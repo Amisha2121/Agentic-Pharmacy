@@ -1,0 +1,11 @@
+# Sensitive API keys and credentials
+.env
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Local databases and temp files
+chroma_db/
+temp_*
