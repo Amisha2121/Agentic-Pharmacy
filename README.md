@@ -1,112 +1,157 @@
-# 🏥 Agentic Pharmacy: AI-Driven Inventory & Safety System
+# 🏥 Agentic Pharmacy AI — Intelligent Inventory & Safety System
 
-An intelligent, multi-agent pharmacy management system that automates drug restocking, clinical queries, and safety alerts using **Gemini 2.5 Flash-Lite**, **LangGraph**, and **Twilio**.
+A production-grade, multi-agent pharmacy management system built with **LangGraph**, **Groq LLaMA 4**, and **Firebase**. It automates drug inventory logging from label photos, enforces human-in-the-loop safety checkpoints for expired medication, and grounds clinical interaction queries in real FDA drug data.
 
-## 🚀 Key Features
+---
 
-* **Multimodal AI Vision**: Automatically extracts batch numbers, expiry dates, and product categories from medicine labels using `gemini-2.5-flash-lite`.
-* **Agentic Routing**: Uses a semantic router to decide whether a query requires SQL database access, Vector search (RAG), or vision processing.
-* **Automated Safety Alerts**: Proactively audits inventory and sends **SMS notifications** via Twilio to your mobile device when expired or near-expiry batches are detected.
-* **Dual-Database Architecture**:
-* **PostgreSQL (Supabase)**: For structured inventory data and transaction history.
-* **ChromaDB**: For unstructured clinical guidelines and medical knowledge (RAG).
+## ✨ Key Features
 
+### 🤖 Multi-Agent LangGraph Workflow
+The app is a state machine with four intelligent nodes, routed automatically based on the user's intent:
 
-* **Dynamic Dashboard**: A modern Streamlit UI featuring categorized inventory cards and a live alert center.
+| Node | Trigger | What it does |
+|---|---|---|
+| **Vision Agent** | Image uploaded | Reads medicine label → extracts batch, expiry, name, category |
+| **Human Approval Gate** | Expired item detected | Pauses graph, waits for pharmacist approval before any write |
+| **DDI Lookup Tool** | Drug interaction query | Exact pandas lookup in FDA dataset — no AI guessing |
+| **Clinical Knowledge** | General medical question | ChromaDB vector search → LLM synthesis |
+
+### 🛑 Human-in-the-Loop (HITL) Checkpoint
+When the Vision Agent detects an **expired medication**, the LangGraph workflow **pauses** using `interrupt()`. The Streamlit dashboard shows:
+
+> ⚠️ *"Critical: Attempting to log expired medication. Approve moving [Drug] to Quarantine DB?"*
+
+The pharmacist clicks **✅ Approve** (routes to a separate `quarantine` Firestore collection) or **❌ Reject** (discards entirely). The graph resumes via `Command(resume=…)`. Nothing is written to Firebase until a human decides.
+
+### 🔬 Structured Drug-Drug Interaction (DDI) Lookup
+Clinical queries like *"Can I take Paracetamol with Warfarin?"* are answered by a **deterministic pandas tool**, not an LLM:
+
+- **560 drugs** with verbatim FDA drug label interaction text
+- Dataset built from the [Kaggle 11k medicine dataset](https://www.kaggle.com/datasets/singhnavjot2062001/11000-medicine-details) cross-referenced against the **FDA openFDA Drug Labels API**
+- **INN synonym map**: `Paracetamol → Acetaminophen`, `Kivexa → Abacavir`, `Salbutamol → Albuterol`, etc.
+- Falls back to ChromaDB vector search only if neither drug is in the FDA dataset
+
+### 📸 Multimodal Vision Scanning
+Upload 1–6 photos of a medicine package. The LLaMA 4 Scout vision model:
+- Reads batch numbers, manufacturing and **expiry dates** (correctly ordered on Indian labels)
+- Auto-generates batch IDs for unreadable barcodes
+- Supports user-provided expiry hints (`"exp 11/2026"`)
+- Detects suspiciously old dates (likely Mfg. Date misread) with a warning
 
 ---
 
 ## 🏗️ Technical Architecture
 
-The system is built as a state machine using **LangGraph**, ensuring reliable transitions between different AI capabilities:
+```
+User Input (text / images)
+        │
+        ▼
+    Route Intent (LLM classifier)
+        │
+   ┌────┴─────────────────────────┐
+   │                              │
+Vision Extraction Node    Clinical / Inventory / Update Node
+   │
+   ▼
+Human Approval Gate ←── interrupt() pauses here if expired
+   │
+   └── Approve → insert_quarantine() → Firestore "quarantine"
+   └── Reject  → discard, nothing written
+```
 
-1. **Vision Node**: Processes uploaded images with **exponential backoff** to handle API rate limits gracefully.
-2. **Clinical Knowledge Node**: Performs semantic search on local medical documents to answer safety questions.
-3. **Inventory Node**: Executes grounded SQL queries against the inventory, with built-in **temporal awareness** (using real-time system dates).
-4. **Auto-Audit Script**: A standalone background task that runs a daily check and triggers mobile notifications.
+**Stack:**
+- **LLM**: Groq (`llama-4-scout-17b` for vision, `llama-3.3-70b` for text)
+- **Orchestration**: LangGraph with `MemorySaver` checkpointer
+- **Database**: Firebase Firestore (`batches` + `quarantine` collections)
+- **Vector DB**: ChromaDB Cloud
+- **DDI Data**: FDA openFDA Drug Labels API → pandas CSV lookup
+- **UI**: Streamlit
 
 ---
 
 ## 🛠️ Installation & Setup
 
-### 1. Clone the Repository
+### 1. Clone & Install
 
 ```bash
-git clone https://github.com/your-username/pharmacy-ai-agent.git
-cd pharmacy-ai-agent
-
-```
-
-### 2. Set Up Virtual Environment
-
-```bash
+git clone https://github.com/Amisha2121/Agentic-Pharmacy.git
+cd Agentic-Pharmacy
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate        # Windows
 pip install -r requirements.txt
-
+pip install "kagglehub[pandas-datasets]"
 ```
 
-### 3. Environment Variables
+### 2. Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file:
 
 ```env
-# Gemini API
-GOOGLE_API_KEY=your_gemini_api_key
+# Groq (LLM + Vision)
+GROQ_API_KEY=your_groq_api_key
 
-# Supabase / PostgreSQL
-DB_URL=your_supabase_postgresql_url
+# Firebase
+FIREBASE_CREDENTIALS_PATH=firebase_key.json
 
-# Twilio (SMS Notifications)
-TWILIO_ACCOUNT_SID=your_sid
-TWILIO_AUTH_TOKEN=your_token
-TWILIO_PHONE_NUMBER=your_twilio_number
-MY_PHONE_NUMBER=your_mobile_number
-
-# AWS (Optional - if using SNS)
-AWS_ACCESS_KEY_ID=your_key
-AWS_SECRET_ACCESS_KEY=your_secret
-
+# ChromaDB Cloud
+CHROMA_API_KEY=your_chroma_api_key
+CHROMA_TENANT=your_tenant
+CHROMA_DATABASE=your_database
 ```
+
+Place your Firebase service account JSON as `firebase_key.json` in the project root.
+
+### 3. Build the DDI Dataset (one-time)
+
+```bash
+python build_full_ddi_bulk.py
+```
+
+This downloads the Kaggle medicine list, scans 30,000 FDA drug labels, and saves `data/fda_ddi.csv` (~560 drugs with full interaction text).
 
 ---
 
 ## 🖥️ Usage
 
-### Run the Interactive Dashboard
-
 ```bash
-streamlit run main.py
-
+venv\Scripts\python.exe -m streamlit run main.py
 ```
 
-### Run the Automated Daily Audit
+Open **http://localhost:8501**
 
-To test the automatic mobile notification system without opening the UI:
-
-```bash
-python auto_notif.py
-
-```
-
----
-
-## 📊 Dashboard Preview
+### Dashboard Tabs
 
 | Tab | Description |
-| --- | --- |
-| **💬 Assistant Chat** | Chat with the AI to scan labels, ask clinical questions, or update records. |
-| **📋 Live Inventory** | View products sorted into square category boxes (Tablets, Syrups, etc.). |
-| **🔔 Alert Notifications** | See critical items expiring soon and trigger manual mobile alerts. |
+|---|---|
+| **💬 Assistant Chat** | Scan labels, ask DDI questions, query inventory, update records |
+| **📋 Live Inventory** | Browse stock by category (Tablets, Syrups, Capsules…) |
 
 ---
 
-## 🛡️ Grounding & Hallucination Prevention
+## �️ Safety & Accuracy
 
-To ensure pharmacy-grade accuracy, this agent implements:
-
-* **Negative Constraints**: The AI is forbidden from "guessing" stock levels not found in the SQL database.
-* **Time Awareness**: Injects the current system date (`YYYY-MM-DD`) into every prompt to prevent errors in expiry reasoning.
-* **Deterministic Logic**: Uses Python's `datetime` library for alert calculations rather than relying solely on LLM logic.
+| Mechanism | What it prevents |
+|---|---|
+| **HITL Checkpoint** | AI cannot write expired drugs to inventory without pharmacist approval |
+| **Quarantine Collection** | Approved-expired items are stored separately, never mixing with live stock |
+| **FDA-grounded DDI lookup** | Drug interaction answers cite verbatim FDA label text — no hallucination |
+| **Expiry sanity check** | Dates > 3 years old flagged as likely Mfg. Date misread |
+| **Temporal injection** | Today's date injected into every inventory prompt |
 
 ---
+
+## 📁 Project Structure
+
+```
+AgenticAI/
+├── main.py                  # Streamlit UI + HITL approval logic
+├── agent.py                 # LangGraph graph, all nodes, MemorySaver
+├── database.py              # Firebase Firestore helpers (batches + quarantine)
+├── ddi_lookup.py            # Pandas-based FDA DDI lookup tool + synonym map
+├── build_full_ddi_bulk.py   # One-time script: builds data/fda_ddi.csv
+├── knowledge_base.py        # ChromaDB vector seeding
+├── daily_audit.py           # Standalone inventory audit script
+├── data/
+│   └── fda_ddi.csv          # 560-drug FDA interaction dataset
+└── firebase_key.json        # Firebase credentials (not committed)
+```

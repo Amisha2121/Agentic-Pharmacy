@@ -33,7 +33,7 @@ def clinical_knowledge_node(state: PharmacyState):
             model='gemini-2.5-flash',
             contents=[system_instruction, user_query]
         )
-        return {"final_response": f"📚 **Clinical Knowledge:** {response.text}"}
+        return {"final_response": f" **Clinical Knowledge:** {response.text}"}
         
     except Exception as e:
         return {"final_response": f"Vector Search Error: {e}"}

@@ -1,5 +1,6 @@
 # Sensitive API keys and credentials
 .env
+firebase_key.json
 
 # Python virtual environment
 venv/
