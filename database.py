@@ -7,10 +7,21 @@ from firebase_admin import credentials, firestore
 load_dotenv()
 
 # Initialize Firebase app (only once)
+# Supports three credential sources (tried in order):
+#   1. FIREBASE_CREDENTIALS_JSON  — full JSON string in env var (best for cloud/server)
+#   2. FIREBASE_CREDENTIALS_PATH  — path to a JSON key file
+#   3. firebase_key.json          — default local file
 if not firebase_admin._apps:
-    cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "firebase_key.json")
-    cred = credentials.Certificate(cred_path)
+    _json_str = os.getenv("FIREBASE_CREDENTIALS_JSON", "")
+    if _json_str:
+        import json
+        _cred_dict = json.loads(_json_str)
+        cred = credentials.Certificate(_cred_dict)
+    else:
+        cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "firebase_key.json")
+        cred = credentials.Certificate(cred_path)
     firebase_admin.initialize_app(cred)
+
 
 db = firestore.client()
 COLLECTION = "batches"
