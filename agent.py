@@ -91,9 +91,17 @@ def route_intent(state: PharmacyState):
     try:
         response = client.chat.completions.create(
             model=TEXT_MODEL,
-            messages=[{"role": "user", "content": f"""Classify this query into one word — INVENTORY, CLINICAL, or UPDATE.
+            messages=[{"role": "user", "content": f"""Classify this pharmacy assistant query into exactly one word.
+
+Categories:
+- INVENTORY: questions about stock, expiry dates, batches, what's in stock, product counts
+- CLINICAL: drug interactions, side effects, dosage, medical/pharmacological questions
+- UPDATE: requests to rename or update a product/batch name in the database
+- GENERAL: greetings, general questions, anything that does not fit the above
+
 Query: "{user_query}"
-Reply with EXACTLY one word."""}],
+
+Reply with EXACTLY one word (INVENTORY, CLINICAL, UPDATE, or GENERAL)."""}],
             temperature=0.0,
             max_tokens=5
         )
@@ -129,6 +137,26 @@ def vision_extraction_node(state: PharmacyState):
                 expiry_override = parsed.strftime("%Y-%m-%d")
         except Exception:
             pass
+
+    # --- Check if user typed a stock/quantity hint ---
+    # Matches: "qty: 100", "stock 200", "quantity as 30", "have 60", "30 tablets"
+    stock_hint = 0
+    stock_match = re.search(
+        r'(?:qty|quantity|stock|number|count|units?|tablets?|capsules?|pieces?|pcs|have|nos?)'
+        r'(?:\s+(?:as|of|is|=|to))?\s*[:\-]?\s*([0-9]+)',
+        user_query, re.IGNORECASE
+    )
+    if not stock_match:
+        # Catch plain trailing number after "as": "name as X and quantity as 30"
+        stock_match = re.search(r'\bquantity\b.{0,20}?\b([0-9]+)\b', user_query, re.IGNORECASE)
+    if not stock_match:
+        # Catch plain leading number: "100 Dolo650"
+        stock_match = re.search(r'^\s*([0-9]+)\s+[A-Za-z]', user_query)
+    if stock_match:
+        try:
+            stock_hint = int(stock_match.group(1))
+        except (ValueError, IndexError):
+            stock_hint = 0
 
     # --- Build the image content blocks ---
     image_blocks = []
@@ -166,9 +194,10 @@ STEP 3 — EXTRACT:
 - batch_number: alphanumeric code on "Batch No" line
 - product_name: brand name from front of package
 - category: Tablet | Liquid/Syrup | Capsule | Lozenges | Cream/Ointment | Drops | Spray | Other
+- stock_quantity: number of units/tablets/bottles visible on the label or stated by user (0 if not found)
 
 STEP 4 — OUTPUT ONE JSON (no markdown, no explanation):
-{{"batch_number": "...", "expiry_date": "YYYY-MM-DD", "product_name": "...", "category": "..."}}
+{{"batch_number": "...", "expiry_date": "YYYY-MM-DD", "product_name": "...", "category": "...", "stock_quantity": 0}}
 
 Date conversion:
 - MM/YYYY → last day of month: 11/2026 → "2026-11-30"
@@ -191,6 +220,12 @@ Date conversion:
             expiry   = data.get("expiry_date", "UNKNOWN")
             name     = data.get("product_name", "Unknown")
             category = data.get("category", "Unknown")
+            # Stock: prefer user hint → then image extraction → then 0
+            try:
+                img_stock = int(data.get("stock_quantity", 0) or 0)
+            except (ValueError, TypeError):
+                img_stock = 0
+            stock = stock_hint if stock_hint > 0 else img_stock
 
             # Apply user-provided expiry override if present
             override_note = ""
@@ -204,52 +239,43 @@ Date conversion:
             else:
                 batch_note = ""
 
-            # Expiry sanity check
+            # Expiry sanity check — block ALL expired products, no exceptions
             try:
                 import pandas as pd
                 exp_date = pd.to_datetime(expiry, dayfirst=False, errors="coerce").date()
-                if exp_date:
+                if exp_date and exp_date < today:
+                    # Product is expired — do NOT log to any collection
                     years_ago = (today - exp_date).days / 365
-
                     if years_ago > 3:
-                        # Suspiciously old — model likely read Mfg. Date instead
-                        database.insert_batch(batch, expiry, name, category)
-                        return {
-                            "final_response": (
-                                f"⚠️ **Date may be incorrect** | **{name}** ({category}) "
-                                f"| Batch: {batch}{batch_note} | Read expiry: {exp_date} "
-                                f"| 🔍 The date seems too old — the AI may have read the "
-                                f"Manufacturing Date instead of Expiry Date. "
-                                f"Product logged but please verify the expiry date manually."
-                            ),
-                            "pending_quarantine": None,
-                            "hitl_decision": None,
-                        }
-
-                    elif years_ago > 0:
-                        # ✋ HITL TRIGGER: Genuinely expired — pause for human approval
-                        return {
-                            "final_response": "",
-                            "pending_quarantine": {
-                                "batch": batch,
-                                "expiry": str(exp_date),
-                                "name": name,
-                                "category": category,
-                                "batch_note": batch_note,
-                            },
-                            "hitl_decision": None,
-                        }
+                        reason = (
+                            f"The read expiry ({exp_date}) is over 3 years ago — "
+                            f"the AI may have read the Manufacturing Date instead. "
+                            f"Please check the label and re-scan with the correct expiry date in your hint."
+                        )
+                    else:
+                        reason = f"This product expired on **{exp_date}**."
+                    return {
+                        "final_response": (
+                            f"❌ **Not Logged — Expired Product** | **{name}** ({category}) "
+                            f"| Batch: {batch}{batch_note} | Expiry: {exp_date}\n\n"
+                            f"⚠️ {reason}"
+                        ),
+                        "pending_quarantine": None,
+                        "hitl_decision": None,
+                    }
 
             except Exception:
                 pass
 
+
             # Happy path — log to main inventory
-            database.insert_batch(batch, expiry, name, category)
+            database.insert_batch(batch, expiry, name, category, stock)
             photo_word = f"{n} photos" if n > 1 else "photo"
+            stock_note = f" | Stock: {stock}" if stock > 0 else ""
             return {
                 "final_response": (
                     f"✅ Logged **{name}** ({category}) from {photo_word} "
-                    f"| Batch: {batch}{batch_note} | Exp: {expiry}"
+                    f"| Batch: {batch}{batch_note} | Exp: {expiry}{stock_note}"
                 ),
                 "pending_quarantine": None,
                 "hitl_decision": None,
@@ -323,7 +349,7 @@ def database_query_node(state: PharmacyState):
     user_query = state.get("user_query", "")
     today = datetime.date.today().strftime("%Y-%m-%d")
     inventory_data = database.get_inventory()
-    inventory_context = "\n".join([f"- {r[2]} ({r[3]}) | Batch: {r[0]} | Exp: {r[1]}" for r in inventory_data])
+    inventory_context = "\n".join([f"- {r[2]} ({r[3]}) | Batch: {r[0]} | Exp: {r[1]} | Stock: {r[5]}" for r in inventory_data])
 
     client = get_client()
     response = client.chat.completions.create(
@@ -353,9 +379,14 @@ def database_update_node(state: PharmacyState):
         )
         data = json.loads(response.choices[0].message.content)
         batch, new_name = data.get("batch_number"), data.get("new_name")
+        # Guard against null/empty values — LLM couldn't extract a real batch
+        if not batch or batch.strip().lower() in ("", "none", "null", "unknown", "..."):
+            return {"final_response": "I can update a product name for you. Please provide the batch number and the new name, e.g. *'Update batch ABC123 to Paracetamol 500mg'*."}
+        if not new_name or new_name.strip().lower() in ("", "none", "null", "unknown", "..."):
+            return {"final_response": f"Please also provide the new product name for batch **{batch}**."}
         if database.update_product_name(batch, new_name):
             return {"final_response": f"🔄 Updated batch **{batch}** name to **{new_name}**."}
-        return {"final_response": f"⚠️ Batch {batch} not found."}
+        return {"final_response": f"⚠️ Batch **{batch}** was not found in the inventory. Please check the batch number and try again."}
     except Exception as e:
         return {"final_response": f"Update failed: {e}"}
 

@@ -11,6 +11,7 @@ import os
 import re
 import pandas as pd
 from functools import lru_cache
+from rapidfuzz import process, fuzz
 
 _DDI_CSV_PATH = os.path.join(os.path.dirname(__file__), "data", "fda_ddi.csv")
 
@@ -44,6 +45,20 @@ def _load_df() -> pd.DataFrame:
     return df
 
 
+@lru_cache(maxsize=1)
+def _get_all_drug_names() -> list[str]:
+    """Get a list of all unique normalized drug names for fuzzy matching."""
+    df = _load_df()
+    if df.empty:
+        return []
+    names = set()
+    for col in ["_name_upper", "_brand_upper", "_generic_upper"]:
+        names.update(df[col].dropna().unique())
+    # Also include INN synonyms keys
+    names.update(_INN_SYNONYMS.keys())
+    return list(names)
+
+
 def _normalise(name: str) -> str:
     """Strip, uppercase, collapse whitespace, and resolve INN synonyms."""
     key = re.sub(r"\s+", " ", name.strip().upper())
@@ -54,29 +69,57 @@ def lookup_drug(drug_name: str) -> dict | None:
     """
     Return the DDI record for a drug by name (case-insensitive).
     Searches drug_name, brand_name, and generic_name columns.
+    Includes fuzzy matching for typos (90% similarity threshold).
     Returns None if not found.
     """
     df = _load_df()
     if df.empty:
         return None
     key = _normalise(drug_name)
+    
+    # First, try exact match
     mask = (
         df["_name_upper"].str.contains(key, regex=False) |
         df["_brand_upper"].str.contains(key, regex=False) |
         df["_generic_upper"].str.contains(key, regex=False)
     )
     matches = df[mask]
-    if matches.empty:
-        return None
-    row = matches.iloc[0]
-    return {
-        "drug_name":          row["drug_name"],
-        "brand_name":         row["brand_name"],
-        "generic_name":       row["generic_name"],
-        "interacts_with_list": row["interacts_with_list"],
-        "description":        row["description"],
-        "source":             row["source"],
-    }
+    if not matches.empty:
+        row = matches.iloc[0]
+        return {
+            "drug_name":          row["drug_name"],
+            "brand_name":         row["brand_name"],
+            "generic_name":       row["generic_name"],
+            "interacts_with_list": row["interacts_with_list"],
+            "description":        row["description"],
+            "source":             row["source"],
+        }
+    
+    # If no exact match, try fuzzy matching
+    all_names = _get_all_drug_names()
+    if all_names:
+        best_match = process.extractOne(key, all_names, scorer=fuzz.ratio)
+        if best_match and best_match[1] >= 90:  # 90% similarity
+            corrected_key = _normalise(best_match[0])  # Resolve synonyms
+            # Now lookup with the corrected key
+            mask = (
+                df["_name_upper"].str.contains(corrected_key, regex=False) |
+                df["_brand_upper"].str.contains(corrected_key, regex=False) |
+                df["_generic_upper"].str.contains(corrected_key, regex=False)
+            )
+            matches = df[mask]
+            if not matches.empty:
+                row = matches.iloc[0]
+                return {
+                    "drug_name":          row["drug_name"],
+                    "brand_name":         row["brand_name"],
+                    "generic_name":       row["generic_name"],
+                    "interacts_with_list": row["interacts_with_list"],
+                    "description":        row["description"],
+                    "source":             row["source"],
+                }
+    
+    return None
 
 
 def check_interaction(drug_a: str, drug_b: str) -> dict:

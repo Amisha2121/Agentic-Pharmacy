@@ -7,8 +7,17 @@ import database
 from agent import app
 from langgraph.types import Command
 from langgraph.errors import GraphInterrupt
+from workflow_tracker import StreamlitNodeVisualizer, stream_agent_with_detailed_tracking
+from inventory_sales_ui import render_log_daily_sales_tab, render_reorder_alerts_tab, render_expired_alerts_tab
 
 st.set_page_config(page_title="Pharmacy AI Agent", layout="wide")
+
+# ── Run on every page load: deduct + archive any past-day sales logs ──────────
+_deduction_msg = database.process_midnight_deductions()
+if _deduction_msg:
+    st.toast(_deduction_msg, icon="✅")
+
+
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -32,8 +41,27 @@ st.markdown("""
 st.title("🏥 Smart Pharmacy AI & Inventory")
 st.markdown("---")
 
+# ─── MIDNIGHT DEDUCTION — Lazy Evaluation ────────────────────────────────────
+# Runs silently on every page load. If a new day has started since the last
+# run, it deducts yesterday's sales from inventory and clears the sales log.
+# Only does real work once per day; subsequent loads return immediately.
+if "_midnight_checked" not in st.session_state:
+    try:
+        deduction_msg = database.process_midnight_deductions()
+        if deduction_msg:
+            st.toast(deduction_msg, icon="✅")
+    except Exception as _e:
+        pass   # Don't crash the app on non-critical background task
+    st.session_state._midnight_checked = True
+
 # 1. DEFINE TABS
-tab1, tab2 = st.tabs(["💬 Assistant Chat", "📋 Live Inventory Dashboard"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "💬 Assistant Chat",
+    "📋 Live Inventory Dashboard",
+    "🛒 Log Daily Sales",
+    "🚨 Reorder Alerts",
+    "⛔ Expired Items",
+])
 
 # --- TAB 1: CONVERSATIONAL AGENT ---
 with tab1:
@@ -75,24 +103,32 @@ with tab1:
             )
             col_approve, col_reject = st.columns(2)
             with col_approve:
-                approve_clicked = st.button("✅ Approve — Move to Quarantine", use_container_width=True, type="primary")
+                approve_clicked = st.button("✅ Approve — Move to Quarantine", width="stretch", type="primary")
             with col_reject:
-                reject_clicked = st.button("❌ Reject — Discard Item", use_container_width=True)
+                reject_clicked = st.button("❌ Reject — Discard Item", width="stretch")
 
         if approve_clicked or reject_clicked:
             decision = "approve" if approve_clicked else "reject"
             with st.chat_message("assistant"):
-                with st.spinner("Processing decision..."):
-                    try:
-                        result = app.invoke(
-                            Command(resume={"decision": decision}),
-                            config=graph_config,
-                        )
-                        final_text = result.get("final_response", "")
-                    except GraphInterrupt:
-                        final_text = "⚠️ Unexpected second interrupt — please refresh."
-                    except Exception as e:
-                        final_text = f"⚠️ Error resuming workflow: {e}"
+                # Initialize visualizer for HITL decision processing
+                visualizer = StreamlitNodeVisualizer()
+                visualizer.init_visualization()
+                
+                try:
+                    # Stream the result of HITL decision
+                    result = None
+                    for event in app.stream(
+                        Command(resume={"decision": decision}),
+                        config=graph_config,
+                        stream_mode="values"
+                    ):
+                        result = event
+                    
+                    final_text = result.get("final_response", "") if result else ""
+                except GraphInterrupt:
+                    final_text = "⚠️ Unexpected second interrupt — please refresh."
+                except Exception as e:
+                    final_text = f"⚠️ Error resuming workflow: {e}"
 
                 st.markdown(final_text)
 
@@ -105,7 +141,7 @@ with tab1:
 
     # ─── NORMAL CHAT INPUT ────────────────────────────────────────────────────
     if not st.session_state.awaiting_hitl:
-        prompt = st.chat_input("Attach labels or ask a question...", accept_file="multiple", file_type=["jpg", "jpeg", "png"])
+        prompt = st.chat_input("+ Attach labels or ask a question...", accept_file="multiple", file_type=["jpg", "jpeg", "png"])
 
         if prompt:
             with st.chat_message("user"):
@@ -127,58 +163,66 @@ with tab1:
             st.session_state.messages.append({"role": "user", "content": user_text})
 
             with st.chat_message("assistant"):
-                with st.spinner("Analyzing..."):
-                    try:
-                        result = app.invoke(
-                            {
-                                "image_paths": temp_paths,
-                                "user_query": user_text,
-                                "final_response": "",
-                                "pending_quarantine": None,
-                                "hitl_decision": None,
-                            },
-                            config=graph_config,
-                        )
-                        final_text = result.get("final_response", "")
-                        # Clean up temp files
-                        for p in temp_paths:
-                            if os.path.exists(p): os.remove(p)
+                # Initialize workflow visualizer
+                visualizer = StreamlitNodeVisualizer()
+                visualizer.init_visualization()
+                
+                try:
+                    # Stream agent execution with real-time visualization
+                    result = None
+                    for event in app.stream(
+                        {
+                            "image_paths": temp_paths,
+                            "user_query": user_text,
+                            "final_response": "",
+                            "pending_quarantine": None,
+                            "hitl_decision": None,
+                        },
+                        config=graph_config,
+                        stream_mode="values"
+                    ):
+                        result = event
+                    
+                    final_text = result.get("final_response", "") if result else ""
+                    # Clean up temp files
+                    for p in temp_paths:
+                        if os.path.exists(p): os.remove(p)
 
-                        st.markdown(final_text)
-                        st.session_state.messages.append({"role": "assistant", "content": final_text})
+                    st.markdown(final_text)
+                    st.session_state.messages.append({"role": "assistant", "content": final_text})
 
-                    except GraphInterrupt as gi:
-                        # Clean up temp files even on interrupt
-                        for p in temp_paths:
-                            if os.path.exists(p): os.remove(p)
+                except GraphInterrupt as gi:
+                    # Clean up temp files even on interrupt
+                    for p in temp_paths:
+                        if os.path.exists(p): os.remove(p)
 
-                        # Extract product info from interrupt payload
-                        interrupt_value = gi.args[0] if gi.args else {}
-                        # GraphInterrupt wraps as list of Interrupt objects
-                        if hasattr(interrupt_value, '__iter__') and not isinstance(interrupt_value, dict):
-                            try:
-                                interrupt_value = list(interrupt_value)[0].value
-                            except Exception:
-                                interrupt_value = {}
+                    # Extract product info from interrupt payload
+                    interrupt_value = gi.args[0] if gi.args else {}
+                    # GraphInterrupt wraps as list of Interrupt objects
+                    if hasattr(interrupt_value, '__iter__') and not isinstance(interrupt_value, dict):
+                        try:
+                            interrupt_value = list(interrupt_value)[0].value
+                        except Exception:
+                            interrupt_value = {}
 
-                        product = interrupt_value.get("product", {}) if isinstance(interrupt_value, dict) else {}
-                        st.session_state.awaiting_hitl = True
-                        st.session_state.hitl_product = product
+                    product = interrupt_value.get("product", {}) if isinstance(interrupt_value, dict) else {}
+                    st.session_state.awaiting_hitl = True
+                    st.session_state.hitl_product = product
 
-                        notice = (
-                            f"🛑 **HITL Checkpoint triggered** — expired medication detected: "
-                            f"**{product.get('name', 'Unknown')}** (Batch: {product.get('batch', '?')}). "
-                            f"Awaiting your approval above."
-                        )
-                        st.markdown(notice)
-                        st.session_state.messages.append({"role": "assistant", "content": notice})
+                    notice = (
+                        f"🛑 **HITL Checkpoint triggered** — expired medication detected: "
+                        f"**{product.get('name', 'Unknown')}** (Batch: {product.get('batch', '?')}). "
+                        f"Awaiting your approval above."
+                    )
+                    st.markdown(notice)
+                    st.session_state.messages.append({"role": "assistant", "content": notice})
 
-                    except Exception as e:
-                        for p in temp_paths:
-                            if os.path.exists(p): os.remove(p)
-                        err_text = f"⚠️ Error: {e}"
-                        st.markdown(err_text)
-                        st.session_state.messages.append({"role": "assistant", "content": err_text})
+                except Exception as e:
+                    for p in temp_paths:
+                        if os.path.exists(p): os.remove(p)
+                    err_text = f"⚠️ Error: {e}"
+                    st.markdown(err_text)
+                    st.session_state.messages.append({"role": "assistant", "content": err_text})
 
             st.rerun()
 
@@ -189,7 +233,8 @@ with tab2:
 
     if not raw_data: st.info("No products uploaded yet.")
     else:
-        df = pd.DataFrame(raw_data, columns=["Batch #", "Expiry Date", "Product Name", "Category", "Logged At"])
+        df = pd.DataFrame(raw_data, columns=["Batch #", "Expiry Date", "Product Name", "Category", "Logged At", "Stock"])
+
         if st.session_state.selected_category is None:
             st.header("📦 Inventory Categories")
             icons = {"Tablet": "💊", "Liquid/Syrup": "🧪", "Capsule": "💊", "Other": "📦", "Cream/Ointment": "🧴"}
@@ -206,3 +251,15 @@ with tab2:
                 st.rerun()
             st.header(f"📁 {st.session_state.selected_category} Details")
             st.dataframe(df[df["Category"] == st.session_state.selected_category][["Product Name", "Batch #", "Expiry Date"]], use_container_width=True, hide_index=True)
+
+# --- TAB 3: LOG DAILY SALES ---
+with tab3:
+    render_log_daily_sales_tab()
+
+# --- TAB 4: REORDER ALERTS ---
+with tab4:
+    render_reorder_alerts_tab()
+
+# --- TAB 5: EXPIRED ITEMS ---
+with tab5:
+    render_expired_alerts_tab()
