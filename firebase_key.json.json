@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "agentic-pharmacy",
+  "private_key_id": "4ddae7036733471dd60924035920b5dc345bc0dd",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC4kkAsgaw1rt7L\nqpA4FM0tq0vPYf2UQX13rGHWOXm9I31rgD5l/lAYryVoQwQGnSom1nCKPTk+NNm5\nM6oc+TABvwZpMs/C71KPvKZvWgP4Q1Mg3FlE38m+RydmI1aAHUp1i+UJ0GwT7BPj\nk5wgKNwYMnPi8QKHBgzq3x53SlO7gxoTLeufNgZ/CfeVis6MgtsP/mC6zFdKuMq6\nin6Ja6eC4EFnRuJ9BhfJ6kCf8dGVRLKD8/2jhnpH8mrlIoIn+gvWK5LpjZ3ajL8m\nOM0XK3RGojvbrkDpNBcrAIG9/Xy12Le7UcU++QgCsfSOeEF6wcDzYqQJBfMF8vye\n+IqTFzcTAgMBAAECggEABZ28TSkO8+fjyJ+32V+sqfCV6HQLXW5Wt9mrdR4fma/m\n75VMkMREbKkxArNTVTOFZlQibYUVD6hXsv54Sn8R77j/zsX93hPJLS1+L6eLX7Zb\nZQW/bkyUR3FuffmiTANYJ4EqZs+MPQOdy/rLBownvPwVXE5IF5K0DuuGHPbKhctC\nDQBptLz8v22KVIrREEDGdHVZyMoJ6eVTuHnsD6FWItuE3kl2E1n/YuD2TfSn9zfu\nozi5DPwVyPMtc0JZzyxeek2QyD0VdVKNMoUWvO5pcftU0H7QOSfoey5Nq0jq95ET\n+KNQK6ERs//TQ6cMaE57WkQpCnhbE4PrvfGWIQiwlQKBgQDf8mPgyBXin3BQGW9s\nJAQelBcT6rYHaAQKkXvtpalCKntaCYFKgJXfPxDuWh9/55DAgcNEhBbLH4KyvWJ5\nhco89pOgldeFrp+pf82WWkBPkOUzI8BZT5Np6seY99pFHujnpkNHP9nT3t+4/ori\nuUzBHDJO/X17mfxyLHOTu9wuBQKBgQDS/RsViko/rWlfq4s6TbpyS9+m6enC8FjX\nSwPXiBz4/me4bXSV70q/b93w02F873cSUVnf/lzHTyrhdQkiWR5qVYrtUvrK0Q6h\na1Rv4iY2I8M44ZIGVA2grh34S8Ohpnbbm7TN8D4T7jikQSEeZP+1et1R8oNpQL54\n65O9RVBENwKBgBDHKjB3DRyzcUiu/ygM8roPwkLdvNGFO3hHOg+t76ZjZGZ0e9lH\nFPNq2CvjWKTOhovFrQl/E+4X6ETX537PRT2YA6tuTn1XfeLHDnILRPIxGtrf/NM0\nIQk4a8fMGfA/xpdEX5oA8KLs+bn0aBdgZp25LRO57iLKgJ1VMzuIQZC5AoGAMeGQ\n86i8IQ3YabvesKwLtlXlzEpk76du+YdMozoUz3EmCF4oQAJQw62o5PS0iZr7paMC\nAojaWmyHEMJgpHQ5Up5it/T0QdrnAJalYcYvjoEp+Fqr8T8R8bj4cOlImQEH/Kd1\nOXLg2klprruPHuZ15evkQyl4k/uwjFn1lbu7XEUCgYB3k1ifQCF76Uelbek0nwMO\nZ0FiuaNHKBG5a5QsCZbTJTSv8IM1Ef3HCizB5JAhcEqwod23llBAedu3mQglpTC5\n3FGk9/K0jcy0m90jm42XYXhqSTnAFLpkKhSLdC0D/Ijs3/HmAtpOAPRak75D1S5A\nChFL2EU2f9zaSZYxcPq3dA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@agentic-pharmacy.iam.gserviceaccount.com",
+  "client_id": "100720830819170390640",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40agentic-pharmacy.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
