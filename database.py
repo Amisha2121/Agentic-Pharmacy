@@ -88,7 +88,7 @@ def get_inventory():
             d.get("logged_at", ""),
             stock_val,
         ))
-    return results
+    return [r for r in results if r[-1] > 0]   # exclude zero-stock from live inventory
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -97,6 +97,57 @@ def get_inventory():
 
 SALES_LOG_COLLECTION = "daily_sales_log"
 INVENTORY_COLLECTION = "inventory"   # Richer inventory collection with stock fields
+CHAT_SESSIONS_COLLECTION = "chat_sessions"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHAT SESSION PERSISTENCE
+# ─────────────────────────────────────────────────────────────────────────────
+
+def save_chat_session(thread_id: str, messages: list[dict], title: str = "") -> None:
+    """
+    Upsert a chat session document in Firestore.
+    Auto-generates a title from the first user message if not provided.
+    """
+    if not title:
+        for m in messages:
+            if m.get("role") == "user":
+                title = m["content"][:60] + ("…" if len(m["content"]) > 60 else "")
+                break
+    if not title:
+        title = "New chat"
+    db.collection(CHAT_SESSIONS_COLLECTION).document(thread_id).set({
+        "thread_id":  thread_id,
+        "title":      title,
+        "messages":   messages,
+        "updated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }, merge=True)
+
+
+def list_chat_sessions(limit: int = 30) -> list[dict]:
+    """Return up to `limit` sessions, newest first."""
+    docs = (
+        db.collection(CHAT_SESSIONS_COLLECTION)
+          .order_by("updated_at", direction=firestore.Query.DESCENDING)
+          .limit(limit)
+          .stream()
+    )
+    return [{"thread_id": d.id, **d.to_dict()} for d in docs]
+
+
+def load_chat_session(thread_id: str) -> list[dict]:
+    """Return the messages list for a given session."""
+    doc = db.collection(CHAT_SESSIONS_COLLECTION).document(thread_id).get()
+    if doc.exists:
+        return doc.to_dict().get("messages", [])
+    return []
+
+
+def delete_chat_session(thread_id: str) -> None:
+    """Permanently delete a chat session."""
+    db.collection(CHAT_SESSIONS_COLLECTION).document(thread_id).delete()
+
 
 
 def get_inventory_with_stock() -> list[dict]:
@@ -319,7 +370,29 @@ def delete_sales_log_entry(log_id: str):
             _adjust_stock_by_batch(batch_number, qty_sold)   # restore
 
 
+def _reset_reorder_flag_if_zero(batch_number: str):
+    """
+    After a stock deduction, check if the batch is now at zero or below.
+    If so, clear reorder_dismissed so the item re-appears in Reorder Alerts.
+    """
+    _STOCK_FIELDS = ["Number", "stock", "Stock", "quantity", "Quantity", "qty"]
+    docs = list(
+        db.collection(COLLECTION)
+          .where(filter=firestore.FieldFilter("batch_number", "==", batch_number))
+          .stream()
+    )
+    for doc in docs:
+        d = doc.to_dict()
+        for field in _STOCK_FIELDS:
+            if field in d:
+                current_stock = int(d[field])
+                if current_stock <= 0 and d.get("reorder_dismissed", False):
+                    doc.reference.update({"reorder_dismissed": False})
+                break
+
+
 def process_midnight_deductions():
+
     """
     Called on every Streamlit page load.
 
@@ -359,6 +432,8 @@ def process_midnight_deductions():
         if not already_deducted and qty_sold > 0 and batch_number:
             _adjust_stock_by_batch(batch_number, -qty_sold)
             deducted_count += 1
+            # If stock now at zero, re-enable the reorder alert
+            _reset_reorder_flag_if_zero(batch_number)
 
         # Archive
         archive_ref = db.collection("archived_sales_log").document(doc.id)
@@ -378,21 +453,31 @@ def process_midnight_deductions():
 
 def get_reorder_alerts() -> list[dict]:
     """
-    Return all inventory items where stock <= 0 AND reorder_dismissed == False.
-
-    Uses a single-field Firestore query on 'stock' (no composite index needed)
-    and filters reorder_dismissed in Python to avoid the index requirement.
+    Return all items from the 'batches' collection where stock <= 0
+    and reorder_dismissed != True. Queries all docs and filters in Python
+    to avoid needing a composite Firestore index.
     """
-    docs = (
-        db.collection(INVENTORY_COLLECTION)
-          .where(filter=firestore.FieldFilter("stock", "<=", 0))
-          .stream()
-    )
+    _STOCK_FIELDS = ["Number", "stock", "Stock", "quantity", "Quantity", "qty"]
+    docs = db.collection(COLLECTION).stream()   # COLLECTION = "batches"
     results = []
     for doc in docs:
         d = doc.to_dict()
-        # Filter reorder_dismissed in Python — avoids needing a composite index
+        # Skip items the user has already dismissed
         if d.get("reorder_dismissed", False):
+            continue
+        # Find the stock value using any known field name
+        stock_val = None
+        for field in _STOCK_FIELDS:
+            if field in d:
+                try:
+                    stock_val = int(d[field])
+                except (ValueError, TypeError):
+                    stock_val = 0
+                break
+        if stock_val is None:
+            stock_val = 0
+        # Only include items at or below zero stock
+        if stock_val > 0:
             continue
         results.append({
             "doc_id":       doc.id,
@@ -400,14 +485,14 @@ def get_reorder_alerts() -> list[dict]:
             "product_name": d.get("product_name", "Unknown"),
             "category":     d.get("category", "Unknown"),
             "expiry_date":  d.get("expiry_date", ""),
-            "stock":        int(d.get("stock", 0)),
+            "stock":        stock_val,
         })
     return results
 
 
 def dismiss_reorder_alert(doc_id: str):
     """Set reorder_dismissed=True so the item disappears from the alert view."""
-    db.collection(INVENTORY_COLLECTION).document(doc_id).update({"reorder_dismissed": True})
+    db.collection(COLLECTION).document(doc_id).update({"reorder_dismissed": True})
 
 
 def get_expired_items() -> list[dict]:
@@ -477,3 +562,38 @@ def seed_inventory_stock_fields():
             doc.reference.update(updates)
             updated += 1
     return updated
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ANALYTICS & REPORTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+def get_analytics_data() -> dict:
+    """
+    Fetch and aggregate data for the Analytics Dashboard.
+    Returns a dictionary with recent sales logs and current stock health.
+    """
+    today = datetime.date.today()
+    thirty_days_ago = (today - datetime.timedelta(days=30)).isoformat()
+    
+    # 1. Fetch sales from the last 30 days
+    sales_docs = list(
+        db.collection(SALES_LOG_COLLECTION)
+          .where(filter=firestore.FieldFilter("date", ">=", thirty_days_ago))
+          .stream()
+    )
+    # Also fetch archived sales if they fall within 30 days
+    archived_docs = list(
+        db.collection("archived_sales_log")
+          .where(filter=firestore.FieldFilter("date", ">=", thirty_days_ago))
+          .stream()
+    )
+    
+    all_sales = [d.to_dict() for d in sales_docs + archived_docs]
+    
+    # 2. Fetch current inventory stock for health charts
+    stock_data = get_inventory_with_stock()
+    
+    return {
+        "sales": all_sales,
+        "stock": stock_data
+    }

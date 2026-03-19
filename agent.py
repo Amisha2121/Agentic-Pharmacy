@@ -54,11 +54,34 @@ def extract_json(text: str) -> dict:
 
 
 # Groq uses OpenAI-compatible API
-def get_client():
+def get_client() -> OpenAI:
     return OpenAI(
         api_key=os.getenv("GROQ_API_KEY"),
         base_url="https://api.groq.com/openai/v1"
     )
+
+def transcribe_audio(audio_bytes: bytes) -> str:
+    """Transcribe audio bytes using Groq Whisper model."""
+    import tempfile
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+        temp_file.write(audio_bytes)
+        temp_file_path = temp_file.name
+        
+    try:
+        client = get_client()
+        with open(temp_file_path, "rb") as audio_file:
+            # Note: The model name could be 'whisper-large-v3' or 'whisper-1' depending on the exact OpenAI SDK / Groq support
+            transcription = client.audio.transcriptions.create(
+                file=audio_file,
+                model="whisper-large-v3", 
+                response_format="text"
+            )
+        return transcription.strip()
+    finally:
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
 
 VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"  # Supports vision
 TEXT_MODEL   = "llama-3.3-70b-versatile"                    # Fast text model
@@ -79,11 +102,13 @@ class PharmacyState(TypedDict):
     # HITL fields
     pending_quarantine: Optional[dict]   # Set when expired item needs human approval
     hitl_decision: Optional[str]         # "approve" or "reject" — injected on resume
+    next_node: str                       # The supervisor uses this to direct the graph
 
-# --- ROUTER ---
-def route_intent(state: PharmacyState):
+# --- SUPERVISOR NODE ---
+def supervisor_node(state: PharmacyState):
+    """The LangGraph Supervisor orchestrates which specialized Worker Agent handles the query."""
     if state.get("image_paths") and len(state["image_paths"]) > 0:
-        return "vision_extraction_node"
+        return {"next_node": "vision_extraction_node"}
 
     user_query = state.get("user_query", "")
     client = get_client()
@@ -91,7 +116,8 @@ def route_intent(state: PharmacyState):
     try:
         response = client.chat.completions.create(
             model=TEXT_MODEL,
-            messages=[{"role": "user", "content": f"""Classify this pharmacy assistant query into exactly one word.
+            messages=[{"role": "system", "content": "You are a routing supervisor for a pharmacy AI. Route the user's query to the proper system."},
+                      {"role": "user", "content": f"""Classify this query into exactly one word.
 
 Categories:
 - INVENTORY: questions about stock, expiry dates, batches, what's in stock, product counts
@@ -107,12 +133,16 @@ Reply with EXACTLY one word (INVENTORY, CLINICAL, UPDATE, or GENERAL)."""}],
         )
         decision = response.choices[0].message.content.strip().upper()
         if "CLINICAL" in decision:
-            return "clinical_knowledge_node"
+            return {"next_node": "clinical_knowledge_node"}
         elif "UPDATE" in decision:
-            return "database_update_node"
+            return {"next_node": "database_update_node"}
     except Exception:
         pass
-    return "database_query_node"
+    return {"next_node": "database_query_node"}
+
+def route_from_supervisor(state: PharmacyState):
+    """Conditional edge from the Supervisor to the next worker."""
+    return state.get("next_node", "database_query_node")
 
 # --- VISION NODE ---
 def vision_extraction_node(state: PharmacyState):
@@ -443,13 +473,19 @@ def clinical_knowledge_node(state: PharmacyState):
 memory = MemorySaver()
 
 workflow = StateGraph(PharmacyState)
+
+# Add Nodes
+workflow.add_node("supervisor", supervisor_node)
 workflow.add_node("vision_extraction_node", vision_extraction_node)
 workflow.add_node("human_approval_node", human_approval_node)
 workflow.add_node("database_query_node", database_query_node)
 workflow.add_node("database_update_node", database_update_node)
 workflow.add_node("clinical_knowledge_node", clinical_knowledge_node)
 
-workflow.add_conditional_edges(START, route_intent, {
+# Define Supervisor Workflow
+workflow.add_edge(START, "supervisor")
+
+workflow.add_conditional_edges("supervisor", route_from_supervisor, {
     "vision_extraction_node": "vision_extraction_node",
     "database_query_node": "database_query_node",
     "database_update_node": "database_update_node",

@@ -37,6 +37,11 @@ Upload 1–6 photos of any medicine package. The **LLaMA 4 Scout** vision model 
 - **Blocks expired products outright** — rejects logging with a clear message
 - Supports manual expiry hints: `"exp 11/2026"`
 
+### 🎙️ Hands-Free Voice Input
+Tired of typing long medical names? Use the built-in **Voice Input widget** powered by Groq's **Whisper-Large-V3** model.
+- Click the mic, speak your query (e.g. *"I just sold 3 strips of Paracetamol"*).
+- The audio is transcribed near-instantly and fed directly into the LangGraph pipeline.
+
 ### 🤖 Multi-Agent LangGraph Workflow
 
 | Agent Node | Trigger | Action |
@@ -61,6 +66,12 @@ Delete entry              →  batches.Number: 50 → 52  (restored)
 ```
 
 A `stock_deducted` flag on each log entry prevents any double-deduction.
+
+### 📩 Automated Daily Email Notifications
+A standalone background script (`daily_alert_job.py`) scans Firestore for:
+- Items with **0 stock** (or negative).
+- Items expiring within the **next 30 days**.
+It compiles a beautiful HTML report and natively dispatches it via SMTP to the pharmacy admin.
 
 ### 🔬 FDA-Grounded DDI Lookup
 *"Can I take Paracetamol with Warfarin?"* — answered with verbatim FDA label text:
@@ -224,8 +235,39 @@ AgenticAI/
 
 ---
 
+---
+
+## 🔬 Deep Dive: DDI Fuzzy Matching Architecture
+
+To prevent false negatives on drug interaction lookups, we use **RapidFuzz** to catch misspellings and synonyms.
+
+1. **Exact Match/Synonym Check**: Normalise string and check `_INN_SYNONYMS`.
+2. **Fuzzy Match Fallback**: Use `process.extractOne` against 818 indexed names.
+3. **Threshold**: Must meet **≥90%** similarity to be accepted (blocks hallucinations).
+4. **Performance**: Both the dataset and name lists are `@lru_cache`'d. Fuzzy matching adds <5ms overhead per lookup and is completely thread-safe.
+
+---
+
+## 🗄️ Deep Dive: Database Lifecycle & Real-Time Stock
+
+The system guarantees stock never drops below 0 and no double-deductions occur.
+
+### The `stock_deducted` Flag
+When `add_to_sales_log()` is called, it:
+1. Deducts the `qty` from `batches.Number` immediately.
+2. Writes the log entry with `stock_deducted: True`.
+
+### Midnight Background Job
+A lazy-evaluation job (`process_midnight_deductions()`) runs silently on page load if the calendar day has changed since the last run:
+1. Queries `daily_sales_log` for entries where `date < today`.
+2. Checks the `stock_deducted` flag. If `False` (legacy entries), it deducts stock now.
+3. Moves entries to `archived_sales_log`.
+4. Deletes entries from `daily_sales_log`.
+
+---
+
 <div align="center">
 
-*Version 2.0 · Updated 2026-03-10*
+*Version 2.0 · Core documentation consolidated 2026-03-10*
 
 </div>
