@@ -86,13 +86,23 @@ def transcribe_audio(audio_bytes: bytes) -> str:
 VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"  # Supports vision
 TEXT_MODEL   = "llama-3.3-70b-versatile"                    # Fast text model
 
-# ChromaDB Cloud for clinical knowledge
-chroma_client = chromadb.CloudClient(
-    api_key=os.getenv("CHROMA_API_KEY"),
-    tenant=os.getenv("CHROMA_TENANT"),
-    database=os.getenv("CHROMA_DATABASE")
-)
-vector_collection = chroma_client.get_or_create_collection(name="amisha2121_agentic_pharmacy_main")
+# ChromaDB Cloud fallback
+class MockCollection:
+    def query(self, *args, **kwargs): return {"documents": [["No clinical data found (MOCK)."]]}
+
+vector_collection = MockCollection()
+try:
+    print("ChromaDB: Initializing CloudClient...")
+    chroma_client = chromadb.CloudClient(
+        api_key=os.getenv("CHROMA_API_KEY"),
+        tenant=os.getenv("CHROMA_TENANT"),
+        database=os.getenv("CHROMA_DATABASE")
+    )
+    # Using a shorter timeout if possible, but CloudClient might not support it directly
+    vector_collection = chroma_client.get_or_create_collection(name="amisha2121_agentic_pharmacy_main")
+    print("ChromaDB: vector_collection ready")
+except Exception as e:
+    print(f"ChromaDB error: {e}. Using mock collection.")
 
 # State definition
 class PharmacyState(TypedDict):

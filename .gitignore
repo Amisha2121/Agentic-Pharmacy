@@ -1,6 +1,8 @@
 # Sensitive API keys and credentials
 .env
 firebase_key.json
+agentic-pharmacy-*.json
+*.json
 
 # Python virtual environment
 venv/
