@@ -1,3 +1,4 @@
+# Firebase key updated: f527dc5103 — reload triggered
 import datetime
 import os
 from dotenv import load_dotenv
@@ -46,34 +47,40 @@ class MockBatch:
     def commit(self): pass
 
 db = MockFirestore()
-MOCK_MODE = True  # Forced True to avoid SDK hangs with invalid credentials
+MOCK_MODE = True
 COLLECTION = "batches"
 
-# Attempt initialization
+# Firebase initialization — clears any stale apps, then re-initializes fresh.
 try:
-    if not firebase_admin._apps:
-        _json_str = os.getenv("FIREBASE_CREDENTIALS_JSON", "")
-        if _json_str:
-            import json
-            _cred_dict = json.loads(_json_str)
-            cred = credentials.Certificate(_cred_dict)
-            print("Firebase: Initializing with JSON string from env")
-            firebase_admin.initialize_app(cred)
-        else:
-            cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "firebase_key.json")
-            if os.path.exists(cred_path):
-                cred = credentials.Certificate(cred_path)
-                print(f"Firebase: Initializing with key file: {cred_path}")
-                firebase_admin.initialize_app(cred)
-    
-    # Initialize the real database client
+    # Delete any previously cached (possibly broken) app so key changes take effect
+    for _stale in list(firebase_admin._apps.values()):
+        firebase_admin.delete_app(_stale)
+
+    _default_key = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firebase_key.json")
+    _json_str = os.getenv("FIREBASE_CREDENTIALS_JSON", "")
+    _cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", _default_key)
+
+    if _json_str:
+        import json as _json
+        cred = credentials.Certificate(_json.loads(_json_str))
+        print("Firebase: Initializing with FIREBASE_CREDENTIALS_JSON env var")
+    elif os.path.exists(_cred_path):
+        cred = credentials.Certificate(_cred_path)
+        print(f"Firebase: Initializing with key file: {_cred_path}")
+    else:
+        raise FileNotFoundError(
+            f"No Firebase credentials found. Expected '{_cred_path}' "
+            "or set FIREBASE_CREDENTIALS_JSON env var."
+        )
+
+    firebase_admin.initialize_app(cred)
     db = firestore.client()
     MOCK_MODE = False
-    print("✅ Firebase initialized successfully in LIVE mode.")
-    
+    print("[OK] Firebase initialized successfully -- LIVE mode.")
+
 except Exception as e:
-    print(f"❌ Firebase initialization failed: {e}")
-    print("⚠️ Falling back to MOCK_MODE for stability.")
+    print(f"[ERROR] Firebase initialization failed: {e}")
+    print("[WARN] Running in MOCK_MODE -- data will not be persisted.")
     db = MockFirestore()
     MOCK_MODE = True
 
@@ -156,6 +163,45 @@ def get_inventory():
 SALES_LOG_COLLECTION = "daily_sales_log"
 INVENTORY_COLLECTION = "inventory"
 CHAT_SESSIONS_COLLECTION = "chat_sessions"
+
+def delete_batch(doc_id: str) -> bool:
+    """Delete a product/batch from the batches collection."""
+    if MOCK_MODE:
+        return True
+    db.collection(COLLECTION).document(doc_id).delete()
+    return True
+
+def update_stock(doc_id: str, new_stock: int):
+    """Directly set the stock level for a specific product."""
+    if MOCK_MODE:
+        return
+    doc_ref = db.collection(COLLECTION).document(doc_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        d = doc.to_dict()
+        for field in _STOCK_FIELDS:
+            if field in d:
+                doc_ref.update({field: max(0, new_stock)})
+                return
+        # If no stock field found, write using the default
+        doc_ref.update({"Number": max(0, new_stock)})
+
+def update_category(doc_id: str, new_category: str):
+    """Change the category of a product."""
+    if MOCK_MODE:
+        return
+    db.collection(COLLECTION).document(doc_id).update({"category": new_category})
+
+def get_quarantine() -> list[dict]:
+    """Return all items in the quarantine collection."""
+    if MOCK_MODE:
+        return []
+    try:
+        docs = db.collection("quarantine").order_by("logged_at", direction=firestore.Query.DESCENDING).stream(timeout=10)
+        return [{**doc.to_dict(), "doc_id": doc.id} for doc in docs]
+    except Exception as e:
+        print(f"Quarantine fetch error: {e}")
+        return []
 
 def save_chat_session(thread_id: str, messages: list[dict], title: str = "") -> None:
     """Upsert a chat session document in Firestore."""
@@ -396,7 +442,7 @@ def get_reorder_alerts() -> list[dict]:
             if field in d:
                 try: stock_val = int(d[field]); break
                 except: stock_val = 0
-        if stock_val <= 0:
+        if stock_val <= 10:
             results.append({
                 "doc_id": doc.id,
                 "batch_number": d.get("batch_number", doc.id),
@@ -421,8 +467,9 @@ def get_expired_items() -> list[dict]:
     results = []
     for doc in docs:
         d = doc.to_dict()
+        if d.get("expiry_dismissed", False): continue
         expiry = d.get("expiry_date", "")
-        if not expiry or expiry >= today_str: continue
+        if not expiry: continue
         stock_val = 0
         for f in _STOCK_FIELDS:
             if f in d:
@@ -432,6 +479,10 @@ def get_expired_items() -> list[dict]:
             days_expired = (datetime.date.today() - datetime.date.fromisoformat(expiry)).days
         except:
             days_expired = 0
+
+        # Skip if expiry is further out than 90 days
+        if days_expired < -90: continue
+
         results.append({
             "doc_id": doc.id,
             "batch_number": d.get("batch_number", doc.id),
@@ -442,6 +493,12 @@ def get_expired_items() -> list[dict]:
             "days_expired": days_expired
         })
     return sorted(results, key=lambda x: x["expiry_date"], reverse=True)
+
+def dismiss_expiry_alert(doc_id: str):
+    """Dismiss an expiration alert."""
+    if MOCK_MODE: return
+    db.collection(COLLECTION).document(doc_id).update({"expiry_dismissed": True})
+
 
 def seed_inventory_stock_fields():
     """Migration: set default fields if missing."""

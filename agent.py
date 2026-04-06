@@ -18,7 +18,7 @@ from langgraph.checkpoint.memory import MemorySaver
 import database
 import ddi_lookup
 
-load_dotenv()
+load_dotenv(override=True)
 
 def extract_json(text: str) -> dict:
     """Robustly extract a JSON object from LLM output, handling common quirks."""
@@ -130,6 +130,7 @@ def supervisor_node(state: PharmacyState):
                       {"role": "user", "content": f"""Classify this query into exactly one word.
 
 Categories:
+- ADD: requests to add, log, insert, or register a new product/batch/medicine to inventory (no image)
 - INVENTORY: questions about stock, expiry dates, batches, what's in stock, product counts
 - CLINICAL: drug interactions, side effects, dosage, medical/pharmacological questions
 - UPDATE: requests to rename or update a product/batch name in the database
@@ -137,12 +138,14 @@ Categories:
 
 Query: "{user_query}"
 
-Reply with EXACTLY one word (INVENTORY, CLINICAL, UPDATE, or GENERAL)."""}],
+Reply with EXACTLY one word (ADD, INVENTORY, CLINICAL, UPDATE, or GENERAL)."""}],
             temperature=0.0,
             max_tokens=5
         )
         decision = response.choices[0].message.content.strip().upper()
-        if "CLINICAL" in decision:
+        if "ADD" in decision:
+            return {"next_node": "text_add_node"}
+        elif "CLINICAL" in decision:
             return {"next_node": "clinical_knowledge_node"}
         elif "UPDATE" in decision:
             return {"next_node": "database_update_node"}
@@ -406,6 +409,86 @@ Rules: Only reference listed products. Mark as EXPIRED if today > expiry date.""
     )
     return {"final_response": response.choices[0].message.content}
 
+# --- TEXT-BASED ADD NODE ---
+def text_add_node(state: PharmacyState):
+    """Parse product details from natural language text and insert into Firestore."""
+    user_query = state.get("user_query", "")
+    client = get_client()
+    today = datetime.date.today()
+
+    try:
+        response = client.chat.completions.create(
+            model=TEXT_MODEL,
+            messages=[{"role": "user", "content": f"""Extract product details from this pharmacy request and return ONLY a JSON object.
+
+Request: "{user_query}"
+
+Return JSON with these exact keys:
+- product_name: the medicine/product name (string)
+- batch_number: batch/lot number if mentioned, else generate "TXT-<4 random digits>" (string)
+- expiry_date: in YYYY-MM-DD format, convert "7th April 2026" → "2026-04-07" (string)
+- category: Analyze the brand or generic name of the product implicitly and pick the BEST matching category exactly from this list:
+    * Pain & Fever       → Dolo650, Paracetamol, Aspirin, Ibuprofen, Crocin, Combiflam, Volini, Moov
+    * Cold & Allergy     → Cough syrups, Benadryl, Cetirizine, Otrivin, Nasivion, Vicks, Allegra
+    * Digestion & Nausea → Antacids, Digene, Gelusil, ORS, Laxatives, Pantoprazole, Omeprazole
+    * Skin & Dermatology → Betadine, Neosporin, Boro Plus, Lacto Calamine, antifungal creams
+    * Vitamins & Nutrition → Vitamin C, Zincovit, Calcium, Ensure, Horlicks, Fish Oil
+    * First Aid & Wound Care → Band-aids, Savlon, Dettol, Cotton rolls, Syringes, Gauze
+    * Eye & Ear Care     → Optive, Murine, ear drops, contact lens solution
+    * Oral Care          → Mouthwash, Sensodyne, Listerine, dental floss
+    * Feminine Care      → Sofy, Stayfree, Whisper, intimate wash
+    * Baby & Child Care  → Pampers, Gripe water, baby powder, diaper rash cream
+    * Cardiovascular & BP→ Amlodipine, Atorvastatin, Losartan, Rosuvastatin
+    * Diabetes Care      → Metformin, Insulin, Glucometer strips, Lancets
+    * Antibiotics        → Amoxicillin, Azithromycin, Ciprofloxacin, Doxycycline
+    * Medical Devices    → Thermometer, BP Monitor, Oximeter, Inhalers
+    * Personal Hygiene   → Soaps, sanitizers, wet wipes, face wash
+    * General/Other      → Anything that fundamentally does not fit above
+- stock: quantity as integer (0 if not mentioned)
+
+JSON only, no explanation."""}],
+            response_format={"type": "json_object"},
+            max_tokens=250
+        )
+        import json as _json
+        data = _json.loads(response.choices[0].message.content)
+
+        name     = data.get("product_name", "Unknown")
+        batch    = data.get("batch_number") or f"TXT-{random.randint(1000,9999)}"
+        expiry   = data.get("expiry_date", "UNKNOWN")
+        category = data.get("category", "Other")
+        stock    = int(data.get("stock") or 0)
+
+        # Block expired products
+        try:
+            exp_date = datetime.date.fromisoformat(expiry)
+            if exp_date < today:
+                return {"final_response": (
+                    f"Cannot add **{name}** — expiry date {expiry} is in the past. "
+                    "Please check the date and try again."
+                ), "pending_quarantine": None, "hitl_decision": None}
+        except Exception:
+            pass
+
+        database.insert_batch(batch, expiry, name, category, stock)
+        stock_note = f" | Stock: {stock}" if stock > 0 else ""
+        return {
+            "final_response": (
+                f"Added **{name}** ({category}) to inventory | "
+                f"Batch: {batch} | Exp: {expiry}{stock_note}"
+            ),
+            "pending_quarantine": None,
+            "hitl_decision": None,
+        }
+
+    except Exception as e:
+        return {
+            "final_response": f"Could not parse product details: {e}. Please include product name, batch number, expiry date, and quantity.",
+            "pending_quarantine": None,
+            "hitl_decision": None,
+        }
+
+
 # --- UPDATE NODE ---
 def database_update_node(state: PharmacyState):
     user_query = state.get("user_query", "")
@@ -488,6 +571,7 @@ workflow = StateGraph(PharmacyState)
 workflow.add_node("supervisor", supervisor_node)
 workflow.add_node("vision_extraction_node", vision_extraction_node)
 workflow.add_node("human_approval_node", human_approval_node)
+workflow.add_node("text_add_node", text_add_node)
 workflow.add_node("database_query_node", database_query_node)
 workflow.add_node("database_update_node", database_update_node)
 workflow.add_node("clinical_knowledge_node", clinical_knowledge_node)
@@ -497,6 +581,7 @@ workflow.add_edge(START, "supervisor")
 
 workflow.add_conditional_edges("supervisor", route_from_supervisor, {
     "vision_extraction_node": "vision_extraction_node",
+    "text_add_node": "text_add_node",
     "database_query_node": "database_query_node",
     "database_update_node": "database_update_node",
     "clinical_knowledge_node": "clinical_knowledge_node"
@@ -505,6 +590,7 @@ workflow.add_conditional_edges("supervisor", route_from_supervisor, {
 # Vision always feeds into the human approval gate
 workflow.add_edge("vision_extraction_node", "human_approval_node")
 workflow.add_edge("human_approval_node", END)
+workflow.add_edge("text_add_node", END)
 workflow.add_edge("database_query_node", END)
 workflow.add_edge("database_update_node", END)
 workflow.add_edge("clinical_knowledge_node", END)

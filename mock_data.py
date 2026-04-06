@@ -1,33 +1,27 @@
-# Mock data for Agentic Pharmacy AI
+"""
+Mock data for offline/development mode when Firebase is unavailable.
+Used by database.py when MOCK_MODE is True.
+"""
 
+# Tuple format: (batch_number, expiry_date, product_name, category, logged_at, stock)
 MOCK_BATCHES = [
-    ("B001", "2026-12-01", "Paracetamol 500mg", "Tablet", "2024-01-01", 150),
-    ("B002", "2024-02-15", "Amoxicillin 250mg", "Capsule", "2024-01-05", 80),
-    ("B003", "2025-06-30", "Cough Syrup", "Liquid/Syrup", "2024-02-10", 45),
-    ("B004", "2026-08-20", "Cetirizine 10mg", "Tablet", "2024-03-01", 200),
-    ("B005", "2023-11-10", "Aspirin 81mg", "Tablet", "2023-01-01", 10),
+    ("8901030858006", "2026-12-31", "Paracetamol 500mg", "Tablet", "2025-01-01 00:00:00", 150),
+    ("8901030812345", "2025-06-30", "Amoxicillin 250mg", "Capsule", "2025-01-01 00:00:00", 80),
+    ("8903622005198", "2027-03-31", "Cough Syrup 100ml", "Liquid/Syrup", "2025-01-01 00:00:00", 45),
+    ("8901030867890", "2026-09-15", "Ibuprofen 400mg", "Tablet", "2025-01-01 00:00:00", 0),
+    ("8901030811111", "2024-01-01", "Expired Cream", "Cream/Ointment", "2025-01-01 00:00:00", 5),
+    ("8901030899999", "2027-12-31", "Vitamin C 500mg", "Tablet", "2025-01-01 00:00:00", 200),
 ]
 
-MOCK_INVENTORY_WITH_STOCK = [
+MOCK_CHAT_SESSIONS = [
     {
-        "doc_id": "mock_1",
-        "batch_number": "B001",
-        "product_name": "Paracetamol 500mg",
-        "category": "Tablet",
-        "expiry_date": "2026-12-01",
-        "stock": 150,
-        "reorder_dismissed": False
+        "thread_id": "mock-session-1",
+        "title": "Drug interaction check for aspirin",
+        "messages": [
+            {"role": "user", "content": "Check aspirin interaction", "type": "user", "id": "m1", "icon": "🎯", "iconColor": "#1E4A4C"},
+            {"role": "assistant", "content": "Aspirin may interact with warfarin — consult your pharmacist.", "type": "system", "id": "m2", "icon": "🤖", "iconColor": "#2B5B5C"},
+        ],
+        "updated_at": "2026-03-26 10:00:00",
+        "created_at": "2026-03-26 10:00:00",
     },
-    {
-        "doc_id": "mock_2",
-        "batch_number": "B002",
-        "product_name": "Amoxicillin 250mg",
-        "category": "Capsule",
-        "expiry_date": "2024-02-15",
-        "stock": 80,
-        "reorder_dismissed": False
-    }
 ]
-
-MOCK_SALES_LOG = []
-MOCK_CHAT_SESSIONS = []
