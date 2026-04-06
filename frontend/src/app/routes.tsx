@@ -1,0 +1,41 @@
+import { createBrowserRouter, Navigate } from "react-router";
+import { RootLayout } from "./components/RootLayout";
+import { AssistantChat } from "./pages/AssistantChat";
+import { LiveInventory } from "./pages/LiveInventory";
+import { LogDailySales } from "./pages/LogDailySales";
+import { ReorderAlerts } from "./pages/ReorderAlerts";
+import { ExpiredItems } from "./pages/ExpiredItems";
+import { Settings } from "./pages/Settings";
+import { Login } from "./pages/Login";
+import { useAuth } from "./context/AuthContext";
+import type { ReactNode } from "react";
+
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return null; // wait for session restore
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+export const router = createBrowserRouter([
+  {
+    path: "/login",
+    Component: Login,
+  },
+  {
+    path: "/",
+    element: (
+      <RequireAuth>
+        <RootLayout />
+      </RequireAuth>
+    ),
+    children: [
+      { index: true, Component: AssistantChat },
+      { path: "inventory", Component: LiveInventory },
+      { path: "sales", Component: LogDailySales },
+      { path: "reorder", Component: ReorderAlerts },
+      { path: "expired", Component: ExpiredItems },
+      { path: "settings", Component: Settings },
+    ],
+  },
+]);
