@@ -14,9 +14,10 @@ interface ChatHistoryProps {
   onNewChat: () => void;
   currentThreadId: string;
   onDeleteChat: (threadId: string) => void;
+  refreshKey?: number;
 }
 
-export function ChatHistory({ isOpen, onToggle, onSelectChat, onNewChat, currentThreadId, onDeleteChat }: ChatHistoryProps) {
+export function ChatHistory({ isOpen, onToggle, onSelectChat, onNewChat, currentThreadId, onDeleteChat, refreshKey }: ChatHistoryProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
 
   const fetchSessions = async () => {
@@ -27,7 +28,7 @@ export function ChatHistory({ isOpen, onToggle, onSelectChat, onNewChat, current
     } catch { /* ignore in mock mode */ }
   };
 
-  useEffect(() => { fetchSessions(); }, [currentThreadId]);
+  useEffect(() => { fetchSessions(); }, [currentThreadId, refreshKey]);
 
   const handleSelect = async (threadId: string) => {
     if (threadId === currentThreadId) return;

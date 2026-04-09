@@ -19,6 +19,7 @@ export function AssistantChat() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [threadId, setThreadId] = useState(() => generateThreadId());
   const [activeMessages, setActiveMessages] = useState<unknown[]>([]);
+  const [sessionRefreshKey, setSessionRefreshKey] = useState(0);
   const { isSidebarOpen, setIsSidebarOpen } = useOutletContext<ContextType>();
 
   const handleNewChat = useCallback(() => {
@@ -39,12 +40,19 @@ export function AssistantChat() {
   }, [threadId]);
 
   const handleNewMessage = useCallback(async (messages: unknown[]) => {
+    // Derive a title from the first user message so new chats are named automatically
+    const firstUserMsg = (messages as { role?: string; type?: string; content?: string }[])
+      .find((m) => m.role === 'user' || m.type === 'user');
+    const autoTitle = firstUserMsg?.content?.trim().slice(0, 60) ?? '';
+
     try {
       await fetch(`/api/sessions/${threadId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, title: '' }),
+        body: JSON.stringify({ messages, title: autoTitle }),
       });
+      // Trigger ChatHistory to re-fetch so the title appears immediately
+      setSessionRefreshKey((k) => k + 1);
     } catch { /* ignore */ }
   }, [threadId]);
 
@@ -67,6 +75,7 @@ export function AssistantChat() {
         onNewChat={handleNewChat}
         currentThreadId={threadId}
         onDeleteChat={handleDeleteChat}
+        refreshKey={sessionRefreshKey}
       />
     </>
   );

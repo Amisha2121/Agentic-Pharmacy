@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import json
 import re
@@ -17,6 +18,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 import database
 import ddi_lookup
+import barcode_scanner
 
 load_dotenv(override=True)
 
@@ -165,6 +167,28 @@ def vision_extraction_node(state: PharmacyState):
     today = datetime.date.today()
     n = len(image_paths)
 
+    # ── STAGE 0: Barcode pre-scan ──────────────────────────────────────────
+    # Try to decode GS1 / standard barcodes before invoking the (slower) LLM.
+    # Results are injected as verified ground-truth into the vision prompt.
+    barcode_result = {"found": False}
+    barcode_batch_override: str | None = None
+    barcode_expiry_override: str | None = None
+    barcode_qty_override: int = 0
+    barcode_hint_text = ""
+
+    for img_path in image_paths:
+        scan = barcode_scanner.scan_image(img_path)
+        if scan["found"]:
+            barcode_result = scan
+            barcode_hint_text = barcode_scanner.build_barcode_hint(scan)
+            if scan.get("batch_number"):
+                barcode_batch_override = scan["batch_number"]
+            if scan.get("expiry_date"):
+                barcode_expiry_override = scan["expiry_date"]
+            if scan.get("quantity"):
+                barcode_qty_override = int(scan["quantity"])
+            break  # First barcode found wins
+
     # --- Check if user manually typed an expiry date in their hint ---
     expiry_override = None
     exp_match = re.search(
@@ -217,32 +241,53 @@ def vision_extraction_node(state: PharmacyState):
         "You are looking at a photo of a medication package."
     )
 
-    prompt = f"""{sides_msg}
+    # Build barcode context block for the prompt
+    barcode_context = ""
+    if barcode_hint_text:
+        barcode_context = f"""
+
+⚡ BARCODE PRE-SCAN RESULTS (use these as EXACT ground truth):
+{barcode_hint_text}
+"""
+
+    # Whether barcode gave us batch/expiry determines what the LLM still needs to do
+    needs_batch  = not barcode_batch_override
+    needs_expiry = not barcode_expiry_override
+
+    batch_instruction = (
+        f'- batch_number: USE EXACTLY "{barcode_batch_override}" (from barcode — do NOT change)'
+        if barcode_batch_override
+        else '- batch_number: alphanumeric code on "Batch No" line'
+    )
+    expiry_instruction = (
+        f'- expiry_date: USE EXACTLY "{barcode_expiry_override}" (from barcode — do NOT change)'
+        if barcode_expiry_override
+        else (
+            '- expiry_date: in YYYY-MM-DD format\n'
+            '⚠️ CRITICAL — Indian stamped labels print dates VERTICALLY in this exact order:\n'
+            '  Line 1: Batch No.\n'
+            '  Line 2: Mfg. Date  ← MANUFACTURING date (top)\n'
+            '  Line 3: Exp. Date  ← EXPIRY date (bottom, ALWAYS later than Mfg. Date)\n'
+            'NEVER return the Mfg. Date as the expiry date.'
+        )
+    )
+
+    prompt = f"""{sides_msg}{barcode_context}
 
 User hint (use if helpful): "{user_query}"
 
-STEP 1 — LIST EVERY DATE you can read from ALL photos. Include the label next to each date.
-
-STEP 2 — IDENTIFY EXPIRY DATE CORRECTLY:
-⚠️ CRITICAL — Indian stamped labels print dates VERTICALLY in this exact order:
-  Line 1: Batch No.
-  Line 2: Mfg. Date  ← MANUFACTURING date (top)
-  Line 3: Exp. Date  ← EXPIRY date (bottom, ALWAYS later than Mfg. Date)
-
-Example: If you see "Mfg. Date: 11/2017" and "Exp. Date: 11/2020", the expiry is 2020-11-30.
-The expiry date label will say "Exp." or "Exp. Date" — it is the date BELOW the manufacturing date.
-NEVER return the Mfg. Date as the expiry date.
-
-STEP 3 — EXTRACT:
-- batch_number: alphanumeric code on "Batch No" line
-- product_name: brand name from front of package
+{"" if barcode_hint_text else "STEP 1 — LIST EVERY DATE visible on ALL photos. Include the label next to each date.\n\n"}\
+STEP {"1" if barcode_hint_text else "2"} — EXTRACT these fields:
+{batch_instruction}
+{expiry_instruction}
+- product_name: brand name from the front of the package
 - category: Tablet | Liquid/Syrup | Capsule | Lozenges | Cream/Ointment | Drops | Spray | Other
 - stock_quantity: number of units/tablets/bottles visible on the label or stated by user (0 if not found)
 
-STEP 4 — OUTPUT ONE JSON (no markdown, no explanation):
+STEP {"2" if barcode_hint_text else "3"} — OUTPUT ONE JSON (no markdown, no explanation):
 {{"batch_number": "...", "expiry_date": "YYYY-MM-DD", "product_name": "...", "category": "...", "stock_quantity": 0}}
 
-Date conversion:
+Date conversion (only if reading from image):
 - MM/YYYY → last day of month: 11/2026 → "2026-11-30"
 - MM/YY   → assume 20YY:    11/27  → "2027-11-30"
 - DD/MM/YYYY → convert directly"""
@@ -263,18 +308,26 @@ Date conversion:
             expiry   = data.get("expiry_date", "UNKNOWN")
             name     = data.get("product_name", "Unknown")
             category = data.get("category", "Unknown")
-            # Stock: prefer user hint → then image extraction → then 0
+            # Stock priority: barcode qty → user hint → image extraction → 0
             try:
                 img_stock = int(data.get("stock_quantity", 0) or 0)
             except (ValueError, TypeError):
                 img_stock = 0
-            stock = stock_hint if stock_hint > 0 else img_stock
+            stock = barcode_qty_override if barcode_qty_override > 0 else (
+                stock_hint if stock_hint > 0 else img_stock
+            )
 
-            # Apply user-provided expiry override if present
+            # Apply barcode overrides as highest-priority ground truth
             override_note = ""
-            if expiry_override:
+            if barcode_expiry_override:
+                expiry = barcode_expiry_override
+                override_note = " *(expiry from barcode ✅)*"
+            elif expiry_override:
                 expiry = expiry_override
                 override_note = " *(expiry from your hint)*"
+
+            if barcode_batch_override:
+                batch = barcode_batch_override
 
             if not batch or batch.upper() in ("UNKNOWN", "NOT FOUND", "N/A", ""):
                 batch = f"BATCH-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}"
@@ -315,10 +368,11 @@ Date conversion:
             database.insert_batch(batch, expiry, name, category, stock)
             photo_word = f"{n} photos" if n > 1 else "photo"
             stock_note = f" | Stock: {stock}" if stock > 0 else ""
+            barcode_tag = " | 🔖 Barcode verified" if barcode_result["found"] else ""
             return {
                 "final_response": (
-                    f"✅ Logged **{name}** ({category}) from {photo_word} "
-                    f"| Batch: {batch}{batch_note} | Exp: {expiry}{stock_note}"
+                    f"✅ Logged **{name}** ({category}) from {photo_word}"
+                    f"{barcode_tag} | Batch: {batch}{batch_note} | Exp: {expiry}{override_note}{stock_note}"
                 ),
                 "pending_quarantine": None,
                 "hitl_decision": None,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Mic, ArrowUp, Paperclip, Menu, History, X, ImageIcon } from 'lucide-react';
+import { Plus, Mic, ArrowUp, Paperclip, Menu, History, X, ImageIcon, ScanLine } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,6 +10,17 @@ interface Message {
   iconColor: string;
   content: string;
   warning?: string;
+}
+
+interface BarcodeResult {
+  found: boolean;
+  barcode_type?: string;
+  batch_number?: string;
+  expiry_date?: string;
+  gtin?: string;
+  quantity?: number;
+  path: string;
+  filename: string;
 }
 
 interface ChatAreaProps {
@@ -38,7 +49,9 @@ export function ChatArea({
   const [isLoading, setIsLoading] = useState(false);
   const [hitlPending, setHitlPending] = useState<Record<string, unknown> | null>(null);
   const [attachedImage, setAttachedImage] = useState<{ path: string; name: string } | null>(null);
+  const [barcodeResult, setBarcodeResult] = useState<BarcodeResult | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,6 +82,7 @@ export function ChatArea({
     setMessages(initialMessages);
     setHitlPending(null);
     setAttachedImage(null);
+    setBarcodeResult(null);
   }, [threadId]);
 
   useEffect(() => {
@@ -86,17 +100,34 @@ export function ChatArea({
   const handleImagePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setUploading(true);
+    setScanning(true);
+    setBarcodeResult(null);
+    setAttachedImage(null);
+
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
-      const data = await res.json();
-      setAttachedImage({ path: data.path, name: file.name });
+      // Scan barcode instantly (also saves the file server-side via /api/scan-barcode)
+      const scanFormData = new FormData();
+      scanFormData.append('file', file);
+      const scanRes = await fetch('/api/scan-barcode', { method: 'POST', body: scanFormData });
+      const scanData: BarcodeResult = await scanRes.json();
+      setBarcodeResult(scanData);
+      setAttachedImage({ path: scanData.path, name: file.name });
     } catch {
-      appendMessage({ id: Date.now().toString(), type: 'system', icon: '❌', iconColor: '#ef4444', content: 'Image upload failed. Try again.' });
+      // Fallback: plain upload without barcode scan
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+        const data = await res.json();
+        setAttachedImage({ path: data.path, name: file.name });
+      } catch {
+        appendMessage({ id: Date.now().toString(), type: 'system', icon: '❌', iconColor: '#ef4444', content: 'Image upload failed. Try again.' });
+      }
     } finally {
       setUploading(false);
+      setScanning(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -110,6 +141,7 @@ export function ChatArea({
     const userContent = text || (attachedImage ? `📷 Image uploaded: ${attachedImage.name}` : '');
     appendMessage({ id: Date.now().toString(), type: 'user', icon: '🎯', iconColor: '#1E4A4C', content: userContent });
     setAttachedImage(null);
+    setBarcodeResult(null);
     setIsLoading(true);
 
     try {
@@ -167,6 +199,40 @@ export function ChatArea({
     }
   };
 
+  const renderBarcodeDetails = () => {
+    if (scanning) {
+      return (
+        <div className="flex items-center gap-2 text-xs text-amber-600 font-medium animate-pulse">
+          <ScanLine className="w-3.5 h-3.5" />
+          <span>Scanning for barcodes…</span>
+        </div>
+      );
+    }
+    if (!barcodeResult) return null;
+    if (barcodeResult.found) {
+      return (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+            <ScanLine className="w-3 h-3" />
+            {barcodeResult.barcode_type ?? 'Barcode'} ✅
+          </span>
+          {barcodeResult.batch_number && (
+            <span className="text-xs text-gray-600">Batch: <strong className="text-gray-800">{barcodeResult.batch_number}</strong></span>
+          )}
+          {barcodeResult.expiry_date && (
+            <span className="text-xs text-gray-600">Exp: <strong className="text-gray-800">{barcodeResult.expiry_date}</strong></span>
+          )}
+          {barcodeResult.gtin && (
+            <span className="text-xs text-gray-500">GTIN: {barcodeResult.gtin}</span>
+          )}
+        </div>
+      );
+    }
+    return (
+      <span className="text-xs text-gray-400 italic">No barcode found — AI will read label visually</span>
+    );
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full w-full relative z-10">
       <div className="flex items-center justify-between p-4 bg-transparent absolute top-0 w-full z-20">
@@ -186,7 +252,7 @@ export function ChatArea({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col pt-20 px-4 sm:px-8 pb-6 max-w-5xl mx-auto w-full">
+      <div className="flex-1 flex flex-col pt-20 px-4 sm:px-8 pb-6 max-w-5xl mx-auto w-full min-h-0">
         {messages.length === 0 && !isLoading && !hitlPending ? (
           <div className="flex-1 flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-5 duration-700 pb-16">
             <h1 className="text-4xl sm:text-[42px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#1E4A4C] to-[#40aab0] mb-3 tracking-tight">
@@ -197,7 +263,7 @@ export function ChatArea({
             </h2>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto mb-8 px-4 space-y-8 [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 overflow-y-auto mb-4 px-4 space-y-8 min-h-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-[#1E4A4C]/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#1E4A4C]/40">
           {messages.map((msg) => (
             <MessageBubble key={msg.id} type={msg.type} icon={msg.icon} iconColor={msg.iconColor} content={msg.content} warning={msg.warning} />
           ))}
@@ -218,20 +284,29 @@ export function ChatArea({
           </div>
         )}
 
-        {/* Attached image preview */}
-        {attachedImage && (
-          <div className="mx-4 mb-3 flex items-center gap-3 bg-[#1E4A4C]/5 border border-[#1E4A4C]/15 rounded-2xl px-4 py-3">
-            <ImageIcon className="w-5 h-5 text-[#1E4A4C]" />
-            <span className="text-sm font-medium text-[#1E4A4C] flex-1 truncate">{attachedImage.name}</span>
-            <button onClick={() => setAttachedImage(null)} className="text-gray-400 hover:text-rose-500 transition-colors">
-              <X className="w-4 h-4" />
-            </button>
+        {/* Attached image preview with live barcode details */}
+        {(attachedImage || scanning) && (
+          <div className="mx-4 mb-3 flex flex-col gap-2 bg-[#1E4A4C]/5 border border-[#1E4A4C]/15 rounded-2xl px-4 py-3">
+            <div className="flex items-center gap-3">
+              <ImageIcon className="w-5 h-5 text-[#1E4A4C] shrink-0" />
+              <span className="text-sm font-medium text-[#1E4A4C] flex-1 truncate">
+                {attachedImage?.name ?? 'Scanning…'}
+              </span>
+              {attachedImage && (
+                <button onClick={() => { setAttachedImage(null); setBarcodeResult(null); }} className="text-gray-400 hover:text-rose-500 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="pl-8">
+              {renderBarcodeDetails()}
+            </div>
           </div>
         )}
 
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} />
 
-        <div className={`relative group mx-4 ${messages.length > 0 ? "mt-auto" : "max-w-3xl mx-auto w-full"}`}>
+        <div className={`relative group mx-4 shrink-0 ${messages.length > 0 ? "mt-auto" : "max-w-3xl mx-auto w-full"}`}>
           <div className="absolute -inset-1 bg-gradient-to-r from-[#1E4A4C] to-[#2B5B5C] rounded-[2rem] blur-md opacity-20 group-hover:opacity-30 transition duration-500"></div>
           <div className="relative bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-xl p-3 flex items-center gap-3 border border-white/80">
             <button
@@ -253,13 +328,17 @@ export function ChatArea({
             <div className="flex items-center gap-2 pr-1 shrink-0">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || scanning}
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors ${
-                  attachedImage ? 'bg-[#1E4A4C]/10 text-[#1E4A4C]' : 'hover:bg-[#C5D3D3]/50 text-gray-500 hover:text-[#1E4A4C]'
+                  scanning
+                    ? 'bg-amber-100 text-amber-500 animate-pulse'
+                    : attachedImage
+                    ? 'bg-[#1E4A4C]/10 text-[#1E4A4C]'
+                    : 'hover:bg-[#C5D3D3]/50 text-gray-500 hover:text-[#1E4A4C]'
                 } ${uploading ? 'animate-pulse' : ''}`}
-                title="Attach image for scanning"
+                title={scanning ? 'Scanning barcode…' : 'Attach image for scanning'}
               >
-                <Paperclip className="w-5 h-5" />
+                {scanning ? <ScanLine className="w-5 h-5" /> : <Paperclip className="w-5 h-5" />}
               </button>
               <button
                 onClick={isListening ? undefined : startListening}
@@ -272,8 +351,12 @@ export function ChatArea({
               </button>
               <button
                 onClick={handleSend}
-                disabled={isLoading || (!message.trim() && !attachedImage)}
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 transform ${(message.trim() || attachedImage) && !isLoading ? 'bg-gradient-to-r from-[#1E4A4C] to-[#2B5B5C] hover:scale-105 text-white shadow-lg shadow-[#1E4A4C]/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                disabled={isLoading || scanning || (!message.trim() && !attachedImage)}
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 transform ${
+                  (message.trim() || attachedImage) && !isLoading && !scanning
+                    ? 'bg-gradient-to-r from-[#1E4A4C] to-[#2B5B5C] hover:scale-105 text-white shadow-lg shadow-[#1E4A4C]/30'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
               >
                 <ArrowUp className="w-6 h-6" />
               </button>

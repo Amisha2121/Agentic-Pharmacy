@@ -1,4 +1,5 @@
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface MessageBubbleProps {
   type: 'user' | 'system';
@@ -50,9 +51,48 @@ export function MessageBubble({
               </span>
             </div>
           )}
-          <p className={`whitespace-pre-wrap leading-relaxed text-[15px] ${isUser ? 'text-gray-100' : 'text-gray-700'}`}>
-            {content}
-          </p>
+          <div className={`leading-relaxed text-[15px] ${isUser ? 'text-gray-100' : 'text-gray-700'}`}>
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => (
+                  <p className="mb-2 last:mb-0 whitespace-pre-wrap">{children}</p>
+                ),
+                strong: ({ children }) => (
+                  <strong className={`font-semibold ${isUser ? 'text-white' : 'text-[#1E4A4C]'}`}>{children}</strong>
+                ),
+                em: ({ children }) => <em className="italic">{children}</em>,
+                ul: ({ children }) => (
+                  <ul className="list-disc list-inside space-y-1 my-2 ml-2">{children}</ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="list-decimal list-inside space-y-1 my-2 ml-2">{children}</ol>
+                ),
+                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                h1: ({ children }) => (
+                  <h1 className={`text-lg font-bold mb-2 ${isUser ? 'text-white' : 'text-[#1E4A4C]'}`}>{children}</h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className={`text-base font-bold mb-1 ${isUser ? 'text-white' : 'text-[#1E4A4C]'}`}>{children}</h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className={`text-sm font-bold mb-1 ${isUser ? 'text-white' : 'text-[#1E4A4C]'}`}>{children}</h3>
+                ),
+                code: ({ children }) => (
+                  <code className={`px-1.5 py-0.5 rounded text-xs font-mono ${isUser ? 'bg-white/20 text-green-200' : 'bg-gray-100 text-[#1E4A4C]'}`}>
+                    {children}
+                  </code>
+                ),
+                blockquote: ({ children }) => (
+                  <blockquote className={`border-l-4 pl-3 my-2 italic ${isUser ? 'border-white/40 text-gray-200' : 'border-[#1E4A4C]/30 text-gray-600'}`}>
+                    {children}
+                  </blockquote>
+                ),
+                hr: () => <hr className={`my-3 ${isUser ? 'border-white/20' : 'border-gray-200'}`} />,
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
           {warning && (
             <div className="mt-4 p-4 bg-rose-50/80 rounded-2xl flex items-start gap-3 border border-rose-100">
               <AlertTriangle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />

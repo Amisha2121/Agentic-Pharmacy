@@ -340,10 +340,35 @@ def get_quarantine():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ── Image Upload ───────────────────────────────────────────────────────────────
+# ── Barcode Scan ───────────────────────────────────────────────────────────────
 
 import shutil, uuid
 from fastapi import UploadFile, File
+import barcode_scanner as _barcode_scanner
+
+@app.post("/api/scan-barcode")
+async def scan_barcode_endpoint(file: UploadFile = File(...)):
+    """Upload an image, run instant local barcode decoding, and return results.
+    Called by the frontend immediately after image selection so the pharmacist
+    gets instant barcode feedback before the image is sent to the LLM agent.
+    """
+    try:
+        upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+        os.makedirs(upload_dir, exist_ok=True)
+        ext = os.path.splitext(file.filename or ".jpg")[1] or ".jpg"
+        filename = f"bc_{uuid.uuid4().hex}{ext}"
+        filepath = os.path.join(upload_dir, filename)
+        with open(filepath, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+
+        result = _barcode_scanner.scan_image(filepath)
+        result["path"] = filepath
+        result["filename"] = filename
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ── Image Upload ───────────────────────────────────────────────────────────────
 
 @app.post("/api/upload-image")
 async def upload_image(file: UploadFile = File(...)):
