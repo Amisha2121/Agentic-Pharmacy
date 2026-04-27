@@ -1,17 +1,11 @@
-import { useState, useId, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import {
-  Eye, EyeOff, Pill, ShieldCheck, Activity,
-  Mail, Phone, ArrowRight, Loader2,
-} from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
-type Tab = 'email' | 'phone';
-
-// ─── Google icon SVG ─────────────────────────────────────────────────────────
 function GoogleIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden="true">
       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
@@ -20,364 +14,257 @@ function GoogleIcon() {
   );
 }
 
-// ─── Divider ──────────────────────────────────────────────────────────────────
-function Divider({ label = 'or' }) {
-  return (
-    <div className="flex items-center gap-3 my-6">
-      <div className="flex-1 h-px bg-gray-200" />
-      <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{label}</span>
-      <div className="flex-1 h-px bg-gray-200" />
-    </div>
-  );
-}
-
 export function Login() {
-  const { loginWithGoogle, loginWithEmail, sendOtp, confirmOtp, login } = useAuth();
+  const { loginWithGoogle, loginWithEmail } = useAuth();
   const navigate = useNavigate();
-  const recaptchaId = useId();
 
-  const [tab, setTab] = useState<Tab>('email');
-  const [showPwd, setShowPwd] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-
-  // Email fields
-  const [email, setEmail] = useState('');
+  const [showPwd,  setShowPwd]  = useState(false);
+  const [error,    setError]    = useState('');
+  const [loading,  setLoading]  = useState(false);
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-
-  // Phone fields
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-
-  // Legacy
-  const [legacyUser, setLegacyUser] = useState('');
-  const [legacyPass, setLegacyPass] = useState('');
-  const [showLegacy, setShowLegacy] = useState(false);
+  const [focused,  setFocused]  = useState<string | null>(null);
 
   const wrap = async (fn: () => Promise<void>) => {
-    setError('');
-    setLoading(true);
-    try {
-      await fn();
-      navigate('/', { replace: true });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Something went wrong.';
-      setError(friendlyError(msg));
-    } finally {
-      setLoading(false);
-    }
+    setError(''); setLoading(true);
+    try { await fn(); navigate('/', { replace: true }); }
+    catch (e: unknown) { setError(e instanceof Error ? e.message : 'Something went wrong.'); }
+    finally { setLoading(false); }
   };
 
-  const handleGoogle = () => wrap(loginWithGoogle);
-
-  const handleEmailSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    wrap(() => loginWithEmail(email, password));
-  };
-
-  const handleSendOtp = async (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await sendOtp(phone, `recaptcha-${recaptchaId}`);
-      setOtpSent(true);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to send OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirmOtp = (e: FormEvent) => {
-    e.preventDefault();
-    wrap(() => confirmOtp(otp));
-  };
-
-  const handleLegacy = async (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    const ok = await login(legacyUser, legacyPass);
-    setLoading(false);
-    if (ok) navigate('/', { replace: true });
-    else setError('Invalid username or password.');
-  };
+  /* ── shared input style ── */
+  const inputStyle = (name: string): React.CSSProperties => ({
+    width: '100%', height: 44, borderRadius: 10,
+    padding: '0 14px', boxSizing: 'border-box',
+    background: focused === name ? '#111318' : '#0D1117',
+    border: focused === name ? '1.5px solid #3B82F6' : '1.5px solid #27272A',
+    boxShadow: focused === name ? '0 0 0 3px rgba(59,130,246,0.12)' : 'none',
+    color: '#F4F4F5', fontSize: 14,
+    fontFamily: 'IBM Plex Sans, sans-serif',
+    outline: 'none', transition: 'all 0.15s',
+  });
 
   return (
-    <div className="min-h-screen w-full flex bg-[#f0f4f4]">
-      {/* ── Left panel ─────────────────────────────────────────────── */}
-      <div className="hidden lg:flex w-[44%] bg-[#1E4A4C] flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#2B5B5C] rounded-full blur-3xl opacity-60" />
-        <div className="absolute bottom-0 right-0 w-72 h-72 bg-[#2B5B5C]/40 rounded-full blur-2xl" />
+    <div style={{ display: 'flex', minHeight: '100vh', width: '100%', background: '#09090B' }}>
 
-        {/* Brand */}
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
-              <Pill className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-extrabold text-white tracking-tight">PharmaAI</span>
-          </div>
-          <p className="text-[#C5D3D3]/70 text-xs font-semibold uppercase tracking-widest">
-            Smart Pharmacy System
-          </p>
-        </div>
+      {/* ── LEFT ─────────────────────────────────────────────────────── */}
+      <div className="left-panel" style={{
+        flex: '0 0 52%', position: 'relative', overflow: 'hidden',
+        background: '#09090B',
+      }}>
+        {/* Blue glow orbs — editorial, not techy */}
+        <div style={{
+          position: 'absolute', top: '-15%', left: '-20%',
+          width: '75%', height: '65%', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
+          filter: 'blur(50px)', pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '0%', right: '-10%',
+          width: '60%', height: '55%', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)',
+          filter: 'blur(60px)', pointerEvents: 'none',
+        }} />
 
-        {/* Features */}
-        <div className="relative z-10 space-y-8">
-          <h2 className="text-4xl font-extrabold text-white leading-snug">
-            Intelligent pharmacy<br />management, powered<br />by AI.
-          </h2>
-          <div className="space-y-5">
-            {[
-              { icon: <Activity className="w-5 h-5" />, title: 'Live Inventory', desc: 'Real-time stock levels & expiry tracking' },
-              { icon: <ShieldCheck className="w-5 h-5" />, title: 'Clinical AI', desc: 'FDA drug interactions & dosage guidance' },
-              { icon: <Pill className="w-5 h-5" />, title: 'Smart Alerts', desc: 'Auto reorder & expired item detection' },
-            ].map(f => (
-              <div key={f.title} className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0 text-white">
-                  {f.icon}
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-sm">{f.title}</p>
-                  <p className="text-[#C5D3D3]/70 text-xs mt-0.5">{f.desc}</p>
-                </div>
-              </div>
-            ))}
+        {/* Top accent line */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, #3B82F6 50%, transparent)',
+          opacity: 0.6,
+        }} />
+
+        {/* Content */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', padding: '52px 64px' }}>
+
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10, fontSize: 18,
+              background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 16px rgba(59,130,246,0.35)',
+            }}>💊</div>
+            <span style={{ color: '#F4F4F5', fontSize: 18, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.3px' }}>PharmaAI</span>
+          </div>
+
+          {/* Hero text */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <p style={{
+              color: '#3B82F6', fontSize: 11, fontWeight: 600,
+              letterSpacing: '3px', textTransform: 'uppercase',
+              fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 24,
+            }}>
+              Pharmacy Intelligence
+            </p>
+            <h1 style={{
+              color: '#F4F4F5',
+              fontSize: 'clamp(34px, 3.5vw, 50px)',
+              fontWeight: 700, fontFamily: 'DM Sans, sans-serif',
+              lineHeight: 1.1, letterSpacing: '-1.5px', marginBottom: 24,
+            }}>
+              Inventory that<br />
+              <em style={{ fontStyle: 'italic', color: '#60A5FA', fontWeight: 400 }}>
+                thinks ahead.
+              </em>
+            </h1>
+            <p style={{ color: '#71717A', fontSize: 15, lineHeight: 1.75, fontFamily: 'IBM Plex Sans, sans-serif', maxWidth: 340 }}>
+              From scanning a barcode to catching a drug interaction — PharmaAI handles the complexity so you can focus on care.
+            </p>
+          </div>
+
+          {/* Footer rule */}
+          <div style={{ borderTop: '1px solid #18181B', paddingTop: 28 }}>
+            <p style={{ color: '#3F3F46', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>
+              Trusted by pharmacy teams worldwide
+            </p>
           </div>
         </div>
-        <p className="relative z-10 text-[#C5D3D3]/40 text-xs">© 2026 PharmaAI · Agentic Pharmacy Intelligence</p>
       </div>
 
-      {/* ── Right panel ────────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-md">
+      {/* ── RIGHT ────────────────────────────────────────────────────── */}
+      <div style={{
+        flex: 1, background: '#0D1117',
+        borderLeft: '1px solid #18181B',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '48px 32px',
+      }}>
+        <div style={{ width: '100%', maxWidth: 380 }}>
 
           {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-[#1E4A4C] rounded-2xl flex items-center justify-center">
-              <Pill className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-extrabold text-[#1E4A4C]">PharmaAI</span>
+          <div className="mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 10, marginBottom: 40 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #3B82F6, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>💊</div>
+            <span style={{ color: '#F4F4F5', fontSize: 17, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}>PharmaAI</span>
           </div>
 
-          <h1 className="text-3xl font-extrabold text-[#1E4A4C] mb-1">Welcome back</h1>
-          <p className="text-gray-500 font-medium mb-7">Sign in to your pharmacy dashboard</p>
+          {/* Heading */}
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ color: '#F4F4F5', fontSize: 26, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.5px', marginBottom: 6 }}>
+              Welcome back
+            </h2>
+            <p style={{ color: '#71717A', fontSize: 14, fontFamily: 'IBM Plex Sans, sans-serif' }}>
+              Sign in to your account
+            </p>
+          </div>
 
-          {/* Google button */}
+          {/* Google */}
           <button
-            id="login-google"
-            onClick={handleGoogle}
+            onClick={() => wrap(loginWithGoogle)}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-2xl px-5 py-[14px] font-semibold text-gray-700 text-sm shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 disabled:opacity-50"
+            style={{
+              width: '100%', height: 44, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', gap: 10, borderRadius: 10,
+              border: '1.5px solid #27272A', background: '#18181B',
+              color: '#A1A1AA', fontSize: 14, fontWeight: 500,
+              fontFamily: 'IBM Plex Sans, sans-serif',
+              cursor: 'pointer', transition: 'all 0.15s', marginBottom: 20,
+              opacity: loading ? 0.4 : 1,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#1F1F23'; e.currentTarget.style.borderColor = '#3F3F46'; e.currentTarget.style.color = '#F4F4F5'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#18181B'; e.currentTarget.style.borderColor = '#27272A'; e.currentTarget.style.color = '#A1A1AA'; }}
           >
             <GoogleIcon />
             Continue with Google
           </button>
 
-          <Divider />
-
-          {/* Tab switcher */}
-          <div className="flex bg-gray-100 rounded-2xl p-1 mb-6">
-            {(['email', 'phone'] as Tab[]).map(t => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setError(''); setOtpSent(false); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  tab === t
-                    ? 'bg-white text-[#1E4A4C] shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {t === 'email' ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
-                {t === 'email' ? 'Email' : 'Phone'}
-              </button>
-            ))}
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1, height: 1, background: '#18181B' }} />
+            <span style={{ color: '#3F3F46', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>or</span>
+            <div style={{ flex: 1, height: 1, background: '#18181B' }} />
           </div>
 
-          {/* ── Email form ──────────────────────────────────────────── */}
-          {tab === 'email' && (
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Email address</label>
+          {/* Form */}
+          <form onSubmit={(e: FormEvent) => { e.preventDefault(); wrap(() => loginWithEmail(email, password)); }}>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', color: '#A1A1AA', fontSize: 12, fontWeight: 500, fontFamily: 'IBM Plex Sans, sans-serif', letterSpacing: '0.3px', marginBottom: 7 }}>
+                Email address
+              </label>
+              <input
+                type="email" value={email} required
+                onChange={e => setEmail(e.target.value)}
+                onFocus={() => setFocused('email')}
+                onBlur={() => setFocused(null)}
+                placeholder="you@example.com"
+                style={inputStyle('email')}
+              />
+            </div>
+
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                <label style={{ color: '#A1A1AA', fontSize: 12, fontWeight: 500, fontFamily: 'IBM Plex Sans, sans-serif', letterSpacing: '0.3px' }}>
+                  Password
+                </label>
+                <Link to="/forgot-password" style={{ color: '#3B82F6', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif', textDecoration: 'none', fontWeight: 500 }}>
+                  Forgot password?
+                </Link>
+              </div>
+              <div style={{ position: 'relative' }}>
                 <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="pharmacist@example.com"
-                  required
-                  className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
+                  type={showPwd ? 'text' : 'password'} value={password} required
+                  onChange={e => setPassword(e.target.value)}
+                  onFocus={() => setFocused('pwd')}
+                  onBlur={() => setFocused(null)}
+                  placeholder="••••••••••"
+                  style={{ ...inputStyle('pwd'), paddingRight: 44 }}
                 />
+                <button type="button" onClick={() => setShowPwd(p => !p)} style={{
+                  position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#52525B', padding: 0, display: 'flex', alignItems: 'center',
+                }}>
+                  {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Password</label>
-                <div className="relative">
-                  <input
-                    id="login-password"
-                    type={showPwd ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    required
-                    className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 pr-14 text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPwd(p => !p)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#1E4A4C] transition-colors"
-                  >
-                    {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
+            </div>
+
+            {error && (
+              <div style={{
+                background: '#1A0000', border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: 8, padding: '10px 14px', color: '#F87171',
+                fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 14,
+              }}>
+                {error}
               </div>
-              {error && <ErrorBox message={error} />}
-              <SubmitButton loading={loading} label="Sign In" />
-            </form>
-          )}
+            )}
 
-          {/* ── Phone form ──────────────────────────────────────────── */}
-          {tab === 'phone' && (
-            <>
-              {/* Invisible reCAPTCHA mount point */}
-              <div id={`recaptcha-${recaptchaId}`} />
+            <button
+              type="submit" disabled={loading}
+              style={{
+                width: '100%', height: 44, borderRadius: 10, border: 'none',
+                background: loading
+                  ? 'rgba(59,130,246,0.5)'
+                  : 'linear-gradient(135deg, #3B82F6, #6366F1)',
+                color: '#FFFFFF', fontSize: 14, fontWeight: 600,
+                fontFamily: 'IBM Plex Sans, sans-serif',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s', marginTop: 20,
+                boxShadow: loading ? 'none' : '0 4px 18px rgba(99,102,241,0.35)',
+              }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.boxShadow = '0 6px 24px rgba(99,102,241,0.5)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = loading ? 'none' : '0 4px 18px rgba(99,102,241,0.35)'; }}
+            >
+              {loading
+                ? <><Loader2 size={16} className="animate-spin" /> Signing in…</>
+                : <>Sign in <ArrowRight size={15} /></>
+              }
+            </button>
+          </form>
 
-              {!otpSent ? (
-                <form onSubmit={handleSendOtp} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Phone number</label>
-                    <input
-                      id="login-phone"
-                      type="tel"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value)}
-                      placeholder="+91 98765 43210"
-                      required
-                      className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
-                    />
-                    <p className="text-xs text-gray-400 mt-1.5 ml-1">Include country code, e.g. +91</p>
-                  </div>
-                  {error && <ErrorBox message={error} />}
-                  <SubmitButton loading={loading} label="Send OTP" />
-                </form>
-              ) : (
-                <form onSubmit={handleConfirmOtp} className="space-y-4">
-                  <p className="text-sm text-gray-600 bg-[#1E4A4C]/5 rounded-xl px-4 py-3 font-medium">
-                    OTP sent to <span className="font-bold text-[#1E4A4C]">{phone}</span>
-                  </p>
-                  <div>
-                    <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Enter OTP</label>
-                    <input
-                      id="login-otp"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={otp}
-                      onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-                      placeholder="6-digit code"
-                      required
-                      className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 text-gray-800 placeholder:text-gray-400 font-medium text-center tracking-[0.5em] text-xl focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
-                    />
-                  </div>
-                  {error && <ErrorBox message={error} />}
-                  <SubmitButton loading={loading} label="Verify & Sign In" />
-                  <button
-                    type="button"
-                    onClick={() => { setOtpSent(false); setOtp(''); setError(''); }}
-                    className="w-full text-sm text-gray-500 hover:text-[#1E4A4C] transition-colors font-medium"
-                  >
-                    ← Change phone number
-                  </button>
-                </form>
-              )}
-            </>
-          )}
-
-          {/* Sign up link */}
-          <p className="mt-6 text-center text-sm text-gray-500">
-            New to PharmaAI?{' '}
-            <Link to="/signup" className="text-[#1E4A4C] font-bold hover:underline">
-              Create account
+          <p style={{ textAlign: 'center', color: '#52525B', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginTop: 24 }}>
+            Don't have an account?{' '}
+            <Link to="/signup" style={{ color: '#3B82F6', fontWeight: 600, textDecoration: 'none' }}>
+              Create one
             </Link>
           </p>
-
-          {/* Legacy login toggle */}
-          <div className="mt-8">
-            <button
-              onClick={() => setShowLegacy(p => !p)}
-              className="w-full text-xs text-gray-400 hover:text-gray-500 transition-colors font-medium"
-            >
-              {showLegacy ? '▲ Hide' : '▼ Use'} legacy credentials
-            </button>
-            {showLegacy && (
-              <form onSubmit={handleLegacy} className="mt-3 bg-[#1E4A4C]/5 border border-[#1E4A4C]/10 rounded-2xl p-4 space-y-3">
-                <p className="text-xs font-bold text-[#1E4A4C] uppercase tracking-wider">Legacy Login</p>
-                <input
-                  value={legacyUser}
-                  onChange={e => setLegacyUser(e.target.value)}
-                  placeholder="username: rxai"
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 transition-all"
-                />
-                <input
-                  type="password"
-                  value={legacyPass}
-                  onChange={e => setLegacyPass(e.target.value)}
-                  placeholder="password: pharma2026"
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 transition-all"
-                />
-                {error && <ErrorBox message={error} />}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#1E4A4C] text-white text-sm font-bold py-2.5 rounded-xl hover:bg-[#2B5B5C] transition-all disabled:opacity-50"
-                >
-                  {loading ? 'Signing in…' : 'Sign in with legacy'}
-                </button>
-              </form>
-            )}
-          </div>
         </div>
       </div>
+
+      <style>{`
+        @media (min-width: 1024px) { .left-panel { display: flex !important; flex-direction: column; } }
+        @media (max-width: 1023px) { .left-panel { display: none !important; } .mobile-logo { display: flex !important; } }
+      `}</style>
     </div>
   );
-}
-
-// ─── Shared sub-components ────────────────────────────────────────────────────
-function ErrorBox({ message }: { message: string }) {
-  return (
-    <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-4 py-3 text-sm font-medium">
-      {message}
-    </div>
-  );
-}
-
-function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
-  return (
-    <button
-      id="login-submit"
-      type="submit"
-      disabled={loading}
-      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#1E4A4C] to-[#2B5B5C] hover:from-[#2B5B5C] hover:to-[#1E4A4C] disabled:opacity-60 text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#1E4A4C]/20 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl text-base"
-    >
-      {loading ? (
-        <><Loader2 className="w-5 h-5 animate-spin" /> Processing…</>
-      ) : (
-        <>{label} <ArrowRight className="w-4 h-4" /></>
-      )}
-    </button>
-  );
-}
-
-function friendlyError(msg: string): string {
-  if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential'))
-    return 'Invalid email or password. Please try again.';
-  if (msg.includes('email-already-in-use')) return 'This email is already registered.';
-  if (msg.includes('weak-password')) return 'Password must be at least 6 characters.';
-  if (msg.includes('invalid-phone')) return 'Please enter a valid phone number with country code.';
-  if (msg.includes('too-many-requests')) return 'Too many attempts. Please wait and try again.';
-  if (msg.includes('popup-closed-by-user')) return 'Sign-in popup was closed. Please try again.';
-  if (msg.includes('network-request-failed')) return 'Network error. Check your internet connection.';
-  return msg;
 }

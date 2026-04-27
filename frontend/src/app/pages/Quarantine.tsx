@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
 import { Menu, RefreshCw, ShieldAlert } from 'lucide-react';
+import { authenticatedFetch } from '../utils/api';
 
 interface ContextType {
   isSidebarOpen: boolean;
@@ -25,7 +26,7 @@ export function Quarantine() {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/quarantine');
+      const res = await authenticatedFetch('/api/quarantine');
       const data = await res.json();
       setItems(data.items ?? []);
     } catch {
@@ -39,31 +40,31 @@ export function Quarantine() {
 
   return (
     <div className="flex-1 flex flex-col h-full w-full relative z-10 overflow-y-auto bg-transparent scrollbar-hide pb-20">
-      <div className="flex items-center justify-between p-4 bg-transparent absolute top-0 w-full z-20 pointer-events-none">
-        <div className="flex items-center pointer-events-auto">
+      {/* Topbar */}
+      <div className="h-14 bg-[#0E0E11] border-b border-[#27272A] flex items-center justify-between px-7 sticky top-0 z-20">
+        <div className="flex items-center gap-4">
           {!isSidebarOpen && (
-            <button onClick={() => setIsSidebarOpen(true)} className="w-12 h-12 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 flex items-center justify-center text-[#1E4A4C] hover:bg-white hover:shadow-md transition-all duration-300 group">
-              <Menu className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <button onClick={() => setIsSidebarOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#18181B] border border-[#27272A] text-[#A1A1AA] hover:text-[#F4F4F5] hover:bg-[#1F1F23] transition-all">
+              <Menu className="w-5 h-5" />
             </button>
           )}
+          <h1 className="text-[18px] font-medium text-[#F4F4F5]" style={{ fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.2px' }}>Quarantine</h1>
         </div>
+        <button onClick={fetchItems} className="btn-secondary h-9 px-4 flex items-center gap-2 text-sm">
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
       </div>
 
-      <div className="flex-1 flex flex-col pt-20 px-8 max-w-5xl mx-auto w-full space-y-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <ShieldAlert className="w-10 h-10 text-amber-500" />
-            <div>
-              <h1 className="text-4xl font-extrabold text-[#1E4A4C] tracking-tight">Quarantine</h1>
-              <p className="text-[#2B5B5C]/70 font-medium mt-1">
-                {loading ? 'Loading…' : `${items.length} item(s) flagged by AI scan`}
-              </p>
-            </div>
+      <div className="flex-1 flex flex-col px-8 pt-8 max-w-5xl mx-auto w-full space-y-8">
+        <div className="flex items-center gap-4">
+          <ShieldAlert className="w-10 h-10 text-amber-500" />
+          <div>
+            <h2 className="text-4xl font-extrabold text-[#1E4A4C] tracking-tight">Quarantine</h2>
+            <p className="text-[#2B5B5C]/70 font-medium mt-1">
+              {loading ? 'Loading…' : `${items.length} item(s) flagged by AI scan`}
+            </p>
           </div>
-          <button onClick={fetchItems} className="flex items-center gap-2 bg-[#1E4A4C] hover:bg-[#2B5B5C] text-white px-5 py-2.5 rounded-xl font-semibold shadow-md transition-all hover:scale-[1.02]">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
         </div>
 
         <div className="bg-amber-50/60 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">

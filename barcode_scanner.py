@@ -23,12 +23,28 @@ import re
 import datetime
 from typing import Optional
 
+_ZXING_AVAILABLE = False
+_PIL_AVAILABLE = False
+
 try:
-    import zxingcpp
-    from PIL import Image
+    import zxingcpp as _zxingcpp
     _ZXING_AVAILABLE = True
+    print("[barcode_scanner] zxingcpp OK")
+except ImportError as e:
+    print(f"[barcode_scanner] zxingcpp not available: {e}")
+
+try:
+    from PIL import Image as _PILImage
+    _PIL_AVAILABLE = True
 except ImportError:
-    _ZXING_AVAILABLE = False
+    print("[barcode_scanner] Pillow not installed — pip install Pillow")
+
+if not _ZXING_AVAILABLE:
+    print("[barcode_scanner] WARNING: No barcode decoder. Run: pip install zxingcpp")
+
+# aliases so the rest of the file can use plain names
+Image = _PILImage if _PIL_AVAILABLE else None
+
 
 
 def _parse_gs1_expiry(yymmdd: str) -> Optional[str]:
@@ -136,63 +152,78 @@ def scan_image(image_path: str) -> dict:
     }
     """
     empty = {
-        "found": False,
-        "barcode_type": None,
-        "raw_text": None,
-        "gtin": None,
-        "batch_number": None,
-        "expiry_date": None,
-        "manufacture_date": None,
-        "quantity": None,
-        "is_gs1": False,
-        "barcodes": [],
-        "pdf_text": None,
+        "found": False, "barcode_type": None, "raw_text": None,
+        "gtin": None, "batch_number": None, "expiry_date": None,
+        "manufacture_date": None, "quantity": None, "is_gs1": False,
+        "barcodes": [], "pdf_text": None,
     }
 
-    if not _ZXING_AVAILABLE:
+    if not _ZXING_AVAILABLE or not _PIL_AVAILABLE:
+        print("[barcode_scanner] zxingcpp or Pillow not available — skipping scan")
         return empty
+
+    def _decode_image(img):
+        """Decode barcodes from a PIL Image using zxingcpp."""
+        try:
+            raw_results = _zxingcpp.read_barcodes(img)
+            results = []
+            for r in raw_results:
+                fmt = r.format.name if hasattr(r.format, "name") else str(r.format)
+                results.append({"text": r.text, "format": fmt})
+            if results:
+                print(f"[barcode_scanner] zxingcpp found {len(results)} barcode(s)")
+            else:
+                print("[barcode_scanner] zxingcpp: no barcodes in this frame")
+            return results
+        except Exception as e:
+            print(f"[barcode_scanner] zxingcpp error: {e}")
+            return []
 
     try:
         all_results = []
         pdf_text = None
 
         if image_path.lower().endswith('.pdf'):
+            print(f"[barcode_scanner] Processing PDF: {image_path}")
             try:
                 import fitz  # PyMuPDF
                 doc = fitz.open(image_path)
                 pdf_text = ""
-                for page in doc:
+                for page_num, page in enumerate(doc):
                     pdf_text += page.get_text() + "\n"
-                    pix = page.get_pixmap(dpi=150)
+                    pix = page.get_pixmap(dpi=300)
                     if pix.alpha:
                         img = Image.frombytes("RGBA", [pix.width, pix.height], pix.samples).convert("RGB")
                     else:
                         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                    page_results = zxingcpp.read_barcodes(img)
+                    print(f"[barcode_scanner] Scanning page {page_num+1} ({img.size[0]}x{img.size[1]}px)...")
+                    page_results = _decode_image(img)
                     all_results.extend(page_results)
+                print(f"[barcode_scanner] PDF done. Total barcodes found: {len(all_results)}")
             except ImportError:
-                print("[barcode_scanner] PyMuPDF (fitz) is not installed. Cannot read PDF.")
+                print("[barcode_scanner] PyMuPDF not installed — pip install pymupdf")
+                return empty
+            except Exception as pdf_err:
+                print(f"[barcode_scanner] PDF processing error: {pdf_err}")
                 return empty
         else:
+            print(f"[barcode_scanner] Scanning image: {image_path}")
             img = Image.open(image_path).convert("RGB")
-            all_results = zxingcpp.read_barcodes(img)
+            all_results = _decode_image(img)
 
         if not all_results:
+            print("[barcode_scanner] No barcodes found in file")
             empty["pdf_text"] = pdf_text
             return empty
 
-        # Prefer GS1-containing barcodes first, then longest raw text
-        results_sorted = sorted(all_results, key=lambda r: len(r.text), reverse=True)
-        
+        # Parse all barcodes
         parsed_barcodes = []
-        for res in results_sorted:
-            raw = res.text.strip()
+        for res in sorted(all_results, key=lambda r: len(r["text"]), reverse=True):
+            raw = res["text"].strip()
             if not raw:
                 continue
-
-            barcode_type = res.format.name if hasattr(res.format, 'name') else str(res.format)
+            barcode_type = res["format"]
             gs1_data = _parse_gs1_string(raw)
-            
             parsed_barcodes.append({
                 "barcode_type": barcode_type,
                 "raw_text": raw,
@@ -208,7 +239,6 @@ def scan_image(image_path: str) -> dict:
             empty["pdf_text"] = pdf_text
             return empty
 
-        # The first one is used for the top-level keys to maintain frontend compatibility
         first = parsed_barcodes[0]
         return {
             "found": True,
@@ -225,7 +255,8 @@ def scan_image(image_path: str) -> dict:
         }
 
     except Exception as e:
-        print(f"[barcode_scanner] Scan error: {e}")
+        print(f"[barcode_scanner] Unexpected error: {e}")
+        import traceback; traceback.print_exc()
 
     return empty
 

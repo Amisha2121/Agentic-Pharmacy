@@ -1,17 +1,13 @@
-import { useState, useId, type FormEvent } from 'react';
+import { useState, useId, type FormEvent, type CSSProperties } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import {
-  Eye, EyeOff, Pill, ShieldCheck, Activity,
-  Mail, Phone, ArrowRight, Loader2, User,
-} from 'lucide-react';
+import { Eye, EyeOff, Mail, Phone, ArrowRight, Loader2, User, ShieldCheck, Zap, Activity } from 'lucide-react';
 
 type Tab = 'email' | 'phone';
 
-// ─── Google icon SVG ──────────────────────────────────────────────────────────
 function GoogleIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden="true">
       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
@@ -20,399 +16,299 @@ function GoogleIcon() {
   );
 }
 
-function Divider({ label = 'or' }) {
-  return (
-    <div className="flex items-center gap-3 my-6">
-      <div className="flex-1 h-px bg-gray-200" />
-      <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{label}</span>
-      <div className="flex-1 h-px bg-gray-200" />
-    </div>
-  );
-}
-
-function ErrorBox({ message }: { message: string }) {
-  return (
-    <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-4 py-3 text-sm font-medium">
-      {message}
-    </div>
-  );
-}
-
-function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
-  return (
-    <button
-      id="signup-submit"
-      type="submit"
-      disabled={loading}
-      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#1E4A4C] to-[#2B5B5C] hover:from-[#2B5B5C] hover:to-[#1E4A4C] disabled:opacity-60 text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#1E4A4C]/20 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl text-base"
-    >
-      {loading ? (
-        <><Loader2 className="w-5 h-5 animate-spin" /> Creating account…</>
-      ) : (
-        <>{label} <ArrowRight className="w-4 h-4" /></>
-      )}
-    </button>
-  );
-}
-
 function friendlyError(msg: string): string {
   if (msg.includes('email-already-in-use')) return 'This email is already registered. Try signing in.';
-  if (msg.includes('weak-password')) return 'Password must be at least 6 characters.';
-  if (msg.includes('invalid-email')) return 'Please enter a valid email address.';
-  if (msg.includes('invalid-phone') || msg.includes('invalid-phone-number')) return 'Please enter a valid phone number with country code (e.g. +91…).';
-  if (msg.includes('too-many-requests')) return 'Too many attempts. Please wait and try again.';
-  if (msg.includes('popup-closed-by-user')) return 'Sign-up popup was closed. Please try again.';
-  if (msg.includes('network-request-failed')) return 'Network error. Check your internet connection.';
+  if (msg.includes('weak-password'))        return 'Password must be at least 6 characters.';
+  if (msg.includes('invalid-email'))        return 'Please enter a valid email address.';
+  if (msg.includes('invalid-phone'))        return 'Please enter a valid phone number with country code (e.g. +91…).';
+  if (msg.includes('too-many-requests'))    return 'Too many attempts. Please wait and try again.';
+  if (msg.includes('popup-closed'))         return 'Sign-up popup was closed. Please try again.';
+  if (msg.includes('network-request'))      return 'Network error. Check your internet connection.';
   return msg;
 }
 
-// ─── Strength indicator ───────────────────────────────────────────────────────
 function PasswordStrength({ password }: { password: string }) {
+  if (!password) return null;
   const score =
     (password.length >= 8 ? 1 : 0) +
     (/[A-Z]/.test(password) ? 1 : 0) +
     (/[0-9]/.test(password) ? 1 : 0) +
     (/[^A-Za-z0-9]/.test(password) ? 1 : 0);
+  const colors = ['', '#EF4444', '#F59E0B', '#84CC16', '#22C55E'];
   const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-  const colors = ['', 'bg-rose-400', 'bg-amber-400', 'bg-lime-400', 'bg-emerald-500'];
-  if (!password) return null;
   return (
-    <div className="mt-2 space-y-1">
-      <div className="flex gap-1">
-        {[1, 2, 3, 4].map(i => (
-          <div
-            key={i}
-            className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= score ? colors[score] : 'bg-gray-200'}`}
-          />
+    <div style={{ marginTop: 8 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+        {[1,2,3,4].map(i => (
+          <div key={i} style={{
+            flex: 1, height: 3, borderRadius: 2,
+            background: i <= score ? colors[score] : '#27272A',
+            transition: 'background 0.2s',
+          }} />
         ))}
       </div>
-      <p className={`text-xs font-semibold ${score <= 1 ? 'text-rose-500' : score === 2 ? 'text-amber-500' : score === 3 ? 'text-lime-600' : 'text-emerald-600'}`}>
+      <span style={{ fontSize: 11, color: colors[score], fontFamily: 'IBM Plex Sans, sans-serif', fontWeight: 500 }}>
         {labels[score]}
-      </p>
+      </span>
     </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export function Signup() {
   const { loginWithGoogle, signupWithEmail, sendOtp, confirmOtp } = useAuth();
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
   const recaptchaId = useId();
 
-  const [tab, setTab] = useState<Tab>('email');
-  const [showPwd, setShowPwd] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [success, setSuccess] = useState('');
+  const [tab,        setTab]        = useState<Tab>('email');
+  const [showPwd,    setShowPwd]    = useState(false);
+  const [showConf,   setShowConf]   = useState(false);
+  const [error,      setError]      = useState('');
+  const [loading,    setLoading]    = useState(false);
+  const [otpSent,    setOtpSent]    = useState(false);
+  const [success,    setSuccess]    = useState('');
+  const [focused,    setFocused]    = useState<string | null>(null);
 
-  // Email fields
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  // email fields
+  const [name,     setName]     = useState('');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [confirm,  setConfirm]  = useState('');
 
-  // Phone fields
-  const [phone, setPhone] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [otp, setOtp] = useState('');
+  // phone fields
+  const [phone,        setPhone]        = useState('');
+  const [displayName,  setDisplayName]  = useState('');
+  const [otp,          setOtp]          = useState('');
 
   const wrap = async (fn: () => Promise<void>) => {
-    setError('');
-    setSuccess('');
-    setLoading(true);
-    try {
-      await fn();
-      navigate('/', { replace: true });
-    } catch (e: unknown) {
-      setError(friendlyError(e instanceof Error ? e.message : 'Something went wrong.'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogle = () => wrap(loginWithGoogle);
-
-  const handleEmailSignup = (e: FormEvent) => {
-    e.preventDefault();
-    if (password !== confirm) { setError('Passwords do not match.'); return; }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
-    wrap(() => signupWithEmail(name, email, password));
+    setError(''); setSuccess(''); setLoading(true);
+    try { await fn(); navigate('/', { replace: true }); }
+    catch (e: unknown) { setError(friendlyError(e instanceof Error ? e.message : 'Something went wrong.')); }
+    finally { setLoading(false); }
   };
 
   const handleSendOtp = async (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await sendOtp(phone, `recaptcha-signup-${recaptchaId}`);
-      setOtpSent(true);
-      setSuccess(`OTP sent to ${phone}`);
-    } catch (e: unknown) {
-      setError(friendlyError(e instanceof Error ? e.message : 'Failed to send OTP'));
-    } finally {
-      setLoading(false);
-    }
+    e.preventDefault(); setError(''); setLoading(true);
+    try { await sendOtp(phone, `recaptcha-signup-${recaptchaId}`); setOtpSent(true); setSuccess(`OTP sent to ${phone}`); }
+    catch (e: unknown) { setError(friendlyError(e instanceof Error ? e.message : 'Failed to send OTP')); }
+    finally { setLoading(false); }
   };
 
-  const handleConfirmOtp = (e: FormEvent) => {
-    e.preventDefault();
-    wrap(() => confirmOtp(otp));
+  /* ── shared styles ── */
+  const inputStyle = (name: string): CSSProperties => ({
+    width: '100%', height: 44, borderRadius: 10, boxSizing: 'border-box',
+    padding: '0 14px', background: focused === name ? '#111318' : '#0D1117',
+    border: focused === name ? '1.5px solid #3B82F6' : '1.5px solid #27272A',
+    boxShadow: focused === name ? '0 0 0 3px rgba(59,130,246,0.12)' : 'none',
+    color: '#F4F4F5', fontSize: 14, fontFamily: 'IBM Plex Sans, sans-serif',
+    outline: 'none', transition: 'all 0.15s',
+  });
+
+  const inputWithIconStyle = (name: string): CSSProperties => ({ ...inputStyle(name), paddingLeft: 40 });
+
+  const labelStyle: CSSProperties = {
+    display: 'block', color: '#A1A1AA', fontSize: 12, fontWeight: 500,
+    fontFamily: 'IBM Plex Sans, sans-serif', letterSpacing: '0.3px', marginBottom: 7,
+  };
+
+  const submitBtn: CSSProperties = {
+    width: '100%', height: 44, borderRadius: 10, border: 'none',
+    background: loading ? 'rgba(59,130,246,0.5)' : 'linear-gradient(135deg, #3B82F6, #6366F1)',
+    color: '#FFFFFF', fontSize: 14, fontWeight: 600,
+    fontFamily: 'IBM Plex Sans, sans-serif', cursor: loading ? 'not-allowed' : 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    transition: 'all 0.2s', marginTop: 8,
+    boxShadow: loading ? 'none' : '0 4px 18px rgba(99,102,241,0.35)',
+  };
+
+  const iconWrap: CSSProperties = {
+    position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
+    color: '#52525B', display: 'flex', alignItems: 'center', pointerEvents: 'none',
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-[#f0f4f4]">
+    <div style={{ display: 'flex', minHeight: '100vh', width: '100%', background: '#09090B' }}>
 
-      {/* ── Left panel ───────────────────────────────────────────── */}
-      <div className="hidden lg:flex w-[44%] bg-[#1E4A4C] flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#2B5B5C] rounded-full blur-3xl opacity-60" />
-        <div className="absolute bottom-0 right-0 w-72 h-72 bg-[#2B5B5C]/40 rounded-full blur-2xl" />
+      {/* ── LEFT ── */}
+      <div className="left-panel" style={{ flex: '0 0 52%', position: 'relative', overflow: 'hidden', background: '#09090B', display: 'none' }}>
+        <div style={{ position: 'absolute', top: '-15%', left: '-20%', width: '75%', height: '65%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)', filter: 'blur(50px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '0%', right: '-10%', width: '60%', height: '55%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, #3B82F6 50%, transparent)', opacity: 0.6 }} />
 
-        {/* Brand */}
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
-              <Pill className="w-6 h-6 text-white" />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', padding: '52px 64px' }}>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, fontSize: 18, background: 'linear-gradient(135deg, #3B82F6, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(59,130,246,0.35)' }}>💊</div>
+            <span style={{ color: '#F4F4F5', fontSize: 18, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.3px' }}>PharmaAI</span>
+          </div>
+
+          {/* Hero */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <p style={{ color: '#3B82F6', fontSize: 11, fontWeight: 600, letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 24 }}>Pharmacy Intelligence</p>
+            <h1 style={{ color: '#F4F4F5', fontSize: 'clamp(34px, 3.5vw, 50px)', fontWeight: 700, fontFamily: 'DM Sans, sans-serif', lineHeight: 1.1, letterSpacing: '-1.5px', marginBottom: 24 }}>
+              Your pharmacy,<br />
+              <em style={{ fontStyle: 'italic', color: '#60A5FA', fontWeight: 400 }}>live in minutes.</em>
+            </h1>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {[
+                { Icon: Zap,          title: 'Instant setup',      desc: 'Sign up and go live in under a minute' },
+                { Icon: ShieldCheck,  title: 'Secure by default',  desc: 'Firebase Auth keeps your account safe' },
+                { Icon: Activity,     title: 'Full AI access',     desc: 'Drug interactions, alerts & smart chat' },
+              ].map(({ Icon, title, desc }) => (
+                <div key={title} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon size={16} color="#60A5FA" />
+                  </div>
+                  <div>
+                    <p style={{ color: '#F4F4F5', fontSize: 13, fontWeight: 600, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 1 }}>{title}</p>
+                    <p style={{ color: '#52525B', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>{desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <span className="text-2xl font-extrabold text-white tracking-tight">PharmaAI</span>
           </div>
-          <p className="text-[#C5D3D3]/70 text-xs font-semibold uppercase tracking-widest">
-            Smart Pharmacy System
-          </p>
-        </div>
 
-        {/* Illustration copy */}
-        <div className="relative z-10 space-y-8">
-          <h2 className="text-4xl font-extrabold text-white leading-snug">
-            Join thousands of<br />pharmacists using<br />AI every day.
-          </h2>
-          <div className="space-y-5">
-            {[
-              { icon: <Activity className="w-5 h-5" />, title: 'Instant setup', desc: 'Sign up and go live in under a minute' },
-              { icon: <ShieldCheck className="w-5 h-5" />, title: 'Secure by default', desc: 'Firebase Auth keeps your account safe' },
-              { icon: <Pill className="w-5 h-5" />, title: 'Full AI access', desc: 'Drug interactions, alerts & smart chat' },
-            ].map(f => (
-              <div key={f.title} className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0 text-white">
-                  {f.icon}
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-sm">{f.title}</p>
-                  <p className="text-[#C5D3D3]/70 text-xs mt-0.5">{f.desc}</p>
-                </div>
-              </div>
-            ))}
+          <div style={{ borderTop: '1px solid #18181B', paddingTop: 28 }}>
+            <p style={{ color: '#3F3F46', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>© 2026 PharmaAI · Agentic Pharmacy Intelligence</p>
           </div>
         </div>
-        <p className="relative z-10 text-[#C5D3D3]/40 text-xs">© 2026 PharmaAI · Agentic Pharmacy Intelligence</p>
       </div>
 
-      {/* ── Right panel ──────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-md">
+      {/* ── RIGHT ── */}
+      <div style={{ flex: 1, background: '#0D1117', borderLeft: '1px solid #18181B', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 32px', overflowY: 'auto' }}>
+        <div style={{ width: '100%', maxWidth: 400 }}>
 
           {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-[#1E4A4C] rounded-2xl flex items-center justify-center">
-              <Pill className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-extrabold text-[#1E4A4C]">PharmaAI</span>
+          <div className="mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 10, marginBottom: 36 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #3B82F6, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>💊</div>
+            <span style={{ color: '#F4F4F5', fontSize: 17, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}>PharmaAI</span>
           </div>
 
-          <h1 className="text-3xl font-extrabold text-[#1E4A4C] mb-1">Create account</h1>
-          <p className="text-gray-500 font-medium mb-7">Get started with your pharmacy dashboard</p>
+          <div style={{ marginBottom: 28 }}>
+            <h2 style={{ color: '#F4F4F5', fontSize: 26, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.5px', marginBottom: 6 }}>Create account</h2>
+            <p style={{ color: '#71717A', fontSize: 14, fontFamily: 'IBM Plex Sans, sans-serif' }}>Get started with your pharmacy dashboard</p>
+          </div>
 
           {/* Google */}
           <button
-            id="signup-google"
-            onClick={handleGoogle}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-2xl px-5 py-[14px] font-semibold text-gray-700 text-sm shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 disabled:opacity-50"
+            onClick={() => wrap(loginWithGoogle)} disabled={loading}
+            style={{ width: '100%', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 10, border: '1.5px solid #27272A', background: '#18181B', color: '#A1A1AA', fontSize: 14, fontWeight: 500, fontFamily: 'IBM Plex Sans, sans-serif', cursor: 'pointer', transition: 'all 0.15s', marginBottom: 20, opacity: loading ? 0.4 : 1 }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#1F1F23'; e.currentTarget.style.borderColor = '#3F3F46'; e.currentTarget.style.color = '#F4F4F5'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#18181B'; e.currentTarget.style.borderColor = '#27272A'; e.currentTarget.style.color = '#A1A1AA'; }}
           >
-            <GoogleIcon />
-            Sign up with Google
+            <GoogleIcon /> Sign up with Google
           </button>
 
-          <Divider />
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1, height: 1, background: '#18181B' }} />
+            <span style={{ color: '#3F3F46', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>or</span>
+            <div style={{ flex: 1, height: 1, background: '#18181B' }} />
+          </div>
 
           {/* Tab switcher */}
-          <div className="flex bg-gray-100 rounded-2xl p-1 mb-6">
+          <div style={{ display: 'flex', background: '#18181B', border: '1px solid #27272A', borderRadius: 10, padding: 4, marginBottom: 20 }}>
             {(['email', 'phone'] as Tab[]).map(t => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setError(''); setOtpSent(false); setSuccess(''); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  tab === t
-                    ? 'bg-white text-[#1E4A4C] shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {t === 'email' ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+              <button key={t} onClick={() => { setTab(t); setError(''); setOtpSent(false); setSuccess(''); }}
+                style={{ flex: 1, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'IBM Plex Sans, sans-serif', transition: 'all 0.15s',
+                  background: tab === t ? '#0D1117' : 'transparent',
+                  color: tab === t ? '#F4F4F5' : '#71717A',
+                  boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.4)' : 'none',
+                }}>
+                {t === 'email' ? <Mail size={13} /> : <Phone size={13} />}
                 {t === 'email' ? 'Email' : 'Phone'}
               </button>
             ))}
           </div>
 
-          {/* ── Email signup ──────────────────────────────────────── */}
+          {/* ── Email form ── */}
           {tab === 'email' && (
-            <form onSubmit={handleEmailSignup} className="space-y-4">
-              {/* Full name */}
-              <div>
-                <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Full name</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    id="signup-name"
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Dr. Amisha Patel"
-                    required
-                    className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-5 py-3.5 text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
-                  />
+            <form onSubmit={e => { e.preventDefault(); if (password !== confirm) { setError('Passwords do not match.'); return; } if (password.length < 6) { setError('Password must be at least 6 characters.'); return; } wrap(() => signupWithEmail(name, email, password)); }}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Full name</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={iconWrap}><User size={15} /></span>
+                  <input type="text" value={name} required onChange={e => setName(e.target.value)} onFocus={() => setFocused('name')} onBlur={() => setFocused(null)} placeholder="Dr. Amisha Patel" style={inputWithIconStyle('name')} />
                 </div>
               </div>
 
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Email address</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="pharmacist@example.com"
-                    required
-                    className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-5 py-3.5 text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
-                  />
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Email address</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={iconWrap}><Mail size={15} /></span>
+                  <input type="email" value={email} required onChange={e => setEmail(e.target.value)} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} placeholder="you@example.com" style={inputWithIconStyle('email')} />
                 </div>
               </div>
 
-              {/* Password */}
-              <div>
-                <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Password</label>
-                <div className="relative">
-                  <input
-                    id="signup-password"
-                    type={showPwd ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Min. 6 characters"
-                    required
-                    className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 pr-14 text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
-                  />
-                  <button type="button" onClick={() => setShowPwd(p => !p)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#1E4A4C] transition-colors">
-                    {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input type={showPwd ? 'text' : 'password'} value={password} required onChange={e => setPassword(e.target.value)} onFocus={() => setFocused('pwd')} onBlur={() => setFocused(null)} placeholder="Min. 6 characters" style={{ ...inputStyle('pwd'), paddingRight: 44 }} />
+                  <button type="button" onClick={() => setShowPwd(p => !p)} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#52525B', padding: 0, display: 'flex' }}>
+                    {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
                 <PasswordStrength password={password} />
               </div>
 
-              {/* Confirm password */}
-              <div>
-                <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Confirm password</label>
-                <div className="relative">
-                  <input
-                    id="signup-confirm"
-                    type={showConfirm ? 'text' : 'password'}
-                    value={confirm}
-                    onChange={e => setConfirm(e.target.value)}
-                    placeholder="Re-enter password"
-                    required
-                    className={`w-full bg-white border rounded-2xl px-5 py-3.5 pr-14 text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 transition-all shadow-sm ${
-                      confirm && confirm !== password
-                        ? 'border-rose-300 focus:ring-rose-200'
-                        : 'border-gray-200 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50'
-                    }`}
-                  />
-                  <button type="button" onClick={() => setShowConfirm(p => !p)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#1E4A4C] transition-colors">
-                    {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Confirm password</label>
+                <div style={{ position: 'relative' }}>
+                  <input type={showConf ? 'text' : 'password'} value={confirm} required onChange={e => setConfirm(e.target.value)} onFocus={() => setFocused('conf')} onBlur={() => setFocused(null)} placeholder="Re-enter password"
+                    style={{ ...inputStyle('conf'), paddingRight: 44, border: confirm && confirm !== password ? '1.5px solid #EF4444' : (focused === 'conf' ? '1.5px solid #3B82F6' : '1.5px solid #27272A') }} />
+                  <button type="button" onClick={() => setShowConf(p => !p)} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#52525B', padding: 0, display: 'flex' }}>
+                    {showConf ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
-                {confirm && confirm !== password && (
-                  <p className="text-xs text-rose-500 mt-1 ml-1 font-medium">Passwords don't match</p>
-                )}
+                {confirm && confirm !== password && <p style={{ color: '#EF4444', fontSize: 11, marginTop: 5, fontFamily: 'IBM Plex Sans, sans-serif' }}>Passwords don't match</p>}
               </div>
 
-              {error && <ErrorBox message={error} />}
-              <SubmitButton loading={loading} label="Create Account" />
+              {error && <div style={{ background: '#1A0000', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#F87171', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 10 }}>{error}</div>}
+              <button type="submit" disabled={loading} style={submitBtn}>
+                {loading ? <><Loader2 size={15} className="animate-spin" /> Creating account…</> : <>Create Account <ArrowRight size={14} /></>}
+              </button>
             </form>
           )}
 
-          {/* ── Phone signup ──────────────────────────────────────── */}
+          {/* ── Phone form ── */}
           {tab === 'phone' && (
             <>
-              {/* Invisible reCAPTCHA mount */}
               <div id={`recaptcha-signup-${recaptchaId}`} />
-
               {!otpSent ? (
-                <form onSubmit={handleSendOtp} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Your name</label>
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        id="signup-phone-name"
-                        type="text"
-                        value={displayName}
-                        onChange={e => setDisplayName(e.target.value)}
-                        placeholder="Dr. Amisha Patel"
-                        required
-                        className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-5 py-3.5 text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
-                      />
+                <form onSubmit={handleSendOtp}>
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={labelStyle}>Your name</label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={iconWrap}><User size={15} /></span>
+                      <input type="text" value={displayName} required onChange={e => setDisplayName(e.target.value)} onFocus={() => setFocused('dname')} onBlur={() => setFocused(null)} placeholder="Dr. Amisha Patel" style={inputWithIconStyle('dname')} />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Phone number</label>
-                    <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        id="signup-phone"
-                        type="tel"
-                        value={phone}
-                        onChange={e => setPhone(e.target.value)}
-                        placeholder="+91 98765 43210"
-                        required
-                        className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-5 py-3.5 text-gray-800 placeholder:text-gray-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
-                      />
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={labelStyle}>Phone number</label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={iconWrap}><Phone size={15} /></span>
+                      <input type="tel" value={phone} required onChange={e => setPhone(e.target.value)} onFocus={() => setFocused('phone')} onBlur={() => setFocused(null)} placeholder="+91 98765 43210" style={inputWithIconStyle('phone')} />
                     </div>
-                    <p className="text-xs text-gray-400 mt-1.5 ml-1">Include country code, e.g. +91</p>
+                    <p style={{ color: '#52525B', fontSize: 11, marginTop: 5, fontFamily: 'IBM Plex Sans, sans-serif' }}>Include country code, e.g. +91</p>
                   </div>
-                  {error && <ErrorBox message={error} />}
-                  <SubmitButton loading={loading} label="Send OTP" />
+                  {error && <div style={{ background: '#1A0000', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#F87171', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 10 }}>{error}</div>}
+                  <button type="submit" disabled={loading} style={submitBtn}>
+                    {loading ? <><Loader2 size={15} className="animate-spin" /> Sending…</> : <>Send OTP <ArrowRight size={14} /></>}
+                  </button>
                 </form>
               ) : (
-                <form onSubmit={handleConfirmOtp} className="space-y-4">
-                  {success && (
-                    <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 font-medium">
-                      ✓ {success}
-                    </p>
-                  )}
-                  <div>
-                    <label className="block text-sm font-semibold text-[#1E4A4C] mb-1.5">Enter OTP</label>
-                    <input
-                      id="signup-otp"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={otp}
-                      onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-                      placeholder="6-digit code"
-                      required
-                      className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3.5 text-gray-800 placeholder:text-gray-400 font-medium text-center tracking-[0.5em] text-xl focus:outline-none focus:ring-2 focus:ring-[#1E4A4C]/30 focus:border-[#1E4A4C]/50 transition-all shadow-sm"
-                    />
+                <form onSubmit={e => { e.preventDefault(); wrap(() => confirmOtp(otp)); }}>
+                  {success && <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, padding: '10px 14px', color: '#4ADE80', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 14 }}>✓ {success}</div>}
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={labelStyle}>Enter OTP</label>
+                    <input type="text" inputMode="numeric" maxLength={6} value={otp} required onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} onFocus={() => setFocused('otp')} onBlur={() => setFocused(null)} placeholder="6-digit code"
+                      style={{ ...inputStyle('otp'), textAlign: 'center', letterSpacing: '0.4em', fontSize: 18 }} />
                   </div>
-                  {error && <ErrorBox message={error} />}
-                  <SubmitButton loading={loading} label="Verify & Create Account" />
-                  <button type="button"
-                    onClick={() => { setOtpSent(false); setOtp(''); setError(''); setSuccess(''); }}
-                    className="w-full text-sm text-gray-500 hover:text-[#1E4A4C] transition-colors font-medium"
-                  >
+                  {error && <div style={{ background: '#1A0000', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#F87171', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 10 }}>{error}</div>}
+                  <button type="submit" disabled={loading} style={submitBtn}>
+                    {loading ? <><Loader2 size={15} className="animate-spin" /> Verifying…</> : <>Verify & Create Account <ArrowRight size={14} /></>}
+                  </button>
+                  <button type="button" onClick={() => { setOtpSent(false); setOtp(''); setError(''); setSuccess(''); }}
+                    style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', color: '#52525B', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif' }}>
                     ← Change phone number
                   </button>
                 </form>
@@ -420,23 +316,23 @@ export function Signup() {
             </>
           )}
 
-          {/* Sign in link */}
-          <p className="mt-6 text-center text-sm text-gray-500">
+          <p style={{ textAlign: 'center', color: '#52525B', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginTop: 24 }}>
             Already have an account?{' '}
-            <Link to="/login" className="text-[#1E4A4C] font-bold hover:underline">
-              Sign in
-            </Link>
+            <Link to="/login" style={{ color: '#3B82F6', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
           </p>
-
-          {/* Terms */}
-          <p className="mt-4 text-center text-xs text-gray-400 leading-relaxed">
+          <p style={{ textAlign: 'center', color: '#3F3F46', fontSize: 11, fontFamily: 'IBM Plex Sans, sans-serif', marginTop: 12, lineHeight: 1.6 }}>
             By creating an account you agree to PharmaAI's{' '}
-            <span className="text-[#1E4A4C] font-semibold cursor-pointer hover:underline">Terms of Service</span>
+            <span style={{ color: '#3B82F6', cursor: 'pointer' }}>Terms of Service</span>
             {' '}and{' '}
-            <span className="text-[#1E4A4C] font-semibold cursor-pointer hover:underline">Privacy Policy</span>.
+            <span style={{ color: '#3B82F6', cursor: 'pointer' }}>Privacy Policy</span>.
           </p>
         </div>
       </div>
+
+      <style>{`
+        @media (min-width: 1024px) { .left-panel { display: flex !important; flex-direction: column; } }
+        @media (max-width: 1023px) { .left-panel { display: none !important; } .mobile-logo { display: flex !important; } }
+      `}</style>
     </div>
   );
 }

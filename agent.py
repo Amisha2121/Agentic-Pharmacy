@@ -6,7 +6,8 @@ import time
 import base64
 import random
 import datetime
-from typing import TypedDict, Optional
+from typing import Annotated, TypedDict, Optional
+import operator
 from pydantic import BaseModel, Field
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -21,6 +22,26 @@ import ddi_lookup
 import barcode_scanner
 
 load_dotenv(override=True)
+
+def _resolve_user_id(state: dict) -> str:
+    """Get the Firebase UID for the current request.
+    Reads from the api._THREAD_USER_MAP first (always fresh, bypasses
+    LangGraph checkpoint state), then falls back to state['user_id'].
+    """
+    try:
+        import api as _api
+        thread_id = None
+        # Try to get thread_id from LangGraph config stored on state
+        # The map is keyed by thread_id which is set in api._stream_agent
+        uid = state.get("user_id") or "legacy"
+        # Search the map for any non-legacy uid associated with recent calls
+        for _uid in _api._THREAD_USER_MAP.values():
+            if _uid and _uid != "legacy":
+                uid = _uid
+                break
+        return uid
+    except Exception:
+        return state.get("user_id") or "legacy"
 
 def extract_json(text: str) -> dict:
     """Robustly extract a JSON object from LLM output, handling common quirks."""
@@ -86,7 +107,7 @@ def transcribe_audio(audio_bytes: bytes) -> str:
 
 
 VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"  # Supports vision
-TEXT_MODEL   = "llama-3.3-70b-versatile"                    # Fast text model
+TEXT_MODEL   = "llama-3.1-8b-instant"                        # Fastest Groq model (~10x faster than 70b)
 
 # ChromaDB Cloud fallback
 class MockCollection:
@@ -94,66 +115,106 @@ class MockCollection:
 
 vector_collection = MockCollection()
 try:
-    print("ChromaDB: Initializing CloudClient...")
-    chroma_client = chromadb.CloudClient(
-        api_key=os.getenv("CHROMA_API_KEY"),
-        tenant=os.getenv("CHROMA_TENANT"),
-        database=os.getenv("CHROMA_DATABASE")
-    )
-    # Using a shorter timeout if possible, but CloudClient might not support it directly
-    vector_collection = chroma_client.get_or_create_collection(name="amisha2121_agentic_pharmacy_main")
-    print("ChromaDB: vector_collection ready")
+    import threading
+    _chroma_ready = threading.Event()
+    def _init_chroma():
+        global vector_collection
+        try:
+            chroma_client = chromadb.CloudClient(
+                api_key=os.getenv("CHROMA_API_KEY"),
+                tenant=os.getenv("CHROMA_TENANT"),
+                database=os.getenv("CHROMA_DATABASE")
+            )
+            vector_collection = chroma_client.get_or_create_collection(name="amisha2121_agentic_pharmacy_main")
+            print("ChromaDB: vector_collection ready")
+        except Exception as e:
+            print(f"ChromaDB error: {e}. Using mock collection.")
+        finally:
+            _chroma_ready.set()
+    threading.Thread(target=_init_chroma, daemon=True).start()
 except Exception as e:
-    print(f"ChromaDB error: {e}. Using mock collection.")
+    print(f"ChromaDB init thread error: {e}")
 
 # State definition
 class PharmacyState(TypedDict):
     image_paths: list[str]
     user_query: str
     final_response: str
+    user_id: str                             # Firebase UID — scopes all DB writes
     # HITL fields
     pending_quarantine: Optional[dict]   # Set when expired item needs human approval
     hitl_decision: Optional[str]         # "approve" or "reject" — injected on resume
     next_node: str                       # The supervisor uses this to direct the graph
+    # Items queued for DB write — the API layer does the actual insert with correct user_id
+    pending_inserts: Optional[list]      # [{batch_number, expiry_date, product_name, category, stock}]
+    # ── Memory & Continuity ───────────────────────────────────────────────────
+    # Auto-accumulates: each node returns only NEW messages [{role, content}]
+    messages: Annotated[list[dict], operator.add]
+    last_added_medicine: Optional[dict]       # {name, batch, expiry}
+    last_scanned_image: Optional[dict]        # {product_name, batch_number, expiry_date, category}
+    last_interaction_checked: Optional[dict]  # {drug_a, drug_b, result}
+    turn_number: int
 
 # --- SUPERVISOR NODE ---
 def supervisor_node(state: PharmacyState):
-    """The LangGraph Supervisor orchestrates which specialized Worker Agent handles the query."""
-    if state.get("image_paths") and len(state["image_paths"]) > 0:
-        return {"next_node": "vision_extraction_node"}
-
+    """Appends user message to history, then routes to the correct worker."""
     user_query = state.get("user_query", "")
+    new_turn = (state.get("turn_number") or 0) + 1
+    user_msg = [{"role": "user", "content": user_query}]
+
+    # Images always go to vision node
+    if state.get("image_paths") and len(state["image_paths"]) > 0:
+        return {"next_node": "vision_extraction_node", "messages": user_msg, "turn_number": new_turn}
+
     client = get_client()
+    full_history = state.get("messages") or []
+
+    # Build context summary for the router
+    ctx_parts = []
+    if m := state.get("last_added_medicine"):
+        ctx_parts.append(f"Last added: {m.get('name')} batch={m.get('batch')} expiry={m.get('expiry')}")
+    if m := state.get("last_scanned_image"):
+        ctx_parts.append(f"Last scanned: {m.get('product_name')} batch={m.get('batch_number')}")
+    if m := state.get("last_interaction_checked"):
+        ctx_parts.append(f"Last interaction: {m.get('drug_a')} + {m.get('drug_b')} -> {m.get('result')}")
+    context_str = "\n".join(ctx_parts) or "No prior actions this session."
+
+    recent_str = "\n".join(
+        f"{msg['role'].upper()}: {msg['content'][:200]}" for msg in full_history[-6:]
+    ) or "No history."
 
     try:
         response = client.chat.completions.create(
             model=TEXT_MODEL,
-            messages=[{"role": "system", "content": "You are a routing supervisor for a pharmacy AI. Route the user's query to the proper system."},
-                      {"role": "user", "content": f"""Classify this query into exactly one word.
+            messages=[
+                {"role": "system", "content": f"""Route to: ADD | INVENTORY | CLINICAL | UPDATE | GENERAL
+Use conversation context to resolve pronouns like 'it', 'that', 'same batch'.
 
-Categories:
-- ADD: requests to add, log, insert, or register a new product/batch/medicine to inventory (no image)
-- INVENTORY: questions about stock, expiry dates, batches, what's in stock, product counts
-- CLINICAL: drug interactions, side effects, dosage, medical/pharmacological questions
-- UPDATE: requests to rename or update a product/batch name in the database
-- GENERAL: greetings, general questions, anything that does not fit the above
+Context:\n{context_str}\nRecent:\n{recent_str}"""},
+                {"role": "user", "content": f"""Categories:
+- ADD: add/log/insert medicine (no image). Use for 'add it'/'log it' if last action was a scan/medicine mention.
+- INVENTORY: stock questions, 'what did I add', 'show me again', expiry queries.
+- CLINICAL: drug interactions, side effects, dosage. Use for 'what about with X?' follow-ups.
+- UPDATE: rename/update a batch name. Use for 'change it'/'update it'.
+- GENERAL: greetings, anything else.
 
 Query: "{user_query}"
-
-Reply with EXACTLY one word (ADD, INVENTORY, CLINICAL, UPDATE, or GENERAL)."""}],
+Reply with EXACTLY one word."""}
+            ],
             temperature=0.0,
-            max_tokens=5
+            max_tokens=5,
+            timeout=10,
         )
         decision = response.choices[0].message.content.strip().upper()
         if "ADD" in decision:
-            return {"next_node": "text_add_node"}
+            return {"next_node": "text_add_node", "messages": user_msg, "turn_number": new_turn}
         elif "CLINICAL" in decision:
-            return {"next_node": "clinical_knowledge_node"}
+            return {"next_node": "clinical_knowledge_node", "messages": user_msg, "turn_number": new_turn}
         elif "UPDATE" in decision:
-            return {"next_node": "database_update_node"}
+            return {"next_node": "database_update_node", "messages": user_msg, "turn_number": new_turn}
     except Exception:
         pass
-    return {"next_node": "database_query_node"}
+    return {"next_node": "database_query_node", "messages": user_msg, "turn_number": new_turn}
 
 def route_from_supervisor(state: PharmacyState):
     """Conditional edge from the Supervisor to the next worker."""
@@ -218,22 +279,54 @@ def vision_extraction_node(state: PharmacyState):
     # --- Build the image content blocks ---
     image_blocks = []
     has_pdf = False
+    _tmp_pdf_images = []  # track temp files to clean up later
     for img_path in image_paths:
         if img_path.lower().endswith('.pdf'):
             has_pdf = True
-            continue # We pass the text of the PDF instead of the image to the LLM (vision model might not take PDF directly)
+            # Convert each PDF page to a JPEG at 300 DPI and add as vision image
+            try:
+                import fitz  # PyMuPDF
+                import tempfile
+                doc = fitz.open(img_path)
+                for page_idx, page in enumerate(doc):
+                    pix = page.get_pixmap(dpi=300)
+                    tmp = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
+                    tmp_path = tmp.name
+                    tmp.close()
+                    pix.save(tmp_path)
+                    _tmp_pdf_images.append(tmp_path)
+                    with open(tmp_path, "rb") as f:
+                        b64 = base64.b64encode(f.read()).decode("utf-8")
+                    image_blocks.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
+                    if page_idx >= 4:  # cap at 5 pages to avoid token overflow
+                        break
+            except Exception as pdf_err:
+                print(f"[vision] PDF→image conversion failed: {pdf_err}. Falling back to text only.")
+            continue
         with open(img_path, "rb") as f:
             b64 = base64.b64encode(f.read()).decode("utf-8")
         ext = img_path.rsplit(".", 1)[-1].lower()
         mime = "image/png" if ext == "png" else "image/jpeg"
         image_blocks.append({"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}})
+    # Enforce Groq vision limit: max 5 images per request
+    if len(image_blocks) > 5:
+        image_blocks = image_blocks[:5]
 
-    sides_msg = (
-        f"You are looking at {n} photos of DIFFERENT SIDES of THE SAME medication package. "
-        f"Combine information from ALL {n} photos to fill in the details below."
-        if n > 1 and not has_pdf else
-        "You are looking at a photo or document containing medication package info or QR codes."
-    )
+    n_images = len(image_blocks)
+    if has_pdf:
+        sides_msg = (
+            f"You are looking at {n_images} page image(s) extracted from a PDF document. "
+            "Each page may contain ONE OR MORE different medicine labels or barcodes. "
+            "Scan EVERY page carefully and return a SEPARATE JSON object for EACH distinct product you find. "
+            "Do NOT merge different products into one entry. If a page has 3 barcodes, return 3 objects."
+        )
+    elif n_images > 1:
+        sides_msg = (
+            f"You are looking at {n_images} photos of DIFFERENT SIDES of THE SAME medication package. "
+            f"Combine information from ALL {n_images} photos to fill in the details below."
+        )
+    else:
+        sides_msg = "You are looking at a photo of a medication package label."
 
     barcode_context = ""
     if barcode_hint_text:
@@ -349,7 +442,7 @@ FINAL JSON SCHEMA (RETURN AS AN ARRAY)
 ]
 """
 
-    max_retries = 5
+    max_retries = 2
     for attempt in range(max_retries):
         try:
             # We might only have text (from PDF) and no images
@@ -364,38 +457,68 @@ FINAL JSON SCHEMA (RETURN AS AN ARRAY)
                 model=model_to_use,
                 messages=[{"role": "user", "content": messages if image_blocks else prompt}],
                 temperature=0.0,
-                max_tokens=1000
+                max_tokens=2000,
+                timeout=30,
             )
 
             raw = response.choices[0].message.content.strip()
-            
-            # Extract JSON array
-            if "```" in raw:
-                parts = raw.split("```")
-                for part in parts:
-                    cleaned = part.strip().lstrip("json").strip()
-                    if cleaned.startswith("["):
-                        raw = cleaned
-                        break
-            
-            match = re.search(r'\[.*\]', raw, re.DOTALL)
-            if match:
-                candidate = match.group(0)
-                items = json.loads(candidate)
-            else:
-                # Fallback to single object extraction
-                data = extract_json(raw)
-                items = [data] if data else []
+            print(f"[vision] Raw LLM output ({len(raw)} chars): {raw[:200]}")
+
+            # ── Robust JSON extraction ────────────────────────────────────────
+            def _try_parse_items(text: str):
+                """Return a list of dicts parsed from text, or None on failure."""
+                # Strategy 1: strip markdown code fences
+                if "```" in text:
+                    for part in text.split("```"):
+                        c = part.strip().lstrip("json").strip()
+                        if c.startswith("[") or c.startswith("{"):
+                            text = c
+                            break
+
+                # Strategy 2: find the JSON array with regex
+                arr_match = re.search(r'\[.*?\]', text, re.DOTALL)
+                if arr_match:
+                    try:
+                        return json.loads(arr_match.group(0))
+                    except json.JSONDecodeError:
+                        pass
+
+                # Strategy 3: progressive truncation — LLM sometimes cuts off mid-array
+                if '[' in text:
+                    chunk = text[text.index('['):]
+                    for end in range(len(chunk), 0, -1):
+                        try:
+                            result = json.loads(chunk[:end])
+                            if isinstance(result, list) and result:
+                                return result
+                        except json.JSONDecodeError:
+                            continue
+
+                # Strategy 4: single-object fallback wrapped in a list
+                obj_match = re.search(r'\{.*?\}', text, re.DOTALL)
+                if obj_match:
+                    try:
+                        return [json.loads(obj_match.group(0))]
+                    except json.JSONDecodeError:
+                        pass
+
+                return None
+
+            items = _try_parse_items(raw)
 
             if not items:
+                print(f"[vision] JSON parse failed. Full response:\n{raw}")
+                if attempt < max_retries - 1:
+                    continue  # retry the LLM call
                 return {
-                    "final_response": "⚠️ Could not extract product details from the provided file.",
+                    "final_response": "⚠️ Could not extract product details — the AI returned an unreadable response. Please try again.",
                     "pending_quarantine": None,
                     "hitl_decision": None,
                 }
 
             responses = []
-            
+            pending_inserts = []  # API will write these with correct user_id
+
             for item in items:
                 batch    = item.get("batch_number", "UNKNOWN")
                 expiry   = item.get("expiry_date", "UNKNOWN")
@@ -430,14 +553,35 @@ FINAL JSON SCHEMA (RETURN AS AN ARRAY)
                 except Exception:
                     pass
 
-                database.insert_batch(str(batch), str(expiry), str(name), str(category), stock)
+                # Queue for API-layer insert — API has guaranteed correct user_id
+                pending_inserts.append({
+                    "batch_number": str(batch),
+                    "expiry_date":  str(expiry),
+                    "product_name": str(name),
+                    "category":     str(category),
+                    "stock":        stock,
+                })
                 stock_note = f" | Stock: {stock}" if stock > 0 else ""
                 responses.append(f"✅ Logged **{name}** ({category}) | Batch: {batch}{batch_note} | Exp: {expiry}{override_note}{stock_note}")
 
+            final_text = "\n\n".join(responses)
+            last_scan = None
+            for item in items:
+                if item.get("product_name") not in ("Unknown", "UNKNOWN", "", None):
+                    last_scan = {
+                        "product_name": item.get("product_name"),
+                        "batch_number": item.get("batch_number"),
+                        "expiry_date": item.get("expiry_date"),
+                        "category": item.get("category"),
+                        "stock": item.get("stock", 0),
+                    }
+                    break
             return {
-                "final_response": "\n\n".join(responses),
+                "final_response": final_text,
+                "messages": [{"role": "assistant", "content": final_text}],
                 "pending_quarantine": None,
                 "hitl_decision": None,
+                **(({"last_scanned_image": last_scan}) if last_scan else {}),
             }
 
         except Exception as e:
@@ -507,64 +651,78 @@ def human_approval_node(state: PharmacyState):
 def database_query_node(state: PharmacyState):
     user_query = state.get("user_query", "")
     today = datetime.date.today().strftime("%Y-%m-%d")
-    inventory_data = database.get_inventory()
-    inventory_context = "\n".join([f"- {r[2]} ({r[3]}) | Batch: {r[0]} | Exp: {r[1]} | Stock: {r[5]}" for r in inventory_data])
+    user_id = state.get("user_id", "legacy")
+    inventory_data = database.get_inventory(user_id)
+    inventory_context = "\n".join([f"- {r[2]} ({r[3]}) | Batch: {r[0]} | Exp: {r[1]} | Stock: {r[5]}" for r in inventory_data]) or "No inventory items yet."
+
+    full_history = state.get("messages") or []
+    system_prompt = f"""You are a pharmacy inventory auditor with full conversation memory.
+TODAY: {today}
+INVENTORY:
+{inventory_context}
+Rules: Only reference listed products. Mark as EXPIRED if today > expiry date.
+Use conversation history to resolve references like 'it', 'that batch', 'same medicine', 'what did I just add'."""
+
+    llm_messages = [{"role": "system", "content": system_prompt}] + full_history[-8:]
 
     client = get_client()
     response = client.chat.completions.create(
         model=TEXT_MODEL,
-        messages=[
-            {"role": "system", "content": f"""You are a pharmacy inventory auditor.
-TODAY: {today}
-INVENTORY:
-{inventory_context}
-Rules: Only reference listed products. Mark as EXPIRED if today > expiry date."""},
-            {"role": "user", "content": user_query}
-        ],
-        max_tokens=1024
+        messages=llm_messages,
+        max_tokens=512,
+        timeout=15,
     )
-    return {"final_response": response.choices[0].message.content}
+    resp_text = response.choices[0].message.content
+    return {
+        "final_response": resp_text,
+        "messages": [{"role": "assistant", "content": resp_text}],
+        "last_inventory_query": user_query,
+    }
 
 # --- TEXT-BASED ADD NODE ---
 def text_add_node(state: PharmacyState):
-    """Parse product details from natural language text and insert into Firestore."""
+    """Parse product details from natural language text (with memory context) and insert into Firestore."""
     user_query = state.get("user_query", "")
+    full_history = state.get("messages") or []
+    last_scanned = state.get("last_scanned_image") or {}
+    last_added = state.get("last_added_medicine") or {}
     client = get_client()
     today = datetime.date.today()
+
+    # Build memory context hint for the extractor
+    memory_ctx = []
+    if last_scanned.get("product_name"):
+        memory_ctx.append(f"Recently scanned image: {last_scanned}")
+    if last_added.get("name"):
+        memory_ctx.append(f"Recently added: {last_added}")
+    # Include last 4 messages for pronoun resolution
+    recent_msgs = "\n".join(f"{m['role'].upper()}: {m['content'][:300]}" for m in full_history[-8:]) or "None"
+    memory_hint = "\n".join(memory_ctx) or "None"
 
     try:
         response = client.chat.completions.create(
             model=TEXT_MODEL,
-            messages=[{"role": "user", "content": f"""Extract product details from this pharmacy request and return ONLY a JSON object.
+            messages=[{"role": "user", "content": f"""Extract product details for a pharmacy ADD request. Use conversation history to resolve 'it', 'that one', etc.
 
-Request: "{user_query}"
+Memory context:
+{memory_hint}
 
-Return JSON with these exact keys:
-- product_name: the medicine/product name (string)
-- batch_number: batch/lot number if mentioned, else generate "TXT-<4 random digits>" (string)
-- expiry_date: in YYYY-MM-DD format, convert "7th April 2026" → "2026-04-07" (string)
-- category: Analyze the brand or generic name of the product implicitly and pick the BEST matching category exactly from this list:
-    * Pain & Fever       → Dolo650, Paracetamol, Aspirin, Ibuprofen, Crocin, Combiflam, Volini, Moov
-    * Cold & Allergy     → Cough syrups, Benadryl, Cetirizine, Otrivin, Nasivion, Vicks, Allegra
-    * Digestion & Nausea → Antacids, Digene, Gelusil, ORS, Laxatives, Pantoprazole, Omeprazole
-    * Skin & Dermatology → Betadine, Neosporin, Boro Plus, Lacto Calamine, antifungal creams
-    * Vitamins & Nutrition → Vitamin C, Zincovit, Calcium, Ensure, Horlicks, Fish Oil
-    * First Aid & Wound Care → Band-aids, Savlon, Dettol, Cotton rolls, Syringes, Gauze
-    * Eye & Ear Care     → Optive, Murine, ear drops, contact lens solution
-    * Oral Care          → Mouthwash, Sensodyne, Listerine, dental floss
-    * Feminine Care      → Sofy, Stayfree, Whisper, intimate wash
-    * Baby & Child Care  → Pampers, Gripe water, baby powder, diaper rash cream
-    * Cardiovascular & BP→ Amlodipine, Atorvastatin, Losartan, Rosuvastatin
-    * Diabetes Care      → Metformin, Insulin, Glucometer strips, Lancets
-    * Antibiotics        → Amoxicillin, Azithromycin, Ciprofloxacin, Doxycycline
-    * Medical Devices    → Thermometer, BP Monitor, Oximeter, Inhalers
-    * Personal Hygiene   → Soaps, sanitizers, wet wipes, face wash
-    * General/Other      → Anything that fundamentally does not fit above
-- stock: quantity as integer (0 if not mentioned)
+Recent conversation:
+{recent_msgs}
 
-JSON only, no explanation."""}],
+Current request: "{user_query}"
+
+Return ONLY a JSON object with:
+- product_name: string (resolve from history if 'it' or 'that')
+- batch_number: batch/lot if mentioned, else generate "TXT-<4 random digits>"
+- expiry_date: YYYY-MM-DD format
+- category: pick from [Pain & Fever | Cold & Allergy | Digestion & Nausea | Skin & Dermatology | Vitamins & Nutrition | First Aid & Wound Care | Eye & Ear Care | Oral Care | Feminine Care | Baby & Child Care | Cardiovascular & BP | Diabetes Care | Antibiotics | Medical Devices | Personal Hygiene | General/Other]
+- stock: integer (0 if not stated)
+
+JSON only."""}],
             response_format={"type": "json_object"},
-            max_tokens=250
+            max_tokens=200,
+            timeout=15,
         )
         import json as _json
         data = _json.loads(response.choices[0].message.content)
@@ -579,27 +737,29 @@ JSON only, no explanation."""}],
         try:
             exp_date = datetime.date.fromisoformat(expiry)
             if exp_date < today:
-                return {"final_response": (
-                    f"Cannot add **{name}** — expiry date {expiry} is in the past. "
-                    "Please check the date and try again."
-                ), "pending_quarantine": None, "hitl_decision": None}
+                resp_text = f"Cannot add **{name}** — expiry date {expiry} is in the past. Please check the date and try again."
+                return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}],
+                        "pending_quarantine": None, "hitl_decision": None}
         except Exception:
             pass
 
-        database.insert_batch(batch, expiry, name, category, stock)
         stock_note = f" | Stock: {stock}" if stock > 0 else ""
+        resp_text = f"Added **{name}** ({category}) to inventory | Batch: {batch} | Exp: {expiry}{stock_note}"
         return {
-            "final_response": (
-                f"Added **{name}** ({category}) to inventory | "
-                f"Batch: {batch} | Exp: {expiry}{stock_note}"
-            ),
+            "final_response": resp_text,
+            "pending_inserts": [{"batch_number": batch, "expiry_date": expiry,
+                                  "product_name": name, "category": category, "stock": stock}],
+            "messages": [{"role": "assistant", "content": resp_text}],
             "pending_quarantine": None,
             "hitl_decision": None,
+            "last_added_medicine": {"name": name, "batch": batch, "expiry": expiry},
         }
 
     except Exception as e:
+        resp_text = f"Could not parse product details: {e}. Please include the medicine name, batch number, expiry date, and quantity."
         return {
-            "final_response": f"Could not parse product details: {e}. Please include product name, batch number, expiry date, and quantity.",
+            "final_response": resp_text,
+            "messages": [{"role": "assistant", "content": resp_text}],
             "pending_quarantine": None,
             "hitl_decision": None,
         }
@@ -608,33 +768,46 @@ JSON only, no explanation."""}],
 # --- UPDATE NODE ---
 def database_update_node(state: PharmacyState):
     user_query = state.get("user_query", "")
+    full_history = state.get("messages") or []
+    last_added = state.get("last_added_medicine") or {}
     client = get_client()
+
+    # Build context so LLM can resolve 'it'/'that batch'
+    recent_str = "\n".join(f"{m['role'].upper()}: {m['content'][:300]}" for m in full_history[-8:]) or "None"
+    memory_hint = f"Last added medicine: {last_added}" if last_added else "None"
+
     try:
         response = client.chat.completions.create(
             model=TEXT_MODEL,
-            messages=[{"role": "user", "content": f'Extract batch_number and new_name from: "{user_query}". Return ONLY JSON: {{"batch_number":"...","new_name":"..."}}'}],
+            messages=[{"role": "user", "content": f'Extract batch_number and new_name from the request below. Use conversation history to resolve "it", "that batch", etc.\n\nMemory: {memory_hint}\nRecent:\n{recent_str}\n\nRequest: "{user_query}"\n\nReturn ONLY JSON: {{"batch_number":"...","new_name":"..."}}'}],
             response_format={"type": "json_object"},
-            max_tokens=100
+            max_tokens=80,
+            timeout=10,
         )
         data = json.loads(response.choices[0].message.content)
         batch, new_name = data.get("batch_number"), data.get("new_name")
-        # Guard against null/empty values — LLM couldn't extract a real batch
         if not batch or batch.strip().lower() in ("", "none", "null", "unknown", "..."):
-            return {"final_response": "I can update a product name for you. Please provide the batch number and the new name, e.g. *'Update batch ABC123 to Paracetamol 500mg'*."}
+            resp_text = "I can update a product name for you. Please provide the batch number and the new name, e.g. *'Update batch ABC123 to Paracetamol 500mg'*."
+            return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
         if not new_name or new_name.strip().lower() in ("", "none", "null", "unknown", "..."):
-            return {"final_response": f"Please also provide the new product name for batch **{batch}**."}
+            resp_text = f"Please also provide the new product name for batch **{batch}**."
+            return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
         if database.update_product_name(batch, new_name):
-            return {"final_response": f"🔄 Updated batch **{batch}** name to **{new_name}**."}
-        return {"final_response": f"⚠️ Batch **{batch}** was not found in the inventory. Please check the batch number and try again."}
+            resp_text = f"🔄 Updated batch **{batch}** name to **{new_name}**."
+            return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
+        resp_text = f"⚠️ Batch **{batch}** was not found in the inventory. Please check the batch number and try again."
+        return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
     except Exception as e:
-        return {"final_response": f"Update failed: {e}"}
+        resp_text = f"Update failed: {e}"
+        return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
 
 # --- CLINICAL NODE (DDI tool-first, ChromaDB fallback) ---
 def clinical_knowledge_node(state: PharmacyState):
     user_query = state.get("user_query", "")
+    full_history = state.get("messages") or []
+    last_interaction = state.get("last_interaction_checked") or {}
 
     # ── STAGE 1: Structured DDI lookup ─────────────────────────────────────
-    # Detect drug-interaction intent: "X with Y", "X and Y", "X interact Y" etc.
     ddi_pattern = re.compile(
         r'(?:can\s+i\s+take|interaction|interact|combine|safe\s+with|take\s+with)'
         r'.{0,60}?'
@@ -643,7 +816,6 @@ def clinical_knowledge_node(state: PharmacyState):
     )
     match = ddi_pattern.search(user_query)
 
-    # Also handle plain "Drug A and Drug B" without trigger words
     if not match:
         plain = re.compile(
             r'^([A-Za-z][A-Za-z0-9\- ]+?)\s+(?:and|with|\+)\s+([A-Za-z][A-Za-z0-9\- ]+)\??$',
@@ -651,32 +823,58 @@ def clinical_knowledge_node(state: PharmacyState):
         )
         match = plain.match(user_query.strip())
 
+    # Handle follow-up: "what about with X?" — reuse last drug_a from memory
+    if not match and last_interaction.get("drug_a"):
+        followup = re.compile(
+            r'(?:what\s+about\s+(?:with\s+)?|and\s+|with\s+)([A-Za-z][A-Za-z0-9\- ]+)',
+            re.IGNORECASE
+        )
+        fm = followup.search(user_query)
+        if fm:
+            drug_a = last_interaction["drug_a"]
+            drug_b = fm.group(1).strip()
+            structured_result = ddi_lookup.format_interaction_result(drug_a, drug_b)
+            check = ddi_lookup.check_interaction(drug_a, drug_b)
+            return {
+                "final_response": structured_result,
+                "messages": [{"role": "assistant", "content": structured_result}],
+                "last_interaction_checked": {"drug_a": drug_a, "drug_b": drug_b, "result": "found" if check["found"] else "not found"},
+            }
+
     if match:
         drug_a = match.group(1).strip()
         drug_b = match.group(2).strip()
         structured_result = ddi_lookup.format_interaction_result(drug_a, drug_b)
-
-        # If at least one drug was found in the FDA dataset, return structured result directly
         check = ddi_lookup.check_interaction(drug_a, drug_b)
         if check["found"]:
-            return {"final_response": structured_result}
+            return {
+                "final_response": structured_result,
+                "messages": [{"role": "assistant", "content": structured_result}],
+                "last_interaction_checked": {"drug_a": drug_a, "drug_b": drug_b, "result": "found"},
+            }
 
-    # ── STAGE 2: ChromaDB vector search fallback ────────────────────────────
+    # ── STAGE 2: ChromaDB vector search with conversation history ───────────
     try:
         results = vector_collection.query(query_texts=[user_query], n_results=1)
         context = results["documents"][0][0] if results["documents"] else "No clinical data found."
         client = get_client()
+        llm_messages = [
+            {"role": "system", "content": f"You are a clinical pharmacy assistant. Use this reference:\n\n{context}\n\nUse conversation history to resolve drug references like 'it', 'same drug', 'what about with X?'."},
+        ] + full_history[-8:]
         response = client.chat.completions.create(
             model=TEXT_MODEL,
-            messages=[
-                {"role": "system", "content": f"Use this reference:\n\n{context}"},
-                {"role": "user", "content": user_query}
-            ],
-            max_tokens=1024
+            messages=llm_messages,
+            max_tokens=512,
+            timeout=15,
         )
-        return {"final_response": f"📚 **Clinical Knowledge (Vector DB):** {response.choices[0].message.content}"}
+        resp_text = f"📚 **Clinical Knowledge (Vector DB):** {response.choices[0].message.content}"
+        return {
+            "final_response": resp_text,
+            "messages": [{"role": "assistant", "content": resp_text}],
+        }
     except Exception as e:
-        return {"final_response": f"Vector search error: {e}"}
+        resp_text = f"Vector search error: {e}"
+        return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
 
 # --- COMPILE GRAPH WITH MEMORY CHECKPOINTER ---
 memory = MemorySaver()

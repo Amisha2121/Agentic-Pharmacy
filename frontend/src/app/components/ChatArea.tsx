@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Mic, ArrowUp, Paperclip, Menu, History, X, ImageIcon, ScanLine } from 'lucide-react';
+import { Plus, Mic, ArrowUp, Paperclip, Menu, History, X, ImageIcon, ScanLine, Bot, User, CheckCircle, AlertCircle, XCircle, Pill, PlusCircle, Search, ClipboardList, Camera, AlertTriangle, Clock } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { useAuth } from '../context/AuthContext';
+import { authenticatedFetch } from '../utils/api';
 
 interface Message {
   id: string;
   type: 'user' | 'system';
-  icon: string;
+  icon: React.ReactNode;
   iconColor: string;
   content: string;
   warning?: string;
@@ -110,7 +111,7 @@ export function ChatArea({
       // Scan barcode instantly (also saves the file server-side via /api/scan-barcode)
       const scanFormData = new FormData();
       scanFormData.append('file', file);
-      const scanRes = await fetch('/api/scan-barcode', { method: 'POST', body: scanFormData });
+      const scanRes = await authenticatedFetch('/api/scan-barcode', { method: 'POST', body: scanFormData });
       const scanData: BarcodeResult = await scanRes.json();
       setBarcodeResult(scanData);
       setAttachedImage({ path: scanData.path, name: file.name });
@@ -119,11 +120,11 @@ export function ChatArea({
       try {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+        const res = await authenticatedFetch('/api/upload-image', { method: 'POST', body: formData });
         const data = await res.json();
         setAttachedImage({ path: data.path, name: file.name });
       } catch {
-        appendMessage({ id: Date.now().toString(), type: 'system', icon: '❌', iconColor: '#ef4444', content: 'Image upload failed. Try again.' });
+        appendMessage({ id: Date.now().toString(), type: 'system', icon: <XCircle className="w-5 h-5" />, iconColor: '#ef4444', content: 'Image upload failed. Try again.' });
       }
     } finally {
       setUploading(false);
@@ -139,13 +140,13 @@ export function ChatArea({
 
     const imagePaths = attachedImage ? [attachedImage.path] : [];
     const userContent = text || (attachedImage ? `📎 File attached: ${attachedImage.name}` : '');
-    appendMessage({ id: Date.now().toString(), type: 'user', icon: '🎯', iconColor: '#1E4A4C', content: userContent });
+    appendMessage({ id: Date.now().toString(), type: 'user', icon: <User className="w-5 h-5" />, iconColor: '#3B82F6', content: userContent });
     setAttachedImage(null);
     setBarcodeResult(null);
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await authenticatedFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ thread_id: threadId, message: text || 'Scan this image and identify the product.', image_paths: imagePaths }),
@@ -165,17 +166,17 @@ export function ChatArea({
           if (!line.startsWith('data: ')) continue;
           const payload = JSON.parse(line.slice(6));
           if (payload.type === 'done') {
-            appendMessage({ id: Date.now().toString(), type: 'system', icon: '🤖', iconColor: '#2B5B5C', content: payload.content });
+            appendMessage({ id: Date.now().toString(), type: 'system', icon: <Bot className="w-5 h-5" />, iconColor: '#3B82F6', content: payload.content });
           } else if (payload.type === 'hitl') {
             setHitlPending(payload.product as Record<string, unknown>);
-            appendMessage({ id: Date.now().toString(), type: 'system', icon: '⚠️', iconColor: '#ef4444', content: `HITL Checkpoint: expired medication detected — **${payload.product?.name ?? '?'}**. Please approve or reject below.` });
+            appendMessage({ id: Date.now().toString(), type: 'system', icon: <AlertCircle className="w-5 h-5" />, iconColor: '#ef4444', content: `HITL Checkpoint: expired medication detected — **${payload.product?.name ?? '?'}**. Please approve or reject below.` });
           } else if (payload.type === 'error') {
-            appendMessage({ id: Date.now().toString(), type: 'system', icon: '❌', iconColor: '#ef4444', content: `Error: ${payload.content}` });
+            appendMessage({ id: Date.now().toString(), type: 'system', icon: <XCircle className="w-5 h-5" />, iconColor: '#ef4444', content: `Error: ${payload.content}` });
           }
         }
       }
     } catch (err) {
-      appendMessage({ id: Date.now().toString(), type: 'system', icon: '❌', iconColor: '#ef4444', content: `Network error: ${err}` });
+      appendMessage({ id: Date.now().toString(), type: 'system', icon: <XCircle className="w-5 h-5" />, iconColor: '#ef4444', content: `Network error: ${err}` });
     } finally {
       setIsLoading(false);
     }
@@ -185,15 +186,15 @@ export function ChatArea({
     setHitlPending(null);
     setIsLoading(true);
     try {
-      const res = await fetch('/api/chat/resume', {
+      const res = await authenticatedFetch('/api/chat/resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ thread_id: threadId, decision }),
       });
       const data = await res.json();
-      appendMessage({ id: Date.now().toString(), type: 'system', icon: '✅', iconColor: '#2B5B5C', content: data.content ?? 'Done.' });
+      appendMessage({ id: Date.now().toString(), type: 'system', icon: <CheckCircle className="w-5 h-5" />, iconColor: '#22C55E', content: data.content ?? 'Done.' });
     } catch (err) {
-      appendMessage({ id: Date.now().toString(), type: 'system', icon: '❌', iconColor: '#ef4444', content: `Resume error: ${err}` });
+      appendMessage({ id: Date.now().toString(), type: 'system', icon: <XCircle className="w-5 h-5" />, iconColor: '#ef4444', content: `Resume error: ${err}` });
     } finally {
       setIsLoading(false);
     }
@@ -202,7 +203,7 @@ export function ChatArea({
   const renderBarcodeDetails = () => {
     if (scanning) {
       return (
-        <div className="flex items-center gap-2 text-xs text-amber-600 font-medium animate-pulse">
+        <div className="flex items-center gap-2 text-xs text-[#FB923C] font-medium animate-pulse" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
           <ScanLine className="w-3.5 h-3.5" />
           <span>Scanning for barcodes…</span>
         </div>
@@ -212,24 +213,24 @@ export function ChatArea({
     if (barcodeResult.found) {
       return (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+          <span className="flex items-center gap-1 text-xs font-medium text-[#22C55E] bg-[#052E16] border border-[#166534] px-2 py-0.5 rounded" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
             <ScanLine className="w-3 h-3" />
             {barcodeResult.barcode_type ?? 'Barcode(s)'} ✅
           </span>
           {barcodeResult.batch_number && (
-            <span className="text-xs text-gray-600">Batch: <strong className="text-gray-800">{barcodeResult.batch_number}</strong></span>
+            <span className="text-xs text-[#A1A1AA]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch: <strong className="text-[#F4F4F5]">{barcodeResult.batch_number}</strong></span>
           )}
           {barcodeResult.expiry_date && (
-            <span className="text-xs text-gray-600">Exp: <strong className="text-gray-800">{barcodeResult.expiry_date}</strong></span>
+            <span className="text-xs text-[#A1A1AA]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Exp: <strong className="text-[#F4F4F5]">{barcodeResult.expiry_date}</strong></span>
           )}
           {barcodeResult.gtin && (
-            <span className="text-xs text-gray-500">GTIN: {barcodeResult.gtin}</span>
+            <span className="text-xs text-[#71717A]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>GTIN: {barcodeResult.gtin}</span>
           )}
         </div>
       );
     }
     return (
-      <span className="text-xs text-gray-400 italic">No barcode found — AI will read label visually</span>
+      <span className="text-xs text-[#52525B] italic" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>No barcode found — AI will read label visually</span>
     );
   };
 
@@ -238,15 +239,15 @@ export function ChatArea({
       <div className="flex items-center justify-between p-4 bg-transparent absolute top-0 w-full z-20">
         <div className="flex items-center">
           {isSidebarClosed && (
-            <button onClick={onOpenSidebar} className="w-12 h-12 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 flex items-center justify-center text-[#1E4A4C] hover:bg-white hover:shadow-md transition-all duration-300 group">
-              <Menu className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <button onClick={onOpenSidebar} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#18181B] border border-[#27272A] text-[#A1A1AA] hover:text-[#F4F4F5] hover:bg-[#1F1F23] transition-all">
+              <Menu className="w-5 h-5" />
             </button>
           )}
         </div>
         <div className="flex items-center">
           {isHistoryClosed && (
-            <button onClick={onOpenHistory} className="w-12 h-12 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 flex items-center justify-center text-[#1E4A4C] hover:bg-white hover:shadow-md transition-all duration-300 group">
-              <History className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <button onClick={onOpenHistory} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#18181B] border border-[#27272A] text-[#A1A1AA] hover:text-[#F4F4F5] hover:bg-[#1F1F23] transition-all">
+              <History className="w-5 h-5" />
             </button>
           )}
         </div>
@@ -254,28 +255,132 @@ export function ChatArea({
 
       <div className="flex-1 flex flex-col pt-20 px-4 sm:px-8 pb-6 max-w-5xl mx-auto w-full min-h-0">
         {messages.length === 0 && !isLoading && !hitlPending ? (
-          <div className="flex-1 flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-5 duration-700 pb-16">
-            <h1 className="text-4xl sm:text-[42px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#1E4A4C] to-[#40aab0] mb-3 tracking-tight">
-              ✨ Hi {user?.name || 'Pharmacist'}
+          <div className="flex-1 flex flex-col items-center justify-center pb-10 select-none">
+
+            {/* ── Animated glow orb ── */}
+            <div className="relative mb-8" style={{ animation: 'floatOrb 4s ease-in-out infinite' }}>
+              <div style={{
+                width: 96, height: 96, borderRadius: '50%',
+                background: 'radial-gradient(circle at 35% 35%, #60A5FA, #3B82F6 50%, #1D4ED8)',
+                boxShadow: '0 0 60px rgba(59,130,246,0.5), 0 0 120px rgba(59,130,246,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff',
+              }}><Pill size={38} strokeWidth={1.5} /></div>
+              {/* Orbiting ring */}
+              <div style={{
+                position: 'absolute', inset: -10, borderRadius: '50%',
+                border: '1.5px solid rgba(59,130,246,0.3)',
+                animation: 'spinRing 8s linear infinite',
+              }} />
+              <div style={{
+                position: 'absolute', inset: -20, borderRadius: '50%',
+                border: '1px solid rgba(59,130,246,0.12)',
+                animation: 'spinRing 14s linear infinite reverse',
+              }} />
+            </div>
+
+            {/* ── Greeting ── */}
+            <h1 style={{
+              fontFamily: 'DM Sans, sans-serif', fontSize: 'clamp(28px,4vw,42px)',
+              fontWeight: 700, color: '#F4F4F5', letterSpacing: '-0.5px',
+              margin: '0 0 8px', textAlign: 'center',
+              animation: 'fadeUp 0.6s ease both',
+            }}>
+              Good to see you,{' '}
+              <span style={{ color: '#3B82F6' }}>{user?.name?.split(' ')[0] || 'Pharmacist'}</span>
             </h1>
-            <h2 className="text-3xl sm:text-[38px] font-medium text-gray-700 tracking-tight text-center">
-              Where should we start?
-            </h2>
+            <p style={{
+              fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 16,
+              color: '#52525B', margin: '0 0 36px', textAlign: 'center',
+              animation: 'fadeUp 0.6s 0.1s ease both', opacity: 0,
+              animationFillMode: 'forwards',
+            }}>
+              Your AI pharmacy assistant is ready. What would you like to do?
+            </p>
+
+            {/* ── Quick-action cards ── */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 12, width: '100%', maxWidth: 680,
+            }}>
+              {([
+                { icon: <PlusCircle size={18} />, color: '#3B82F6', bg: '#1E3A5F', label: 'Add new stock',    sub: 'Log medicine to inventory',    prompt: 'Add ' },
+                { icon: <Search size={18} />,     color: '#A78BFA', bg: '#2E1065', label: 'Drug interaction', sub: 'Check safety between drugs',    prompt: 'Can a patient take ' },
+                { icon: <ClipboardList size={18} />, color: '#22C55E', bg: '#052E16', label: 'View inventory',   sub: "See what's in stock",           prompt: 'Show me the current inventory' },
+                { icon: <Camera size={18} />,     color: '#F59E0B', bg: '#2D1B00', label: 'Scan a label',      sub: 'Upload a medicine photo',      prompt: null },
+                { icon: <AlertTriangle size={18} />, color: '#EF4444', bg: '#3B0000', label: 'Low stock check',  sub: 'What needs reordering?',       prompt: 'Which medicines are running low?' },
+                { icon: <Clock size={18} />,      color: '#38BDF8', bg: '#0C2840', label: 'Expiry report',     sub: 'Items expiring soon',          prompt: 'Which medicines are expiring soon?' },
+              ] as const).map(({ icon, color, bg, label, sub, prompt }, i) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    if (prompt) setMessage(prompt);
+                    else fileInputRef.current?.click();
+                  }}
+                  style={{
+                    background: '#111113', border: '1px solid #27272A',
+                    borderRadius: 14, padding: '14px 16px',
+                    textAlign: 'left', cursor: 'pointer', display: 'flex',
+                    alignItems: 'flex-start', gap: 12,
+                    transition: 'all 0.2s ease',
+                    animation: `fadeUp 0.5s ${0.15 + i * 0.07}s ease both`,
+                    opacity: 0, animationFillMode: 'forwards',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLButtonElement).style.background = '#18181B';
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = color;
+                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 8px 24px ${color}20`;
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLButtonElement).style.background = '#111113';
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#27272A';
+                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0, marginTop: 1 }}>
+                    {icon}
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#F4F4F5', lineHeight: 1.3 }}>{label}</p>
+                    <p style={{ margin: '3px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11.5, color: '#52525B', lineHeight: 1.4 }}>{sub}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Keyframe styles injected inline */}
+            <style>{`
+              @keyframes floatOrb {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-10px); }
+              }
+              @keyframes spinRing {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+              @keyframes fadeUp {
+                from { opacity: 0; transform: translateY(12px); }
+                to   { opacity: 1; transform: translateY(0); }
+              }
+            `}</style>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto mb-4 px-4 space-y-8 min-h-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-[#1E4A4C]/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#1E4A4C]/40">
+          <div className="flex-1 overflow-y-auto mb-4 px-4 space-y-8 min-h-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-[#3B82F6]/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#3B82F6]/40">
           {messages.map((msg) => (
             <MessageBubble key={msg.id} type={msg.type} icon={msg.icon} iconColor={msg.iconColor} content={msg.content} warning={msg.warning} />
           ))}
           {isLoading && (
-            <MessageBubble type="system" icon="🤖" iconColor="#2B5B5C" content="Thinking…" />
+            <MessageBubble type="system" icon={<Bot className="w-5 h-5" />} iconColor="#3B82F6" content="Thinking…" />
           )}
           {hitlPending && (
             <div className="flex gap-3 justify-center">
-              <button onClick={() => handleHitl('approve')} className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 shadow">
+              <button onClick={() => handleHitl('approve')} className="bg-[#166534] hover:bg-[#15803D] text-white px-6 py-3 rounded-lg font-medium transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
                 ✅ Approve — Move to Quarantine
               </button>
-              <button onClick={() => handleHitl('reject')} className="bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 shadow">
+              <button onClick={() => handleHitl('reject')} className="bg-[#991B1B] hover:bg-[#B91C1C] text-white px-6 py-3 rounded-lg font-medium transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
                 ❌ Reject — Discard
               </button>
             </div>
@@ -286,14 +391,14 @@ export function ChatArea({
 
         {/* Attached image preview with live barcode details */}
         {(attachedImage || scanning) && (
-          <div className="mx-4 mb-3 flex flex-col gap-2 bg-[#1E4A4C]/5 border border-[#1E4A4C]/15 rounded-2xl px-4 py-3">
+          <div className="mx-4 mb-3 flex flex-col gap-2 bg-[#111113] border border-[#27272A] rounded-xl px-4 py-3">
             <div className="flex items-center gap-3">
-              <ImageIcon className="w-5 h-5 text-[#1E4A4C] shrink-0" />
-              <span className="text-sm font-medium text-[#1E4A4C] flex-1 truncate">
+              <ImageIcon className="w-5 h-5 text-[#3B82F6] shrink-0" />
+              <span className="text-sm font-medium text-[#F4F4F5] flex-1 truncate" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
                 {attachedImage?.name ?? 'Scanning…'}
               </span>
               {attachedImage && (
-                <button onClick={() => { setAttachedImage(null); setBarcodeResult(null); }} className="text-gray-400 hover:text-rose-500 transition-colors">
+                <button onClick={() => { setAttachedImage(null); setBarcodeResult(null); }} className="text-[#71717A] hover:text-[#EF4444] transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -307,34 +412,36 @@ export function ChatArea({
         <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleImagePick} />
 
         <div className={`relative group mx-4 shrink-0 ${messages.length > 0 ? "mt-auto" : "max-w-3xl mx-auto w-full"}`}>
-          <div className="absolute -inset-1 bg-gradient-to-r from-[#1E4A4C] to-[#2B5B5C] rounded-[2rem] blur-md opacity-20 group-hover:opacity-30 transition duration-500"></div>
-          <div className="relative bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-xl p-3 flex items-center gap-3 border border-white/80">
+          <div className="relative bg-[#18181B] backdrop-blur-2xl rounded-xl shadow-xl p-3 flex items-center gap-3 border border-[#27272A]">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-12 h-12 rounded-2xl bg-[#C5D3D3]/40 hover:bg-[#1E4A4C] text-[#1E4A4C] hover:text-white flex items-center justify-center transition-all duration-300 transform hover:scale-105 shrink-0"
+              data-tour="attach-btn"
+              className="w-11 h-11 rounded-lg bg-[#27272A] hover:bg-[#3B82F6] text-[#71717A] hover:text-white flex items-center justify-center transition-all duration-300 transform hover:scale-105 shrink-0"
               title="Attach File"
             >
-              <Plus className="w-6 h-6" />
+              <Plus className="w-5 h-5" />
             </button>
             <input
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              data-tour="chat-input"
               placeholder={attachedImage ? 'Describe the file or press send to scan…' : 'Type your message, attach labels/PDFs or ask a question...'}
-              className="flex-1 bg-transparent px-3 py-3 outline-none text-gray-800 placeholder:text-gray-400 font-medium text-[15px]"
+              className="flex-1 bg-transparent px-3 py-3 outline-none text-[#F4F4F5] placeholder:text-[#52525B] font-normal text-[15px]"
+              style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
               disabled={isLoading}
             />
             <div className="flex items-center gap-2 pr-1 shrink-0">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading || scanning}
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors ${
+                className={`w-11 h-11 rounded-lg flex items-center justify-center transition-colors ${
                   scanning
-                    ? 'bg-amber-100 text-amber-500 animate-pulse'
+                    ? 'bg-[#451A03] text-[#FB923C] animate-pulse'
                     : attachedImage
-                    ? 'bg-[#1E4A4C]/10 text-[#1E4A4C]'
-                    : 'hover:bg-[#C5D3D3]/50 text-gray-500 hover:text-[#1E4A4C]'
+                    ? 'bg-[#0C1A2E] text-[#3B82F6]'
+                    : 'hover:bg-[#27272A] text-[#71717A] hover:text-[#F4F4F5]'
                 } ${uploading ? 'animate-pulse' : ''}`}
                 title={scanning ? 'Scanning...' : 'Attach image or PDF for scanning'}
               >
@@ -343,8 +450,8 @@ export function ChatArea({
               <button
                 onClick={isListening ? undefined : startListening}
                 title="Voice Input"
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors ${
-                  isListening ? 'bg-rose-100 text-rose-500 animate-pulse' : 'hover:bg-[#C5D3D3]/50 text-gray-500 hover:text-[#1E4A4C]'
+                className={`w-11 h-11 rounded-lg flex items-center justify-center transition-colors ${
+                  isListening ? 'bg-[#1A0000] text-[#EF4444] animate-pulse' : 'hover:bg-[#27272A] text-[#71717A] hover:text-[#F4F4F5]'
                 }`}
               >
                 <Mic className="w-5 h-5" />
@@ -352,10 +459,10 @@ export function ChatArea({
               <button
                 onClick={handleSend}
                 disabled={isLoading || scanning || (!message.trim() && !attachedImage)}
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 transform ${
+                className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300 transform ${
                   (message.trim() || attachedImage) && !isLoading && !scanning
-                    ? 'bg-gradient-to-r from-[#1E4A4C] to-[#2B5B5C] hover:scale-105 text-white shadow-lg shadow-[#1E4A4C]/30'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    ? 'bg-[#3B82F6] hover:scale-105 text-white shadow-lg shadow-[#3B82F6]/30'
+                    : 'bg-[#27272A] text-[#52525B] cursor-not-allowed'
                 }`}
               >
                 <ArrowUp className="w-6 h-6" />
