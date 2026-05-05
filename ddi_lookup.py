@@ -194,40 +194,43 @@ def get_all_interactions_for(drug_name: str) -> str:
 
 def format_interaction_result(drug_a: str, drug_b: str) -> str:
     """
-    User-friendly interaction check result.
-    Written for pharmacists and patients — no technical jargon.
+    Clinical interaction check result formatted as clean plain text.
+    No emojis, no markdown. Suitable for direct display in a professional UI.
     """
     result = check_interaction(drug_a, drug_b)
 
-    # Display names (use what the user typed, but title-cased)
     name_a = drug_a.title()
     name_b = drug_b.title()
 
     if not result["found"]:
         return (
-            f"We don't have specific data on **{name_a}** or **{name_b}** in our drug "
-            f"interaction database right now.\n\n"
-            f"**Please consult a pharmacist or your doctor before taking these together.** "
-            f"They can check a comprehensive interaction database and review your full medication history."
+            f"Neither {name_a} nor {name_b} was found in the FDA openFDA drug label dataset. "
+            f"This does not confirm they are safe to combine.\n\n"
+            f"Recommendation: Consult a licensed pharmacist or physician before taking these "
+            f"medications together. A clinical database review of your full medication history "
+            f"is advised."
         )
 
     if result["interaction_detected"]:
-        # Clean up the raw FDA text into something readable
+        # Clean up raw FDA label text
         raw = result["interaction_text"] or ""
-        # Remove section headers like "Drug Interactions Anticoagulants"
-        cleaned = re.sub(r'^[A-Z][A-Za-z /]+\n', '', raw).strip()
-        # Limit to a readable length
-        if len(cleaned) > 400:
-            cleaned = cleaned[:400].rsplit(".", 1)[0] + "."
+        # Remove all-caps section headers (e.g. "DRUG INTERACTIONS\n")
+        cleaned = re.sub(r'^[A-Z][A-Z /\-]+\n', '', raw).strip()
+        # Remove any leading label noise
+        cleaned = re.sub(r'^Drug Interactions[^\n]*\n', '', cleaned, flags=re.IGNORECASE).strip()
+        if len(cleaned) > 500:
+            cleaned = cleaned[:500].rsplit(".", 1)[0] + "."
 
         return (
-            f"⚠️ **Yes, there is a known interaction between {name_a} and {name_b}.**\n\n"
+            f"A clinically significant interaction has been identified between {name_a} and {name_b}.\n\n"
+            f"FDA Label Excerpt:\n"
             f"{cleaned}\n\n"
-            f"**What this means for you:** Taking these two medications together may require "
-            f"dose adjustment or extra monitoring. Do not stop or change your medication without "
-            f"speaking to your doctor first.\n\n"
-            f"> 💊 Always inform your pharmacist about all the medicines you are taking, "
-            f"including over-the-counter drugs and supplements."
+            f"Clinical Guidance: Concurrent use of these agents may require dose adjustment, "
+            f"enhanced monitoring, or an alternative therapeutic approach. Do not modify or "
+            f"discontinue any medication without first consulting the prescribing physician or "
+            f"a qualified pharmacist.\n\n"
+            f"Always disclose your complete medication list — including over-the-counter drugs, "
+            f"vitamins, and herbal supplements — to your healthcare provider."
         )
     else:
         missing = []
@@ -239,14 +242,16 @@ def format_interaction_result(drug_a: str, drug_b: str) -> str:
         caveat = ""
         if missing:
             caveat = (
-                f"\n\n*Note: We don't have full data for {' and '.join(missing)}, "
-                f"so this result may not be complete.*"
+                f"\n\nNote: {' and '.join(missing)} could not be fully matched in the FDA dataset. "
+                f"This result may be incomplete."
             )
 
         return (
-            f"✅ **No direct interaction was found between {name_a} and {name_b}** "
-            f"in our drug interaction records.{caveat}\n\n"
-            f"This does not mean they are completely risk-free when combined — individual "
-            f"factors like your health conditions, dosage, and other medications matter.\n\n"
-            f"> 💊 When in doubt, always check with your pharmacist before combining medicines."
+            f"No direct interaction between {name_a} and {name_b} was identified in the "
+            f"FDA openFDA drug label records.{caveat}\n\n"
+            f"This result does not confirm absolute safety. Individual patient factors — including "
+            f"comorbidities, renal or hepatic function, dosage, and concurrent therapies — may "
+            f"alter clinical risk.\n\n"
+            f"When in doubt, verify with a pharmacist or consult a comprehensive drug interaction "
+            f"database such as Lexicomp or Micromedex before co-administering these agents."
         )

@@ -64,9 +64,17 @@ try:
     for _stale in list(firebase_admin._apps.values()):
         firebase_admin.delete_app(_stale)
 
-    _default_key = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firebase_key.json")
+    _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    _default_key = os.path.join(_SCRIPT_DIR, "firebase_key.json")
     _json_str = os.getenv("FIREBASE_CREDENTIALS_JSON", "")
-    _cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", _default_key)
+    _cred_path_raw = os.getenv("FIREBASE_CREDENTIALS_PATH", _default_key)
+
+    # Resolve relative paths against the project root (script directory)
+    # so the server works regardless of the CWD it is launched from.
+    if not os.path.isabs(_cred_path_raw):
+        _cred_path = os.path.join(_SCRIPT_DIR, _cred_path_raw)
+    else:
+        _cred_path = _cred_path_raw
 
     if _json_str:
         import json as _json
@@ -92,24 +100,46 @@ except Exception as e:
     db = MockFirestore()
     MOCK_MODE = True
 
-import mock_data
+from scripts import mock_data
 
 def init_db():
     """No-op: Firestore is schema-less, no table creation needed."""
     pass
 
 def insert_batch(batch_number: str, expiry_date: str, product_name: str = "Unknown", category: str = "Unknown", stock: int = 0, user_id: str = "legacy"):
-    """Insert a new batch into the 'batches' collection."""
+    """Insert a new batch into the 'batches' collection, or merge stock if it already exists."""
     if MOCK_MODE:
         return
+        
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    db.collection(_user_collection(user_id, COLLECTION)).add({
+    collection_ref = db.collection(_user_collection(user_id, COLLECTION))
+    
+    docs = collection_ref.where(filter=firestore.FieldFilter("batch_number", "==", batch_number)).stream()
+    for doc in docs:
+        d = doc.to_dict()
+        if d.get("expiry_date") == expiry_date:
+            existing_stock = 0
+            for field in _STOCK_FIELDS:
+                if field in d:
+                    try:
+                        existing_stock = int(d[field])
+                    except (ValueError, TypeError):
+                        pass
+                    break
+            
+            doc.reference.update({
+                "stock": existing_stock + stock,
+                "updated_at": current_time
+            })
+            return
+
+    collection_ref.add({
         "batch_number": batch_number,
         "expiry_date":  expiry_date,
         "product_name": product_name,
         "category":     category,
         "logged_at":    current_time,
-        "Number":       stock,
+        "stock":        stock,
     })
 
 def update_product_name(batch_number: str, new_name: str, user_id: str = "legacy") -> bool:
@@ -138,36 +168,61 @@ def insert_quarantine(batch_number: str, expiry_date: str, product_name: str = "
     })
 
 def get_inventory(user_id: str = "legacy"):
-    """Returns a list of tuples: (batch_number, expiry_date, product_name, category, logged_at, stock)"""
+    """Returns a list of tuples: (batch_number, expiry_date, product_name, category, logged_at, stock)
+    Reads from ALL possible Firestore paths (user-scoped + root collections) so
+    items added via the Firebase Console or legacy code are always included.
+    """
     if MOCK_MODE:
         return mock_data.MOCK_BATCHES
 
+    def _read_as_tuples(col_path: str) -> list[tuple]:
+        out = []
+        try:
+            for doc in db.collection(col_path).stream(timeout=10):
+                d = doc.to_dict()
+                if not d:
+                    continue
+                stock_val = 0
+                for f in _STOCK_FIELDS:
+                    if f in d:
+                        try:
+                            stock_val = int(d[f])
+                        except (ValueError, TypeError):
+                            stock_val = 0
+                        break
+                out.append((
+                    d.get("batch_number", ""),
+                    d.get("expiry_date", ""),
+                    d.get("product_name", "Unknown"),
+                    d.get("category", "Unknown"),
+                    d.get("logged_at", ""),
+                    stock_val,
+                ))
+        except Exception as e:
+            print(f"[get_inventory] stream error ({col_path}): {e}")
+        return out
+
     try:
-        docs = db.collection(_user_collection(user_id, COLLECTION)).stream(timeout=10)
-        results = []
-        for doc in docs:
-            d = doc.to_dict()
-            stock_val = 0
-            for f in _STOCK_FIELDS:
-                if f in d:
-                    try:
-                        stock_val = int(d[f])
-                    except (ValueError, TypeError):
-                        stock_val = 0
-                    break
-            results.append((
-                d.get("batch_number", ""),
-                d.get("expiry_date", ""),
-                d.get("product_name", "Unknown"),
-                d.get("category", "Unknown"),
-                d.get("logged_at", ""),
-                stock_val,
-            ))
-        # In LIVE mode, return all items with stock > 0 (empty list for new users)
-        return [r for r in results if r[-1] > 0]
+        # 1. User-scoped
+        results = _read_as_tuples(_user_collection(user_id, COLLECTION))
+        seen_bns = {r[0] for r in results}  # deduplicate by batch_number
+
+        # 2. Root 'batches' (legacy / Firebase Console adds)
+        if user_id != "legacy":
+            for row in _read_as_tuples(COLLECTION):
+                if row[0] not in seen_bns:
+                    results.append(row)
+                    seen_bns.add(row[0])
+
+        # 3. Root 'inventory' collection
+        for row in _read_as_tuples(INVENTORY_COLLECTION):
+            if row[0] not in seen_bns:
+                results.append(row)
+                seen_bns.add(row[0])
+
+        return results
     except Exception as e:
         print(f"Firestore stream error: {e}")
-        # In LIVE mode, return empty list — do NOT leak mock data to real users
         return []
 
 SALES_LOG_COLLECTION = "daily_sales_log"
@@ -265,8 +320,11 @@ def delete_chat_session(thread_id: str, user_id: str = "legacy") -> None:
 
 def get_inventory_with_stock(user_id: str = "legacy") -> list[dict]:
     """Fetch all medicines with stock info.
-    Reads from BOTH the user-scoped path AND the legacy root collection so
-    items added in Firebase Console or by old agent calls all appear.
+    Reads from ALL possible Firestore paths so nothing is missed:
+      1. users/{uid}/batches   — user-scoped (new app writes)
+      2. batches               — root legacy collection (console / old agent)
+      3. inventory             — root inventory collection (some older writes)
+    Results are deduplicated by doc_id.
     """
     if MOCK_MODE:
         return [{
@@ -284,6 +342,8 @@ def get_inventory_with_stock(user_id: str = "legacy") -> list[dict]:
             out = []
             for doc in db.collection(col_path).stream():
                 d = doc.to_dict()
+                if not d:  # skip empty docs
+                    continue
                 stock_val = 0
                 for field in _STOCK_FIELDS:
                     if field in d:
@@ -300,16 +360,37 @@ def get_inventory_with_stock(user_id: str = "legacy") -> list[dict]:
                     "expiry_date":       d.get("expiry_date", ""),
                     "stock":             stock_val,
                     "reorder_dismissed": bool(d.get("reorder_dismissed", False)),
+                    "_source_col":       col_path,  # debug only
                 })
             return out
         except Exception as e:
             print(f"[db] read error ({col_path}): {e}")
             return []
 
-    # Read user-scoped items
-    results = _read_col(_user_collection(user_id, COLLECTION))
+    # 1. Primary: user-scoped collection
+    user_col = _user_collection(user_id, COLLECTION)
+    results = _read_col(user_col)
+    seen_ids = {r["doc_id"] for r in results}
 
-    print(f"[db] inventory: {len(results)} item(s) for user={user_id}")
+    # 2. Root 'batches' collection — items added via Firebase Console or old agent code
+    if user_id != "legacy":
+        for item in _read_col(COLLECTION):
+            if item["doc_id"] not in seen_ids:
+                results.append(item)
+                seen_ids.add(item["doc_id"])
+
+    # 3. Root 'inventory' collection — some older writes used this name
+    for item in _read_col(INVENTORY_COLLECTION):
+        if item["doc_id"] not in seen_ids:
+            results.append(item)
+            seen_ids.add(item["doc_id"])
+
+    # Strip internal debug field before returning
+    for r in results:
+        r.pop("_source_col", None)
+
+    print(f"[db] inventory: {len(results)} item(s) total for user={user_id} "
+          f"(paths checked: {user_col}, {COLLECTION}, {INVENTORY_COLLECTION})")
     return results
 
 
@@ -317,7 +398,7 @@ def set_stock(doc_id: str, stock: int, user_id: str = "legacy"):
     """Update stock for a specific document."""
     if MOCK_MODE:
         return
-    db.collection(_user_collection(user_id, COLLECTION)).document(doc_id).update({"Number": stock})
+    db.collection(_user_collection(user_id, COLLECTION)).document(doc_id).update({"stock": stock})
 def get_todays_sales_log(user_id: str = "legacy") -> list[dict]:
     """Fetch sales logs for today."""
     if MOCK_MODE:
@@ -455,27 +536,23 @@ def process_midnight_deductions(user_id: str = "legacy"):
     return f"✅ Archived {len(past_docs)} logs."
 
 def get_reorder_alerts(user_id: str = "legacy") -> list[dict]:
-    """Return items with zero or low stock."""
+    """Return items with zero or low stock — scans ALL Firestore paths."""
     if MOCK_MODE:
         return []
-    docs = db.collection(_user_collection(user_id, COLLECTION)).stream()
+    # Reuse get_inventory_with_stock which already merges all collection paths
+    all_items = get_inventory_with_stock(user_id)
     results = []
-    for doc in docs:
-        d = doc.to_dict()
-        if d.get("reorder_dismissed", False): continue
-        stock_val = 0
-        for field in _STOCK_FIELDS:
-            if field in d:
-                try: stock_val = int(d[field]); break
-                except: stock_val = 0
-        if stock_val <= 10:
+    for item in all_items:
+        if item.get("reorder_dismissed", False):
+            continue
+        if item.get("stock", 0) <= 10:
             results.append({
-                "doc_id": doc.id,
-                "batch_number": d.get("batch_number", doc.id),
-                "product_name": d.get("product_name", "Unknown"),
-                "category": d.get("category", "Unknown"),
-                "expiry_date": d.get("expiry_date", ""),
-                "stock": stock_val
+                "doc_id":       item["doc_id"],
+                "batch_number": item["batch_number"],
+                "product_name": item["product_name"],
+                "category":     item["category"],
+                "expiry_date":  item["expiry_date"],
+                "stock":        item["stock"],
             })
     return results
 
@@ -485,38 +562,33 @@ def dismiss_reorder_alert(doc_id: str, user_id: str = "legacy"):
     db.collection(_user_collection(user_id, COLLECTION)).document(doc_id).update({"reorder_dismissed": True})
 
 def get_expired_items(user_id: str = "legacy") -> list[dict]:
-    """Return items past their expiry date."""
+    """Return items past or approaching expiry — scans ALL Firestore paths."""
     if MOCK_MODE:
         return []
-    today_str = datetime.date.today().isoformat()
-    docs = db.collection(_user_collection(user_id, COLLECTION)).stream()
+    # Reuse get_inventory_with_stock which already merges all collection paths
+    all_items = get_inventory_with_stock(user_id)
     results = []
-    for doc in docs:
-        d = doc.to_dict()
-        if d.get("expiry_dismissed", False): continue
-        expiry = d.get("expiry_date", "")
-        if not expiry: continue
-        stock_val = 0
-        for f in _STOCK_FIELDS:
-            if f in d:
-                try: stock_val = int(d[f]); break
-                except: stock_val = 0
+    for item in all_items:
+        if item.get("expiry_dismissed", False):
+            continue
+        expiry = item.get("expiry_date", "")
+        if not expiry:
+            continue
         try:
             days_expired = (datetime.date.today() - datetime.date.fromisoformat(expiry)).days
-        except:
+        except Exception:
             days_expired = 0
-
-        # Skip if expiry is further out than 90 days
-        if days_expired < -90: continue
-
+        # Skip items expiring more than 90 days in the future
+        if days_expired < -90:
+            continue
         results.append({
-            "doc_id": doc.id,
-            "batch_number": d.get("batch_number", doc.id),
-            "product_name": d.get("product_name", "Unknown"),
-            "category": d.get("category", "Unknown"),
-            "expiry_date": expiry,
-            "stock": stock_val,
-            "days_expired": days_expired
+            "doc_id":       item["doc_id"],
+            "batch_number": item["batch_number"],
+            "product_name": item["product_name"],
+            "category":     item["category"],
+            "expiry_date":  expiry,
+            "stock":        item.get("stock", 0),
+            "days_expired": days_expired,
         })
     return sorted(results, key=lambda x: x["expiry_date"], reverse=True)
 

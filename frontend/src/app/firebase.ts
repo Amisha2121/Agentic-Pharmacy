@@ -1,6 +1,6 @@
 // firebase.ts — Initialize Firebase app and export auth instance
 import { initializeApp } from 'firebase/app';
-import { getAnalytics } from 'firebase/analytics';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 import {
   getAuth,
   GoogleAuthProvider,
@@ -25,7 +25,13 @@ const firebaseConfig = {
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
-export const analytics = getAnalytics(firebaseApp);
+
+// Analytics is optional — only initialise when the browser supports it
+// (avoids crashes in SSR / non-browser environments or when the SDK blocks).
+export const analytics = isSupported()
+  .then((yes) => (yes ? getAnalytics(firebaseApp) : null))
+  .catch(() => null);
+
 export const auth: Auth = getAuth(firebaseApp);
 export const googleProvider = new GoogleAuthProvider();
 

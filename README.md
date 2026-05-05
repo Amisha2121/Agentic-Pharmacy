@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💊 PharmaAI
+# 💊 PharmaAI (Agentic Pharmacy)
 
 ![React](https://img.shields.io/badge/React_18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
@@ -9,80 +9,90 @@
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 ![LangGraph](https://img.shields.io/badge/LangGraph-000000?style=for-the-badge)
 
-**Agentic Pharmacy Intelligence — AI-powered inventory, barcode scanning & drug interaction detection.**
+**Agentic Pharmacy Intelligence — AI-powered inventory management, multimodal barcode scanning & clinical drug interaction detection.**
 
 </div>
 
 ---
 
-## ✨ Features
+## 📖 About the Project
 
-| Feature | Description |
-|---|---|
-| 💬 **AI Chat Assistant** | Conversational agent for inventory queries, stock updates, and clinical lookups via text or voice |
-| 📦 **Live Inventory** | Real-time category grid with CSV export, stock editing, and reorder alerts |
-| 🔖 **GS1 Barcode Scanning** | Instant local decode of GS1-128, DataMatrix, QR & EAN barcodes via `zxing-cpp` |
-| 🧠 **Vision Extraction** | Multimodal LLM reads medicine labels from uploaded images or PDFs |
-| ⛔ **Expiry Watch** | 90-day early warning system for upcoming and past expirations |
-| 💊 **Drug Interaction Checker** | FDA DDI dataset + ChromaDB RAG fallback for clinical safety queries |
-| 🛒 **Daily Sales Log** | Fast stock deduction interface with persistent sales history |
-| 🔐 **Firebase Auth** | Google OAuth, email/password, and phone OTP sign-up |
+PharmaAI is a next-generation pharmacy management system that leverages state-of-the-art agentic AI to streamline daily workflows. Designed for pharmacists and medical staff, the system replaces traditional point-of-sale and inventory software with an intuitive, conversational interface.
+
+By combining deterministic tools (like local GS1 barcode decoding) with advanced large language models (for visual data extraction and clinical RAG), PharmaAI reduces manual data entry, prevents stockouts, and enhances patient safety by actively monitoring drug-drug interactions.
+
+## ✨ Key Features
+
+- 💬 **AI Chat Assistant**: A LangGraph-powered conversational agent that handles inventory queries, stock updates, clinical safety lookups, and general medical knowledge queries via text or voice.
+- 📦 **Live Inventory Dashboard**: A real-time, user-scoped grid displaying stock levels, categories, with inline editing and instant CSV export.
+- 🔖 **Instant Barcode Scanning**: Local, zero-latency decoding of GS1-128, DataMatrix, QR, and EAN barcodes via `zxing-cpp`.
+- 🧠 **Vision Extraction Engine**: Multimodal LLM capabilities to read complex medicine labels directly from uploaded photos or batch-process multiple pages of PDF invoices directly into the Live Inventory.
+- ⛔ **Expiry & Reorder Watch**: Automated 90-day early warning system for upcoming expirations and low-stock threshold alerts.
+- 💊 **Clinical Safety Checker**: Integration with the FDA OpenFDA dataset plus a ChromaDB-powered Retrieval-Augmented Generation (RAG) fallback for drug interaction checks.
+- 🛒 **Daily Sales Log**: Fast, streamlined interface for daily stock deduction and historical sales tracking.
+- 🔐 **Secure Authentication**: Firebase-backed auth supporting Google OAuth, Email/Password, and Phone OTP, with strict user-data isolation.
 
 ---
 
 ## 🏗️ Architecture
 
+PharmaAI is built on a modern, decoupled stack.
+
+### Tech Stack
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + TypeScript + Vite |
-| Backend | FastAPI (Python) — REST + SSE streaming |
-| Database | Firebase Firestore (user-scoped) |
-| AI Orchestration | LangGraph state machine + Groq API |
-| LLM — Text | `llama-3.3-70b-versatile` |
-| LLM — Vision | `llama-4-scout-17b` (multimodal) |
-| Voice | Groq Whisper `whisper-large-v3` |
-| Barcode | `zxing-cpp` — local, no API call |
-| Vector Search | ChromaDB Cloud (clinical RAG) |
-| Drug Interactions | FDA OpenFDA DDI via `ddi_lookup.py` |
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Lucide Icons |
+| **Backend** | FastAPI (Python) — REST API + Server-Sent Events (SSE) streaming |
+| **Database** | Firebase Firestore (Strictly user-scoped collections) |
+| **AI Orchestration** | LangGraph (State Machine Architecture) |
+| **LLM (Text)** | `llama-3.1-8b-instant` (via Groq API) |
+| **LLM (Vision)** | `llama-4-scout-17b` (Multimodal analysis) |
+| **Speech-to-Text** | Groq Whisper (`whisper-large-v3`) |
+| **Barcode Decoder** | `zxing-cpp` (Fast local C++ bindings, no external API calls) |
+| **Vector DB** | ChromaDB Cloud (For clinical RAG lookups) |
+| **Medical Data** | FDA OpenFDA DDI (`ddi_lookup.py`) |
 
 ### LangGraph Agent Pipeline
+The core of the assistant is a routing supervisor that directs user requests to specialized nodes:
 
-```
-User Input (text / voice / image / PDF)
+```text
+User Input (Text / Voice / Image / PDF)
     │
     ▼
-Barcode Pre-Scan (zxing-cpp, before LLM)
+Barcode Pre-Scan (Local zxing-cpp decode)
     │
     ▼
-Supervisor Node  ──► routes by intent
+Supervisor Node  ──► Routes by intent classification
     │
-    ├── Image/PDF  → Vision Extraction Node → HITL Approval (if expired)
-    ├── ADD text   → Add Medicine Node
-    ├── CLINICAL   → DDI Lookup + ChromaDB RAG
-    ├── UPDATE     → Database Update Node
-    └── INVENTORY  → Database Query Node
+    ├── [IMAGE/PDF]  → Vision Extraction Node → HITL Approval (if expired)
+    ├── [ADD]        → Add Medicine Node
+    ├── [CLINICAL]   → DDI Lookup + ChromaDB RAG Synthesis
+    ├── [UPDATE]     → Database Update Node
+    └── [INVENTORY]  → Database Query Node
 ```
 
-All Firestore writes are scoped to `users/{uid}/batches` — data is never shared between accounts.
+*Security Note: All Firestore writes and reads are scoped to `users/{uid}/*`. Data is never shared or leaked between accounts.*
 
 ---
 
 ## 🌐 API Endpoints
 
+The FastAPI backend provides robust REST endpoints alongside the streaming chat interface.
+
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/chat` | SSE stream — runs the LangGraph agent |
-| `POST` | `/api/chat/resume` | Resume after HITL interrupt |
-| `POST` | `/api/scan-barcode` | Instant barcode decode (GS1 data) |
-| `POST` | `/api/upload-image` | Image upload for vision processing |
-| `GET` | `/api/inventory` | Full user inventory with stock levels |
-| `POST` | `/api/inventory` | Add item manually |
-| `DELETE` | `/api/inventory/{id}` | Delete a batch |
-| `PATCH` | `/api/inventory/{id}/stock` | Update stock count |
-| `GET/POST/DELETE` | `/api/sales` | Daily sales log CRUD |
-| `GET` | `/api/reorder-alerts` | Low-stock alerts |
-| `GET` | `/api/expired` | Upcoming/past expiry watch |
-| `GET/DELETE` | `/api/sessions` | Chat session history |
+| `POST` | `/api/chat` | Main SSE stream — processes messages via the LangGraph agent |
+| `POST` | `/api/chat/resume` | Resumes the agent workflow after a Human-In-The-Loop (HITL) interrupt |
+| `POST` | `/api/scan-barcode` | Instant barcode decode, returning GS1 standard data |
+| `POST` | `/api/upload-image` | Temporary image upload for vision processing |
+| `GET` | `/api/inventory` | Retrieves full user inventory with real-time stock levels |
+| `POST` | `/api/inventory` | Add a new item manually |
+| `DELETE` | `/api/inventory/{id}` | Delete a specific batch |
+| `PATCH` | `/api/inventory/{id}/stock` | Quick-update stock count |
+| `GET/POST/DELETE` | `/api/sales` | CRUD operations for the daily sales log |
+| `GET` | `/api/reorder-alerts` | Fetch items at or below reorder threshold |
+| `GET` | `/api/expired` | Fetch items past or approaching expiry |
+| `GET/DELETE` | `/api/sessions` | Manage chat session history |
 
 ---
 
@@ -91,57 +101,89 @@ All Firestore writes are scoped to `users/{uid}/batches` — data is never share
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- Firebase project with Firestore + Authentication enabled
-- Groq API key
+- A Firebase project with Firestore and Authentication (Email, Google, Phone) enabled.
+- API Keys for Groq and ChromaDB.
 
-### 1. Backend
+### 1. Backend Setup
 
 ```bash
-# Clone and enter directory
+# Clone the repository and enter the directory
+git clone https://github.com/yourusername/Agentic-Pharmacy.git
 cd Agentic-Pharmacy-main
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
-# Configure environment
+# Configure environment variables
 cp .env.example .env
-# Fill in: GROQ_API_KEY, FIREBASE_CREDENTIALS_JSON, CHROMA_API_KEY
-
-# Run backend
-python api.py
-# → http://localhost:8000
 ```
-
-### 2. Frontend
+Open `.env` and fill in:
+- `GROQ_API_KEY`
+- `FIREBASE_CREDENTIALS_PATH` (or `FIREBASE_CREDENTIALS_JSON`)
+- `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE`
 
 ```bash
-cd frontend
-npm install
-npm run dev
-# → http://localhost:5173
+# Start the FastAPI backend
+python api.py
+# Server runs on http://localhost:8000
 ```
 
-### 3. Firebase Setup
-- Enable **Firestore** and **Authentication** (Email, Google, Phone) in Firebase Console
-- Download your service account JSON as `firebase_key.json` in the project root
-- Add your Firebase web config to `frontend/src/firebase.ts`
+### 2. Frontend Setup
+
+```bash
+# Open a new terminal window
+cd Agentic-Pharmacy-main/frontend
+
+# Install Node dependencies
+npm install
+
+# Configure environment variables
+cp .env.example .env
+```
+Open `frontend/.env` and add your Firebase configuration variables (e.g., `VITE_FIREBASE_API_KEY`, etc.).
+
+```bash
+# Start the Vite development server
+npm run dev
+# App runs on http://localhost:5173
+```
+
+### 3. Firebase Configuration details
+1. Go to the [Firebase Console](https://console.firebase.google.com/).
+2. Enable **Firestore Database**.
+3. Enable **Authentication** and turn on the Email/Password, Google, and Phone providers.
+4. Go to Project Settings -> Service Accounts, generate a new private key, and save it as `firebase_key.json` in the root of the project (`Agentic-Pharmacy-main/`).
+5. Copy your Web App configuration keys into the frontend's `.env` file.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 Agentic-Pharmacy-main/
-├── api.py              # FastAPI server + SSE streaming
-├── agent.py            # LangGraph agent (all nodes)
-├── database.py         # Firestore CRUD (user-scoped)
-├── barcode_scanner.py  # zxing-cpp GS1 barcode decoder
-├── ddi_lookup.py       # Drug-drug interaction checker
-├── requirements.txt
-└── frontend/
+├── api.py              # FastAPI server + HTTP routes + SSE streaming
+├── agent.py            # LangGraph agent definitions and routing logic
+├── database.py         # Universal Firestore CRUD operations
+├── barcode_scanner.py  # Local zxing-cpp GS1 barcode decoder wrapper
+├── ddi_lookup.py       # OpenFDA Drug-Drug Interaction checker
+├── requirements.txt    # Pinned Python dependencies
+├── .env.example        # Backend environment variables template
+├── scripts/            # Dev utilities, eval scripts, migration helpers
+│   ├── daily_alert_job.py
+│   ├── build_ddi_dataset.py
+│   └── evaluation_runner.py
+└── frontend/           # React + Vite Web Application
+    ├── index.html
+    ├── package.json
+    ├── .env.example    # Frontend environment variables template
     └── src/
-        ├── app/pages/  # Login, Signup, Dashboard pages
-        └── firebase.ts # Firebase client config
+        ├── app/
+        │   ├── components/ # Chat UI, Sidebar, Premium Barcode Scanner UI, etc.
+        │   ├── context/    # Auth and App state providers
+        │   ├── pages/      # Inventory, Sales, Auth, Settings
+        │   └── utils/      # API helpers (e.g., authenticatedFetch)
+        ├── firebase.ts     # Firebase client initialization
+        └── main.tsx        # React mounting point
 ```
 
 ---

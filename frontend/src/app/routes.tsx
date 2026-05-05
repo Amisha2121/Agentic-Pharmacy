@@ -5,6 +5,7 @@ import { LiveInventory } from "./pages/LiveInventory";
 import { LogDailySales } from "./pages/LogDailySales";
 import { ReorderAlerts } from "./pages/ReorderAlerts";
 import { ExpiredItems } from "./pages/ExpiredItems";
+import { DrugInteractions } from "./pages/DrugInteractions";
 import { Settings } from "./pages/Settings";
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
       { path: "sales", Component: LogDailySales },
       { path: "reorder", Component: ReorderAlerts },
       { path: "expired", Component: ExpiredItems },
+      { path: "interactions", Component: DrugInteractions },
       { path: "settings", Component: Settings },
     ],
   },

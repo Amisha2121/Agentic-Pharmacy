@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Mic, ArrowUp, Paperclip, Menu, History, X, ImageIcon, ScanLine, Bot, User, CheckCircle, AlertCircle, XCircle, Pill, PlusCircle, Search, ClipboardList, Camera, AlertTriangle, Clock } from 'lucide-react';
-import { MessageBubble } from './MessageBubble';
+import { MessageBubble, TypingIndicator } from './MessageBubble';
 import { useAuth } from '../context/AuthContext';
 import { authenticatedFetch } from '../utils/api';
 
@@ -11,6 +11,7 @@ interface Message {
   iconColor: string;
   content: string;
   warning?: string;
+  timestamp?: string;
 }
 
 interface BarcodeResult {
@@ -139,8 +140,9 @@ export function ChatArea({
     setMessage('');
 
     const imagePaths = attachedImage ? [attachedImage.path] : [];
-    const userContent = text || (attachedImage ? `📎 File attached: ${attachedImage.name}` : '');
-    appendMessage({ id: Date.now().toString(), type: 'user', icon: <User className="w-5 h-5" />, iconColor: '#3B82F6', content: userContent });
+    const userContent = text || (attachedImage ? `File attached: ${attachedImage.name}` : '');
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    appendMessage({ id: Date.now().toString(), type: 'user', icon: <User className="w-5 h-5" />, iconColor: '#3B82F6', content: userContent, timestamp: now });
     setAttachedImage(null);
     setBarcodeResult(null);
     setIsLoading(true);
@@ -166,12 +168,15 @@ export function ChatArea({
           if (!line.startsWith('data: ')) continue;
           const payload = JSON.parse(line.slice(6));
           if (payload.type === 'done') {
-            appendMessage({ id: Date.now().toString(), type: 'system', icon: <Bot className="w-5 h-5" />, iconColor: '#3B82F6', content: payload.content });
+            const ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            appendMessage({ id: Date.now().toString(), type: 'system', icon: <Bot className="w-5 h-5" />, iconColor: '#3B82F6', content: payload.content, timestamp: ts });
           } else if (payload.type === 'hitl') {
             setHitlPending(payload.product as Record<string, unknown>);
-            appendMessage({ id: Date.now().toString(), type: 'system', icon: <AlertCircle className="w-5 h-5" />, iconColor: '#ef4444', content: `HITL Checkpoint: expired medication detected — **${payload.product?.name ?? '?'}**. Please approve or reject below.` });
+            const ts2 = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            appendMessage({ id: Date.now().toString(), type: 'system', icon: <AlertCircle className="w-5 h-5" />, iconColor: '#ef4444', content: `HITL Checkpoint: expired medication detected — **${payload.product?.name ?? '?'}**. Please approve or reject below.`, timestamp: ts2 });
           } else if (payload.type === 'error') {
-            appendMessage({ id: Date.now().toString(), type: 'system', icon: <XCircle className="w-5 h-5" />, iconColor: '#ef4444', content: `Error: ${payload.content}` });
+            const ts3 = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            appendMessage({ id: Date.now().toString(), type: 'system', icon: <XCircle className="w-5 h-5" />, iconColor: '#ef4444', content: `Error: ${payload.content}`, timestamp: ts3 });
           }
         }
       }
@@ -192,7 +197,8 @@ export function ChatArea({
         body: JSON.stringify({ thread_id: threadId, decision }),
       });
       const data = await res.json();
-      appendMessage({ id: Date.now().toString(), type: 'system', icon: <CheckCircle className="w-5 h-5" />, iconColor: '#22C55E', content: data.content ?? 'Done.' });
+      const ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      appendMessage({ id: Date.now().toString(), type: 'system', icon: <CheckCircle className="w-5 h-5" />, iconColor: '#22C55E', content: data.content ?? 'Done.', timestamp: ts });
     } catch (err) {
       appendMessage({ id: Date.now().toString(), type: 'system', icon: <XCircle className="w-5 h-5" />, iconColor: '#ef4444', content: `Resume error: ${err}` });
     } finally {
@@ -203,34 +209,70 @@ export function ChatArea({
   const renderBarcodeDetails = () => {
     if (scanning) {
       return (
-        <div className="flex items-center gap-2 text-xs text-[#FB923C] font-medium animate-pulse" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-          <ScanLine className="w-3.5 h-3.5" />
-          <span>Scanning for barcodes…</span>
+        <div className="mt-2 flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-xs text-[#3B82F6] font-semibold animate-pulse tracking-wide uppercase" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+            <ScanLine className="w-4 h-4 animate-spin-slow" />
+            <span>Analyzing Image & Scanning Barcodes...</span>
+          </div>
+          <div className="w-full h-1 bg-[#18181B] rounded-full overflow-hidden relative">
+            <div className="absolute top-0 left-0 h-full bg-[#3B82F6] w-1/3 rounded-full animate-scanner-pan"></div>
+          </div>
         </div>
       );
     }
     if (!barcodeResult) return null;
+    
     if (barcodeResult.found) {
       return (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="flex items-center gap-1 text-xs font-medium text-[#22C55E] bg-[#052E16] border border-[#166534] px-2 py-0.5 rounded" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-            <ScanLine className="w-3 h-3" />
-            {barcodeResult.barcode_type ?? 'Barcode(s)'} ✅
-          </span>
-          {barcodeResult.batch_number && (
-            <span className="text-xs text-[#A1A1AA]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch: <strong className="text-[#F4F4F5]">{barcodeResult.batch_number}</strong></span>
-          )}
-          {barcodeResult.expiry_date && (
-            <span className="text-xs text-[#A1A1AA]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Exp: <strong className="text-[#F4F4F5]">{barcodeResult.expiry_date}</strong></span>
-          )}
-          {barcodeResult.gtin && (
-            <span className="text-xs text-[#71717A]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>GTIN: {barcodeResult.gtin}</span>
-          )}
+        <div className="mt-3 flex flex-col gap-3 p-3 bg-[#0C1525] border border-[#1E3A5F] rounded-lg relative overflow-hidden">
+          <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#3B82F6] opacity-10 rounded-full blur-xl pointer-events-none" />
+          
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-[#052E16] flex items-center justify-center border border-[#166534]">
+                <CheckCircle className="w-3.5 h-3.5 text-[#22C55E]" />
+              </div>
+              <span className="text-sm font-semibold text-[#60A5FA]" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                Barcode Detected
+              </span>
+            </div>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[#3B82F6] bg-[#1E3A5F]/50 px-2 py-0.5 rounded" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+              {barcodeResult.barcode_type ?? 'Format'}
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 mt-1 relative z-10">
+            {barcodeResult.batch_number && (
+              <div className="bg-[#111827] rounded border border-[#1F2937] p-2 flex flex-col">
+                <span className="text-[10px] text-[#9CA3AF] uppercase font-semibold mb-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch Number</span>
+                <span className="text-xs font-mono text-[#F3F4F6] truncate" title={barcodeResult.batch_number}>{barcodeResult.batch_number}</span>
+              </div>
+            )}
+            {barcodeResult.expiry_date && (
+              <div className="bg-[#111827] rounded border border-[#1F2937] p-2 flex flex-col">
+                <span className="text-[10px] text-[#9CA3AF] uppercase font-semibold mb-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Expiry Date</span>
+                <span className="text-xs font-semibold text-[#F3F4F6]">{barcodeResult.expiry_date}</span>
+              </div>
+            )}
+            {barcodeResult.gtin && (
+              <div className="bg-[#111827] rounded border border-[#1F2937] p-2 flex flex-col col-span-full">
+                <span className="text-[10px] text-[#9CA3AF] uppercase font-semibold mb-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>GTIN</span>
+                <span className="text-xs font-mono text-[#F3F4F6]">{barcodeResult.gtin}</span>
+              </div>
+            )}
+          </div>
         </div>
       );
     }
+    
     return (
-      <span className="text-xs text-[#52525B] italic" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>No barcode found — AI will read label visually</span>
+      <div className="mt-3 flex items-start gap-2 p-3 bg-[#1A1A1D] border border-[#27272A] rounded-lg">
+        <AlertCircle className="w-4 h-4 text-[#A1A1AA] shrink-0 mt-0.5" />
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-[#F4F4F5]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>No Standard Barcode Found</span>
+          <span className="text-[11px] text-[#71717A] mt-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>The AI will extract details visually from the label text instead.</span>
+        </div>
+      </div>
     );
   };
 
@@ -365,23 +407,31 @@ export function ChatArea({
                 from { opacity: 0; transform: translateY(12px); }
                 to   { opacity: 1; transform: translateY(0); }
               }
+              @keyframes scannerPan {
+                0% { left: -30%; }
+                100% { left: 130%; }
+              }
+              .animate-scanner-pan {
+                animation: scannerPan 1.5s ease-in-out infinite;
+              }
+              .animate-spin-slow {
+                animation: spin 3s linear infinite;
+              }
             `}</style>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto mb-4 px-4 space-y-8 min-h-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-[#3B82F6]/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#3B82F6]/40">
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} type={msg.type} icon={msg.icon} iconColor={msg.iconColor} content={msg.content} warning={msg.warning} />
+            <MessageBubble key={msg.id} type={msg.type} icon={msg.icon} iconColor={msg.iconColor} content={msg.content} warning={msg.warning} timestamp={msg.timestamp} />
           ))}
-          {isLoading && (
-            <MessageBubble type="system" icon={<Bot className="w-5 h-5" />} iconColor="#3B82F6" content="Thinking…" />
-          )}
+          {isLoading && <TypingIndicator />}
           {hitlPending && (
             <div className="flex gap-3 justify-center">
-              <button onClick={() => handleHitl('approve')} className="bg-[#166534] hover:bg-[#15803D] text-white px-6 py-3 rounded-lg font-medium transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-                ✅ Approve — Move to Quarantine
+              <button onClick={() => handleHitl('approve')} className="bg-[#166534] hover:bg-[#15803D] text-white px-6 py-2.5 rounded-lg font-semibold text-sm transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                Approve — Move to Quarantine
               </button>
-              <button onClick={() => handleHitl('reject')} className="bg-[#991B1B] hover:bg-[#B91C1C] text-white px-6 py-3 rounded-lg font-medium transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-                ❌ Reject — Discard
+              <button onClick={() => handleHitl('reject')} className="bg-[#991B1B] hover:bg-[#B91C1C] text-white px-6 py-2.5 rounded-lg font-semibold text-sm transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                Reject — Discard
               </button>
             </div>
           )}
@@ -391,19 +441,34 @@ export function ChatArea({
 
         {/* Attached image preview with live barcode details */}
         {(attachedImage || scanning) && (
-          <div className="mx-4 mb-3 flex flex-col gap-2 bg-[#111113] border border-[#27272A] rounded-xl px-4 py-3">
-            <div className="flex items-center gap-3">
-              <ImageIcon className="w-5 h-5 text-[#3B82F6] shrink-0" />
-              <span className="text-sm font-medium text-[#F4F4F5] flex-1 truncate" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-                {attachedImage?.name ?? 'Scanning…'}
-              </span>
-              {attachedImage && (
-                <button onClick={() => { setAttachedImage(null); setBarcodeResult(null); }} className="text-[#71717A] hover:text-[#EF4444] transition-colors">
+          <div className="mx-4 mb-4 flex flex-col bg-[#0D1117] border border-[#27272A] shadow-[0_8px_30px_rgb(0,0,0,0.5)] rounded-xl p-4 animate-in slide-in-from-bottom-2 fade-in duration-300 relative overflow-hidden">
+            {/* Background glow when scanning */}
+            {scanning && <div className="absolute inset-0 bg-[#3B82F6]/5 animate-pulse pointer-events-none" />}
+            
+            <div className="flex items-center gap-3 relative z-10">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors ${scanning ? 'bg-[#3B82F6]/20 border border-[#3B82F6]/40 text-[#60A5FA]' : 'bg-[#1E3A5F]/30 border border-[#3B82F6]/30 text-[#3B82F6]'}`}>
+                {scanning ? <ScanLine className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
+              </div>
+              <div className="flex-1 min-w-0 flex flex-col">
+                <span className="text-sm font-semibold text-[#F4F4F5] truncate" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                  {attachedImage?.name ?? 'Processing Image…'}
+                </span>
+                <span className="text-xs text-[#71717A]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                  {attachedImage ? 'Ready to analyze' : 'Extracting data...'}
+                </span>
+              </div>
+              {attachedImage && !scanning && (
+                <button 
+                  onClick={() => { setAttachedImage(null); setBarcodeResult(null); }} 
+                  className="w-8 h-8 flex items-center justify-center rounded-md bg-[#18181B] border border-[#27272A] text-[#A1A1AA] hover:text-[#EF4444] hover:bg-[#3B0000] hover:border-[#EF4444]/30 transition-all ml-2"
+                  title="Remove attachment"
+                >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
-            <div className="pl-8">
+            
+            <div className="w-full relative z-10">
               {renderBarcodeDetails()}
             </div>
           </div>

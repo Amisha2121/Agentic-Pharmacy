@@ -23,57 +23,20 @@ import barcode_scanner
 
 load_dotenv(override=True)
 
-def _resolve_user_id(state: dict) -> str:
+def _resolve_user_id(state: dict, thread_id: str = "") -> str:
     """Get the Firebase UID for the current request.
-    Reads from the api._THREAD_USER_MAP first (always fresh, bypasses
-    LangGraph checkpoint state), then falls back to state['user_id'].
+    Looks up by thread_id in the api._THREAD_USER_MAP (always fresh,
+    bypasses LangGraph checkpoint state), then falls back to state['user_id'].
     """
     try:
         import api as _api
-        thread_id = None
-        # Try to get thread_id from LangGraph config stored on state
-        # The map is keyed by thread_id which is set in api._stream_agent
-        uid = state.get("user_id") or "legacy"
-        # Search the map for any non-legacy uid associated with recent calls
-        for _uid in _api._THREAD_USER_MAP.values():
-            if _uid and _uid != "legacy":
-                uid = _uid
-                break
-        return uid
+        if thread_id:
+            uid = _api._THREAD_USER_MAP.get(thread_id)
+            if uid and uid != "legacy":
+                return uid
+        return state.get("user_id") or "legacy"
     except Exception:
         return state.get("user_id") or "legacy"
-
-def extract_json(text: str) -> dict:
-    """Robustly extract a JSON object from LLM output, handling common quirks."""
-    # Strip markdown code fences
-    if "```" in text:
-        parts = text.split("```")
-        for part in parts:
-            cleaned = part.strip().lstrip("json").strip()
-            if cleaned.startswith("{"):
-                text = cleaned
-                break
-
-    # Find the first {...} block
-    match = re.search(r'\{[^{}]*\}', text, re.DOTALL)
-    if match:
-        candidate = match.group(0)
-        # Fix trailing commas before } or ]
-        candidate = re.sub(r',\s*([}\]])', r'\1', candidate)
-        # Fix single quotes → double quotes
-        candidate = candidate.replace("'", '"')
-        try:
-            return json.loads(candidate)
-        except Exception:
-            pass
-
-    # Last resort: extract fields individually via regex
-    result = {}
-    for key in ["batch_number", "expiry_date", "product_name", "category"]:
-        m = re.search(r'["\']?' + re.escape(key) + r'["\']?\s*:\s*["\']([^"\' ]+)["\']', text)
-        if m:
-            result[key] = m.group(1)
-    return result
 
 
 # Groq uses OpenAI-compatible API
@@ -341,7 +304,7 @@ def vision_extraction_node(state: PharmacyState):
         pdf_context = f"""
 
 📄 PDF TEXT EXTRACTED:
-{pdf_text[:3000]}  # limited to avoid token overflow
+{pdf_text[:3000]}
 """
 
     prompt = f"""{sides_msg}{barcode_context}{pdf_context}
@@ -581,6 +544,7 @@ FINAL JSON SCHEMA (RETURN AS AN ARRAY)
                 "messages": [{"role": "assistant", "content": final_text}],
                 "pending_quarantine": None,
                 "hitl_decision": None,
+                "pending_inserts": pending_inserts,
                 **(({"last_scanned_image": last_scan}) if last_scan else {}),
             }
 
@@ -653,26 +617,36 @@ def database_query_node(state: PharmacyState):
     today = datetime.date.today().strftime("%Y-%m-%d")
     user_id = state.get("user_id", "legacy")
     inventory_data = database.get_inventory(user_id)
-    inventory_context = "\n".join([f"- {r[2]} ({r[3]}) | Batch: {r[0]} | Exp: {r[1]} | Stock: {r[5]}" for r in inventory_data]) or "No inventory items yet."
+    # Include zero-stock items so the agent can report out-of-stock products
+    inventory_context = "\n".join(
+        [f"- {r[2]} ({r[3]}) | Batch: {r[0]} | Exp: {r[1]} | Stock: {r[5]}{'  ⚠️ OUT OF STOCK' if r[5] == 0 else ''}" for r in inventory_data]
+    ) or "No inventory items yet."
 
     full_history = state.get("messages") or []
-    system_prompt = f"""You are a pharmacy inventory auditor with full conversation memory.
+    system_prompt = f"""You are a pharmacy inventory auditor and a general medical assistant with full conversation memory.
 TODAY: {today}
 INVENTORY:
 {inventory_context}
-Rules: Only reference listed products. Mark as EXPIRED if today > expiry date.
+Rules:
+1. If the user asks about stock/inventory, refer to the INVENTORY list above.
+2. Mark as EXPIRED if today > expiry date.
+3. If the user asks a general medical question or a question about a drug (whether it is in the inventory or not), answer it helpfully using your general medical knowledge. DO NOT refuse to answer questions about items not in the inventory.
 Use conversation history to resolve references like 'it', 'that batch', 'same medicine', 'what did I just add'."""
 
     llm_messages = [{"role": "system", "content": system_prompt}] + full_history[-8:]
 
     client = get_client()
-    response = client.chat.completions.create(
-        model=TEXT_MODEL,
-        messages=llm_messages,
-        max_tokens=512,
-        timeout=15,
-    )
-    resp_text = response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model=TEXT_MODEL,
+            messages=llm_messages,
+            max_tokens=512,
+            timeout=15,
+        )
+        resp_text = response.choices[0].message.content
+    except Exception as e:
+        print(f"[database_query_node] LLM error: {e}")
+        resp_text = "⚠️ I'm having trouble reaching the AI right now. Please try again in a moment."
     return {
         "final_response": resp_text,
         "messages": [{"role": "assistant", "content": resp_text}],

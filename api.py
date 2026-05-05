@@ -345,13 +345,14 @@ def chat(body: ChatRequest, request: Request):
 
 
 @app.post("/api/chat/resume")
-def chat_resume(body: ChatResumeRequest):
-    """Resume the LangGraph agent after a HITL interrupt."""
+def chat_resume(body: ChatResumeRequest, request: Request):
+    """Resume the LangGraph agent after a HITL interrupt. Requires a valid auth token."""
+    user_id = get_user_id_from_token(request)  # ← auth guard added
     try:
         agent_app, Command, _ = _load_agent()
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Agent unavailable: {e}")
-    graph_config = {"configurable": {"thread_id": body.thread_id}}
+    graph_config = {"configurable": {"thread_id": body.thread_id, "user_id": user_id}}
     try:
         result = None
         for event in agent_app.stream(
@@ -468,6 +469,32 @@ def get_quarantine(request: Request):
 import shutil, uuid
 from fastapi import UploadFile, File
 import barcode_scanner as _barcode_scanner
+import threading as _threading
+import time as _time
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+UPLOAD_TTL_SECONDS = 3600  # auto-delete uploads older than 1 hour
+
+def _cleanup_old_uploads():
+    """Background thread: periodically remove uploads older than UPLOAD_TTL_SECONDS."""
+    while True:
+        try:
+            _time.sleep(1800)  # run every 30 minutes
+            now = _time.time()
+            if os.path.isdir(UPLOAD_DIR):
+                for fname in os.listdir(UPLOAD_DIR):
+                    fpath = os.path.join(UPLOAD_DIR, fname)
+                    try:
+                        if os.path.isfile(fpath) and (now - os.path.getmtime(fpath)) > UPLOAD_TTL_SECONDS:
+                            os.remove(fpath)
+                            print(f"[cleanup] Deleted old upload: {fname}")
+                    except Exception:
+                        pass
+        except Exception as e:
+            print(f"[cleanup] Error: {e}")
+
+# Start background cleanup thread on server startup
+_threading.Thread(target=_cleanup_old_uploads, daemon=True, name="upload-cleanup").start()
 
 @app.post("/api/scan-barcode")
 async def scan_barcode_endpoint(file: UploadFile = File(...)):
@@ -476,11 +503,10 @@ async def scan_barcode_endpoint(file: UploadFile = File(...)):
     gets instant barcode feedback before the image is sent to the LLM agent.
     """
     try:
-        upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
-        os.makedirs(upload_dir, exist_ok=True)
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
         ext = os.path.splitext(file.filename or ".jpg")[1] or ".jpg"
         filename = f"bc_{uuid.uuid4().hex}{ext}"
-        filepath = os.path.join(upload_dir, filename)
+        filepath = os.path.join(UPLOAD_DIR, filename)
         with open(filepath, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
@@ -495,16 +521,38 @@ async def scan_barcode_endpoint(file: UploadFile = File(...)):
 
 @app.post("/api/upload-image")
 async def upload_image(file: UploadFile = File(...)):
-    """Save an uploaded image to a temp folder and return its path for the agent."""
+    """Save an uploaded image to a temp folder and return its path for the agent.
+    Files are automatically removed by the background cleanup thread after 1 hour.
+    """
     try:
-        upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
-        os.makedirs(upload_dir, exist_ok=True)
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
         ext = os.path.splitext(file.filename or ".jpg")[1] or ".jpg"
         filename = f"{uuid.uuid4().hex}{ext}"
-        filepath = os.path.join(upload_dir, filename)
+        filepath = os.path.join(UPLOAD_DIR, filename)
         with open(filepath, "wb") as f:
             shutil.copyfileobj(file.file, f)
         return {"path": filepath, "filename": filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ── Drug-Drug Interaction Direct Check ────────────────────────────────────────
+
+class DDICheckRequest(BaseModel):
+    drug_a: str
+    drug_b: str
+
+@app.post("/api/ddi-check")
+def ddi_check(body: DDICheckRequest, request: Request):
+    """Directly check a drug-drug interaction using the FDA DDI dataset.
+    Returns structured result + human-readable formatted string.
+    Requires authentication.
+    """
+    get_user_id_from_token(request)  # auth guard
+    try:
+        import ddi_lookup
+        result = ddi_lookup.check_interaction(body.drug_a, body.drug_b)
+        formatted = ddi_lookup.format_interaction_result(body.drug_a, body.drug_b)
+        return {**result, "formatted": formatted}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

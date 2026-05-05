@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LogOut, MessageSquare, PackageSearch, ClipboardList, BellRing, AlertTriangle, Settings } from 'lucide-react';
+import { LogOut, MessageSquare, PackageSearch, ClipboardList, BellRing, AlertTriangle, Settings, FlaskConical } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { authenticatedFetch } from '../utils/api';
@@ -7,6 +7,15 @@ import { authenticatedFetch } from '../utils/api';
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+}
+
+interface MenuItem {
+  icon: React.ReactNode;
+  label: string;
+  path: string;
+  tourId: string;
+  badge?: number;
+  accent?: string;
 }
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
@@ -41,12 +50,13 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
     navigate('/login', { replace: true });
   };
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { icon: <MessageSquare className="w-[18px] h-[18px]" />, label: 'Assistant Chat', path: '/', tourId: 'nav-chat' },
     { icon: <PackageSearch className="w-[18px] h-[18px]" />, label: 'Live Inventory', path: '/inventory', tourId: 'nav-inventory' },
     { icon: <ClipboardList className="w-[18px] h-[18px]" />, label: 'Log Daily Sales', path: '/sales', tourId: 'nav-sales' },
     { icon: <BellRing className="w-[18px] h-[18px]" />, label: 'Reorder Alerts', path: '/reorder', badge: reorderCount, tourId: 'nav-reorder' },
     { icon: <AlertTriangle className="w-[18px] h-[18px]" />, label: 'Expirations', path: '/expired', badge: expiredCount, tourId: 'nav-expired' },
+    { icon: <FlaskConical className="w-[18px] h-[18px]" />, label: 'Drug Interactions', path: '/interactions', accent: '#A78BFA', tourId: 'nav-ddi' },
   ];
 
   return (
@@ -105,7 +115,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               {({ isActive }) => (
                 <>
                   <div className="flex items-center gap-3">
-                    <span className={isActive ? 'text-[#3B82F6]' : 'text-[#71717A] group-hover:text-[#A1A1AA]'}>
+                    <span style={{ color: isActive ? (item.accent ?? '#3B82F6') : undefined }}
+                      className={!isActive ? 'text-[#71717A] group-hover:text-[#A1A1AA]' : ''}>
                       {item.icon}
                     </span>
                     <span>{item.label}</span>
