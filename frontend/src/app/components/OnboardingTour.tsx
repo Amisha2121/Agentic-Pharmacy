@@ -43,7 +43,7 @@ const STEPS: TourStep[] = [
   {
     target: '[data-tour="chat-input"]',
     placement: 'top',
-    emoji: '💊',
+    emoji: '💬',
     title: 'Drug Interaction Checker',
     description:
       'Type any drug question here — "Can a patient take Ibuprofen with Aspirin?" — and get a structured safety report instantly.',
@@ -97,7 +97,7 @@ const STEPS: TourStep[] = [
     emoji: '🎉',
     title: "You're all set!",
     description:
-      '📷 New stock → Chat tab\n💊 Safety check → Chat tab\n📦 Running low → Reorder Alerts\n⏰ Expiring soon → Expirations\n💰 Sold something → Log Daily Sales\n\nThe AI is always in the chat whenever you need help.',
+      '📷 New stock → Chat tab\n💬 Safety check → Chat tab\n📦 Running low → Reorder Alerts\n⏰ Expiring soon → Expirations\n💰 Sold something → Log Daily Sales\n\nThe AI is always in the chat whenever you need help.',
   },
 ];
 

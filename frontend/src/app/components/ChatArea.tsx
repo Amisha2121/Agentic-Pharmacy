@@ -210,12 +210,12 @@ export function ChatArea({
     if (scanning) {
       return (
         <div className="mt-2 flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-xs text-[#3B82F6] font-semibold animate-pulse tracking-wide uppercase" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+          <div className="flex items-center gap-2 text-xs text-[#22C55E] font-semibold animate-pulse tracking-wide uppercase" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
             <ScanLine className="w-4 h-4 animate-spin-slow" />
             <span>Analyzing Image & Scanning Barcodes...</span>
           </div>
-          <div className="w-full h-1 bg-[#18181B] rounded-full overflow-hidden relative">
-            <div className="absolute top-0 left-0 h-full bg-[#3B82F6] w-1/3 rounded-full animate-scanner-pan"></div>
+          <div className="w-full h-1 bg-[#F3F4F6] rounded-full overflow-hidden relative">
+            <div className="absolute top-0 left-0 h-full bg-[#22C55E] w-1/3 rounded-full animate-scanner-pan"></div>
           </div>
         </div>
       );
@@ -224,40 +224,40 @@ export function ChatArea({
     
     if (barcodeResult.found) {
       return (
-        <div className="mt-3 flex flex-col gap-3 p-3 bg-[#0C1525] border border-[#1E3A5F] rounded-lg relative overflow-hidden">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#3B82F6] opacity-10 rounded-full blur-xl pointer-events-none" />
+        <div className="mt-3 flex flex-col gap-3 p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg relative overflow-hidden">
+          <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#22C55E] opacity-5 rounded-full blur-xl pointer-events-none" />
           
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-[#052E16] flex items-center justify-center border border-[#166534]">
+              <div className="w-6 h-6 rounded bg-[#ECFDF5] flex items-center justify-center border border-[#A7F3D0]">
                 <CheckCircle className="w-3.5 h-3.5 text-[#22C55E]" />
               </div>
-              <span className="text-sm font-semibold text-[#60A5FA]" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+              <span className="text-sm font-semibold text-[#16A34A]" style={{ fontFamily: 'DM Sans, sans-serif' }}>
                 Barcode Detected
               </span>
             </div>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-[#3B82F6] bg-[#1E3A5F]/50 px-2 py-0.5 rounded" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[#22C55E] bg-[#ECFDF5] px-2 py-0.5 rounded" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
               {barcodeResult.barcode_type ?? 'Format'}
             </span>
           </div>
           
           <div className="grid grid-cols-2 gap-2 mt-1 relative z-10">
             {barcodeResult.batch_number && (
-              <div className="bg-[#111827] rounded border border-[#1F2937] p-2 flex flex-col">
-                <span className="text-[10px] text-[#9CA3AF] uppercase font-semibold mb-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch Number</span>
-                <span className="text-xs font-mono text-[#F3F4F6] truncate" title={barcodeResult.batch_number}>{barcodeResult.batch_number}</span>
+              <div className="bg-white rounded border border-[#E5E7EB] p-2 flex flex-col">
+                <span className="text-[10px] text-[#6B7280] uppercase font-semibold mb-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch Number</span>
+                <span className="text-xs font-mono text-[#111827] truncate" title={barcodeResult.batch_number}>{barcodeResult.batch_number}</span>
               </div>
             )}
             {barcodeResult.expiry_date && (
-              <div className="bg-[#111827] rounded border border-[#1F2937] p-2 flex flex-col">
-                <span className="text-[10px] text-[#9CA3AF] uppercase font-semibold mb-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Expiry Date</span>
-                <span className="text-xs font-semibold text-[#F3F4F6]">{barcodeResult.expiry_date}</span>
+              <div className="bg-white rounded border border-[#E5E7EB] p-2 flex flex-col">
+                <span className="text-[10px] text-[#6B7280] uppercase font-semibold mb-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Expiry Date</span>
+                <span className="text-xs font-semibold text-[#111827]">{barcodeResult.expiry_date}</span>
               </div>
             )}
             {barcodeResult.gtin && (
-              <div className="bg-[#111827] rounded border border-[#1F2937] p-2 flex flex-col col-span-full">
-                <span className="text-[10px] text-[#9CA3AF] uppercase font-semibold mb-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>GTIN</span>
-                <span className="text-xs font-mono text-[#F3F4F6]">{barcodeResult.gtin}</span>
+              <div className="bg-white rounded border border-[#E5E7EB] p-2 flex flex-col col-span-full">
+                <span className="text-[10px] text-[#6B7280] uppercase font-semibold mb-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>GTIN</span>
+                <span className="text-xs font-mono text-[#111827]">{barcodeResult.gtin}</span>
               </div>
             )}
           </div>
@@ -266,11 +266,11 @@ export function ChatArea({
     }
     
     return (
-      <div className="mt-3 flex items-start gap-2 p-3 bg-[#1A1A1D] border border-[#27272A] rounded-lg">
-        <AlertCircle className="w-4 h-4 text-[#A1A1AA] shrink-0 mt-0.5" />
+      <div className="mt-3 flex items-start gap-2 p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
+        <AlertCircle className="w-4 h-4 text-[#6B7280] shrink-0 mt-0.5" />
         <div className="flex flex-col">
-          <span className="text-xs font-medium text-[#F4F4F5]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>No Standard Barcode Found</span>
-          <span className="text-[11px] text-[#71717A] mt-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>The AI will extract details visually from the label text instead.</span>
+          <span className="text-xs font-medium text-[#111827]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>No Standard Barcode Found</span>
+          <span className="text-[11px] text-[#6B7280] mt-0.5" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>The AI will extract details visually from the label text instead.</span>
         </div>
       </div>
     );
@@ -281,14 +281,14 @@ export function ChatArea({
       <div className="flex items-center justify-between p-4 bg-transparent absolute top-0 w-full z-20">
         <div className="flex items-center">
           {isSidebarClosed && (
-            <button onClick={onOpenSidebar} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#18181B] border border-[#27272A] text-[#A1A1AA] hover:text-[#F4F4F5] hover:bg-[#1F1F23] transition-all">
+            <button onClick={onOpenSidebar} className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-[#E5E7EB] text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB] transition-all">
               <Menu className="w-5 h-5" />
             </button>
           )}
         </div>
         <div className="flex items-center">
           {isHistoryClosed && (
-            <button onClick={onOpenHistory} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#18181B] border border-[#27272A] text-[#A1A1AA] hover:text-[#F4F4F5] hover:bg-[#1F1F23] transition-all">
+            <button onClick={onOpenHistory} className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-[#E5E7EB] text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB] transition-all">
               <History className="w-5 h-5" />
             </button>
           )}
@@ -303,20 +303,20 @@ export function ChatArea({
             <div className="relative mb-8" style={{ animation: 'floatOrb 4s ease-in-out infinite' }}>
               <div style={{
                 width: 96, height: 96, borderRadius: '50%',
-                background: 'radial-gradient(circle at 35% 35%, #60A5FA, #3B82F6 50%, #1D4ED8)',
-                boxShadow: '0 0 60px rgba(59,130,246,0.5), 0 0 120px rgba(59,130,246,0.2)',
+                background: 'radial-gradient(circle at 35% 35%, #86EFAC, #22C55E 50%, #16A34A)',
+                boxShadow: '0 0 60px rgba(34,197,94,0.4), 0 0 120px rgba(34,197,94,0.15)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#fff',
               }}><Pill size={38} strokeWidth={1.5} /></div>
               {/* Orbiting ring */}
               <div style={{
                 position: 'absolute', inset: -10, borderRadius: '50%',
-                border: '1.5px solid rgba(59,130,246,0.3)',
+                border: '1.5px solid rgba(34,197,94,0.3)',
                 animation: 'spinRing 8s linear infinite',
               }} />
               <div style={{
                 position: 'absolute', inset: -20, borderRadius: '50%',
-                border: '1px solid rgba(59,130,246,0.12)',
+                border: '1px solid rgba(34,197,94,0.12)',
                 animation: 'spinRing 14s linear infinite reverse',
               }} />
             </div>
@@ -324,20 +324,19 @@ export function ChatArea({
             {/* ── Greeting ── */}
             <h1 style={{
               fontFamily: 'DM Sans, sans-serif', fontSize: 'clamp(28px,4vw,42px)',
-              fontWeight: 700, color: '#F4F4F5', letterSpacing: '-0.5px',
+              fontWeight: 700, color: '#111827', letterSpacing: '-0.5px',
               margin: '0 0 8px', textAlign: 'center',
               animation: 'fadeUp 0.6s ease both',
             }}>
-              Good to see you,{' '}
-              <span style={{ color: '#3B82F6' }}>{user?.name?.split(' ')[0] || 'Pharmacist'}</span>
+              What can I help you with?
             </h1>
             <p style={{
               fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 16,
-              color: '#52525B', margin: '0 0 36px', textAlign: 'center',
+              color: '#6B7280', margin: '0 0 36px', textAlign: 'center',
               animation: 'fadeUp 0.6s 0.1s ease both', opacity: 0,
               animationFillMode: 'forwards',
             }}>
-              Your AI pharmacy assistant is ready. What would you like to do?
+              Your AI pharmacy assistant is ready
             </p>
 
             {/* ── Quick-action cards ── */}
@@ -347,12 +346,12 @@ export function ChatArea({
               gap: 12, width: '100%', maxWidth: 680,
             }}>
               {([
-                { icon: <PlusCircle size={18} />, color: '#3B82F6', bg: '#1E3A5F', label: 'Add new stock',    sub: 'Log medicine to inventory',    prompt: 'Add ' },
-                { icon: <Search size={18} />,     color: '#A78BFA', bg: '#2E1065', label: 'Drug interaction', sub: 'Check safety between drugs',    prompt: 'Can a patient take ' },
-                { icon: <ClipboardList size={18} />, color: '#22C55E', bg: '#052E16', label: 'View inventory',   sub: "See what's in stock",           prompt: 'Show me the current inventory' },
-                { icon: <Camera size={18} />,     color: '#F59E0B', bg: '#2D1B00', label: 'Scan a label',      sub: 'Upload a medicine photo',      prompt: null },
-                { icon: <AlertTriangle size={18} />, color: '#EF4444', bg: '#3B0000', label: 'Low stock check',  sub: 'What needs reordering?',       prompt: 'Which medicines are running low?' },
-                { icon: <Clock size={18} />,      color: '#38BDF8', bg: '#0C2840', label: 'Expiry report',     sub: 'Items expiring soon',          prompt: 'Which medicines are expiring soon?' },
+                { icon: <PlusCircle size={18} />, color: '#22C55E', bg: '#ECFDF5', label: 'Add new stock',    sub: 'Log medicine to inventory',    prompt: 'Add ' },
+                { icon: <Search size={18} />,     color: '#8B5CF6', bg: '#F5F3FF', label: 'Drug interaction', sub: 'Check safety between drugs',    prompt: 'Can a patient take ' },
+                { icon: <ClipboardList size={18} />, color: '#22C55E', bg: '#ECFDF5', label: 'View inventory',   sub: "See what's in stock",           prompt: 'Show me the current inventory' },
+                { icon: <Camera size={18} />,     color: '#F59E0B', bg: '#FEF3C7', label: 'Scan a label',      sub: 'Upload a medicine photo',      prompt: null },
+                { icon: <AlertTriangle size={18} />, color: '#EF4444', bg: '#FEE2E2', label: 'Low stock check',  sub: 'What needs reordering?',       prompt: 'Which medicines are running low?' },
+                { icon: <Clock size={18} />,      color: '#3B82F6', bg: '#DBEAFE', label: 'Expiry report',     sub: 'Items expiring soon',          prompt: 'Which medicines are expiring soon?' },
               ] as const).map(({ icon, color, bg, label, sub, prompt }, i) => (
                 <button
                   key={label}
@@ -361,7 +360,7 @@ export function ChatArea({
                     else fileInputRef.current?.click();
                   }}
                   style={{
-                    background: '#111113', border: '1px solid #27272A',
+                    background: '#FFFFFF', border: '1px solid #E5E7EB',
                     borderRadius: 14, padding: '14px 16px',
                     textAlign: 'left', cursor: 'pointer', display: 'flex',
                     alignItems: 'flex-start', gap: 12,
@@ -370,14 +369,14 @@ export function ChatArea({
                     opacity: 0, animationFillMode: 'forwards',
                   }}
                   onMouseEnter={e => {
-                    (e.currentTarget as HTMLButtonElement).style.background = '#18181B';
+                    (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB';
                     (e.currentTarget as HTMLButtonElement).style.borderColor = color;
                     (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 8px 24px ${color}20`;
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 8px 24px ${color}15`;
                   }}
                   onMouseLeave={e => {
-                    (e.currentTarget as HTMLButtonElement).style.background = '#111113';
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#27272A';
+                    (e.currentTarget as HTMLButtonElement).style.background = '#FFFFFF';
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB';
                     (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
                     (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
                   }}
@@ -386,8 +385,8 @@ export function ChatArea({
                     {icon}
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#F4F4F5', lineHeight: 1.3 }}>{label}</p>
-                    <p style={{ margin: '3px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11.5, color: '#52525B', lineHeight: 1.4 }}>{sub}</p>
+                    <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: 1.3 }}>{label}</p>
+                    <p style={{ margin: '3px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11.5, color: '#6B7280', lineHeight: 1.4 }}>{sub}</p>
                   </div>
                 </button>
               ))}
@@ -420,17 +419,17 @@ export function ChatArea({
             `}</style>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto mb-4 px-4 space-y-8 min-h-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-[#3B82F6]/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#3B82F6]/40">
+          <div className="flex-1 overflow-y-auto mb-4 px-4 space-y-8 min-h-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-[#22C55E]/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#22C55E]/40">
           {messages.map((msg) => (
             <MessageBubble key={msg.id} type={msg.type} icon={msg.icon} iconColor={msg.iconColor} content={msg.content} warning={msg.warning} timestamp={msg.timestamp} />
           ))}
           {isLoading && <TypingIndicator />}
           {hitlPending && (
             <div className="flex gap-3 justify-center">
-              <button onClick={() => handleHitl('approve')} className="bg-[#166534] hover:bg-[#15803D] text-white px-6 py-2.5 rounded-lg font-semibold text-sm transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+              <button onClick={() => handleHitl('approve')} className="bg-[#16A34A] hover:bg-[#15803D] text-white px-6 py-2.5 rounded-lg font-semibold text-sm transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
                 Approve — Move to Quarantine
               </button>
-              <button onClick={() => handleHitl('reject')} className="bg-[#991B1B] hover:bg-[#B91C1C] text-white px-6 py-2.5 rounded-lg font-semibold text-sm transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+              <button onClick={() => handleHitl('reject')} className="bg-[#DC2626] hover:bg-[#B91C1C] text-white px-6 py-2.5 rounded-lg font-semibold text-sm transition-all hover:scale-105 shadow" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
                 Reject — Discard
               </button>
             </div>
@@ -441,26 +440,26 @@ export function ChatArea({
 
         {/* Attached image preview with live barcode details */}
         {(attachedImage || scanning) && (
-          <div className="mx-4 mb-4 flex flex-col bg-[#0D1117] border border-[#27272A] shadow-[0_8px_30px_rgb(0,0,0,0.5)] rounded-xl p-4 animate-in slide-in-from-bottom-2 fade-in duration-300 relative overflow-hidden">
+          <div className="mx-4 mb-4 flex flex-col bg-white border border-[#E5E7EB] shadow-lg rounded-xl p-4 animate-in slide-in-from-bottom-2 fade-in duration-300 relative overflow-hidden">
             {/* Background glow when scanning */}
-            {scanning && <div className="absolute inset-0 bg-[#3B82F6]/5 animate-pulse pointer-events-none" />}
+            {scanning && <div className="absolute inset-0 bg-[#22C55E]/5 animate-pulse pointer-events-none" />}
             
             <div className="flex items-center gap-3 relative z-10">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors ${scanning ? 'bg-[#3B82F6]/20 border border-[#3B82F6]/40 text-[#60A5FA]' : 'bg-[#1E3A5F]/30 border border-[#3B82F6]/30 text-[#3B82F6]'}`}>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors ${scanning ? 'bg-[#22C55E]/20 border border-[#22C55E]/40 text-[#16A34A]' : 'bg-[#ECFDF5] border border-[#22C55E]/30 text-[#22C55E]'}`}>
                 {scanning ? <ScanLine className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
               </div>
               <div className="flex-1 min-w-0 flex flex-col">
-                <span className="text-sm font-semibold text-[#F4F4F5] truncate" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                <span className="text-sm font-semibold text-[#111827] truncate" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
                   {attachedImage?.name ?? 'Processing Image…'}
                 </span>
-                <span className="text-xs text-[#71717A]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                <span className="text-xs text-[#6B7280]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
                   {attachedImage ? 'Ready to analyze' : 'Extracting data...'}
                 </span>
               </div>
               {attachedImage && !scanning && (
                 <button 
                   onClick={() => { setAttachedImage(null); setBarcodeResult(null); }} 
-                  className="w-8 h-8 flex items-center justify-center rounded-md bg-[#18181B] border border-[#27272A] text-[#A1A1AA] hover:text-[#EF4444] hover:bg-[#3B0000] hover:border-[#EF4444]/30 transition-all ml-2"
+                  className="w-8 h-8 flex items-center justify-center rounded-md bg-[#F9FAFB] border border-[#E5E7EB] text-[#6B7280] hover:text-[#EF4444] hover:bg-[#FEE2E2] hover:border-[#EF4444]/30 transition-all ml-2"
                   title="Remove attachment"
                 >
                   <X className="w-4 h-4" />
@@ -477,11 +476,11 @@ export function ChatArea({
         <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleImagePick} />
 
         <div className={`relative group mx-4 shrink-0 ${messages.length > 0 ? "mt-auto" : "max-w-3xl mx-auto w-full"}`}>
-          <div className="relative bg-[#18181B] backdrop-blur-2xl rounded-xl shadow-xl p-3 flex items-center gap-3 border border-[#27272A]">
+          <div className="relative bg-white backdrop-blur-sm rounded-xl shadow-lg p-3 flex items-center gap-3 border border-[#E5E7EB]">
             <button
               onClick={() => fileInputRef.current?.click()}
               data-tour="attach-btn"
-              className="w-11 h-11 rounded-lg bg-[#27272A] hover:bg-[#3B82F6] text-[#71717A] hover:text-white flex items-center justify-center transition-all duration-300 transform hover:scale-105 shrink-0"
+              className="w-11 h-11 rounded-lg bg-[#F3F4F6] hover:bg-[#22C55E] text-[#6B7280] hover:text-white flex items-center justify-center transition-all duration-300 transform hover:scale-105 shrink-0"
               title="Attach File"
             >
               <Plus className="w-5 h-5" />
@@ -493,7 +492,7 @@ export function ChatArea({
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               data-tour="chat-input"
               placeholder={attachedImage ? 'Describe the file or press send to scan…' : 'Type your message, attach labels/PDFs or ask a question...'}
-              className="flex-1 bg-transparent px-3 py-3 outline-none text-[#F4F4F5] placeholder:text-[#52525B] font-normal text-[15px]"
+              className="flex-1 bg-transparent px-3 py-3 outline-none text-[#111827] placeholder:text-[#9CA3AF] font-normal text-[15px]"
               style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
               disabled={isLoading}
             />
@@ -503,10 +502,10 @@ export function ChatArea({
                 disabled={uploading || scanning}
                 className={`w-11 h-11 rounded-lg flex items-center justify-center transition-colors ${
                   scanning
-                    ? 'bg-[#451A03] text-[#FB923C] animate-pulse'
+                    ? 'bg-[#FEF3C7] text-[#F59E0B] animate-pulse'
                     : attachedImage
-                    ? 'bg-[#0C1A2E] text-[#3B82F6]'
-                    : 'hover:bg-[#27272A] text-[#71717A] hover:text-[#F4F4F5]'
+                    ? 'bg-[#ECFDF5] text-[#22C55E]'
+                    : 'hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]'
                 } ${uploading ? 'animate-pulse' : ''}`}
                 title={scanning ? 'Scanning...' : 'Attach image or PDF for scanning'}
               >
@@ -516,7 +515,7 @@ export function ChatArea({
                 onClick={isListening ? undefined : startListening}
                 title="Voice Input"
                 className={`w-11 h-11 rounded-lg flex items-center justify-center transition-colors ${
-                  isListening ? 'bg-[#1A0000] text-[#EF4444] animate-pulse' : 'hover:bg-[#27272A] text-[#71717A] hover:text-[#F4F4F5]'
+                  isListening ? 'bg-[#FEE2E2] text-[#EF4444] animate-pulse' : 'hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]'
                 }`}
               >
                 <Mic className="w-5 h-5" />
@@ -526,8 +525,8 @@ export function ChatArea({
                 disabled={isLoading || scanning || (!message.trim() && !attachedImage)}
                 className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300 transform ${
                   (message.trim() || attachedImage) && !isLoading && !scanning
-                    ? 'bg-[#3B82F6] hover:scale-105 text-white shadow-lg shadow-[#3B82F6]/30'
-                    : 'bg-[#27272A] text-[#52525B] cursor-not-allowed'
+                    ? 'bg-[#22C55E] hover:scale-105 text-white shadow-lg shadow-[#22C55E]/30'
+                    : 'bg-[#F3F4F6] text-[#D1D5DB] cursor-not-allowed'
                 }`}
               >
                 <ArrowUp className="w-6 h-6" />

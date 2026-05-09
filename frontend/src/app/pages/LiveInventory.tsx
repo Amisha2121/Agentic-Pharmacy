@@ -25,7 +25,7 @@ interface Category {
 
 const CAT_COLORS: Record<string, string> = {
   'Pain & Fever': '#ef5350',
-  'Cold & Allergy': '#3B82F6',
+  'Cold & Allergy': '#22C55E',
   'Digestion & Nausea': '#ffa726',
   'Skin & Dermatology': '#ab47bc',
   'Vitamins & Nutrition': '#66bb6a',
@@ -35,7 +35,7 @@ const CAT_COLORS: Record<string, string> = {
   'Feminine Care': '#ec407a',
   'Baby & Child Care': '#f06292',
   'Cardiovascular & BP': '#e53935',
-  'Diabetes Care': '#3B82F6',
+  'Diabetes Care': '#22C55E',
   'Antibiotics': '#ab47bc',
   'Medical Devices': '#78909c',
   'Personal Hygiene': '#9ccc65',
@@ -45,7 +45,7 @@ const CAT_COLORS: Record<string, string> = {
   'Capsule': '#ab47bc',
   'Cream/Ointment': '#ffa726',
   'Gummies': '#66bb6a',
-  'Drops': '#3B82F6',
+  'Drops': '#22C55E',
   'Spray': '#ff7043',
   'Other': '#78909c'
 };
@@ -85,9 +85,9 @@ const CATEGORIES = [
 ];
 
 function getStatusBadge(stock: number) {
-  if (stock > 10) return { label: 'In Stock', cls: 'bg-[#052E16] text-[#22C55E] border-[#166534]' };
-  if (stock > 0) return { label: 'Low Stock', cls: 'bg-[#451A03] text-[#FB923C] border-[#92400E]' };
-  return { label: 'Out of Stock', cls: 'bg-[#1A0000] text-[#EF4444] border-[#991B1B]' };
+  if (stock > 10) return { label: 'In Stock', cls: 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]' };
+  if (stock > 0) return { label: 'Low Stock', cls: 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]' };
+  return { label: 'Out of Stock', cls: 'bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]' };
 }
 
 function daysUntilExpiry(dateStr: string): number {
@@ -276,8 +276,11 @@ export function LiveInventory() {
       <div className="flex items-center justify-between p-4 absolute top-0 w-full z-20">
         <div className="flex items-center">
           {!isSidebarOpen && (
-            <button onClick={() => setIsSidebarOpen(true)} className="w-12 h-12 glass-card rounded-3xl shadow-lg flex items-center justify-center text-[#00695c] hover:shadow-xl hover:scale-110 transition-all duration-300 group animate-glow">
-              <Menu className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <button 
+              onClick={() => setIsSidebarOpen(true)} 
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-[#0F172A] text-[#0F172A] hover:bg-[#F0FDF4] transition-all"
+            >
+              <Menu className="w-5 h-5" strokeWidth={2.5} />
             </button>
           )}
         </div>
@@ -285,62 +288,56 @@ export function LiveInventory() {
 
       <div className="flex-1 flex flex-col pt-16 px-8 pb-12 max-w-7xl mx-auto w-full">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex items-baseline justify-between">
           <div>
-            <h1 className="text-5xl font-bold text-[#3B82F6] tracking-tight" style={{ fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.5px' }}>Live Inventory</h1>
-            <p className="text-[#A1A1AA] font-normal mt-2 text-base" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Real-time stock across all categories · auto-refreshes every 30s</p>
+            <h1 className="text-3xl font-bold text-[#0F172A] mb-2">
+              Inventory
+            </h1>
+            <p className="text-sm text-[#64748B]">
+              Real-time stock · Auto-refreshes every 30s
+            </p>
           </div>
           <div className="flex items-center gap-3">
             {/* View toggle */}
             {!selectedCategory && (
-              <div className="flex items-center bg-[#111113] border border-[#27272A] rounded-lg p-1 gap-1">
+              <div className="flex items-center bg-white border border-gray-300 rounded-lg p-1 gap-1">
                 <button
                   onClick={() => setViewMode('grid')}
                   title="Category grid view"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                    viewMode === 'grid' ? 'bg-[#1A2535] text-[#3B82F6]' : 'text-[#52525B] hover:text-[#A1A1AA]'
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                    viewMode === 'grid' ? 'bg-[#16a34a] text-white' : 'text-gray-700 hover:bg-gray-50'
                   }`}
-                  style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <rect x="0" y="0" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-                    <rect x="8" y="0" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-                    <rect x="0" y="8" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-                    <rect x="8" y="8" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.9"/>
-                  </svg>
                   Grid
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
                   title="Flat list view"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                    viewMode === 'list' ? 'bg-[#1A2535] text-[#3B82F6]' : 'text-[#52525B] hover:text-[#A1A1AA]'
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                    viewMode === 'list' ? 'bg-[#16a34a] text-white' : 'text-gray-700 hover:bg-gray-50'
                   }`}
-                  style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <rect x="0" y="1" width="14" height="2" rx="1" fill="currentColor" opacity="0.9"/>
-                    <rect x="0" y="6" width="14" height="2" rx="1" fill="currentColor" opacity="0.9"/>
-                    <rect x="0" y="11" width="14" height="2" rx="1" fill="currentColor" opacity="0.9"/>
-                  </svg>
                   List
                 </button>
               </div>
             )}
-            <button onClick={fetchInventory} className="flex items-center gap-2 btn-secondary px-5 py-2.5 rounded-lg font-medium text-sm">
+            <button 
+              onClick={fetchInventory} 
+              className="border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 text-sm flex items-center gap-2"
+            >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              Refresh
             </button>
             <button
               onClick={() => downloadCSV(categories.flatMap(c => c.items), 'live_inventory_full')}
-              className="flex items-center gap-2 btn-secondary px-5 py-2.5 rounded-lg font-medium text-sm"
+              className="border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 text-sm flex items-center gap-2"
               title="Download Full Inventory as CSV"
             >
-              <Download className="w-4 h-4" /> <span className="hidden sm:inline">Export</span>
+              <Download className="w-4 h-4" /> Export
             </button>
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="flex items-center gap-2 btn-primary px-5 py-2.5 rounded-lg font-medium text-sm"
+              className="bg-[#16a34a] text-white hover:bg-[#15803d] rounded-lg px-4 py-2 text-sm flex items-center gap-2"
             >
               <Plus className="w-4 h-4" /> Add Item
             </button>
@@ -350,17 +347,17 @@ export function LiveInventory() {
         {/* Search bar — shown when not drilled into a category */}
         {!selectedCategory && (
           <div className="relative mb-8">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#52525B]" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search product name, batch number, or category…"
-              className="w-full pl-11 pr-10 py-3 bg-[#111113] border border-[#27272A] rounded-xl text-[#F4F4F5] placeholder-[#52525B] text-sm focus:outline-none focus:border-[#3B82F6] transition-colors"
+              className="w-full pl-11 pr-10 py-3 bg-white border border-[#E5E7EB] rounded-xl text-[#111827] placeholder-[#9CA3AF] text-sm focus:outline-none focus:border-[#22C55E] transition-colors"
               style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
             />
             {search && (
-              <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#52525B] hover:text-[#A1A1AA] transition-colors">
+              <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
                 <X className="w-4 h-4" />
               </button>
             )}
@@ -371,16 +368,16 @@ export function LiveInventory() {
 
         {/* Error banner */}
         {fetchError && !loading && (
-          <div className="mb-6 flex items-center gap-3 px-5 py-3.5 rounded-xl bg-[#1A0000] border border-[#3B1111] text-sm" style={{ fontFamily: 'IBM Plex Sans, sans-serif', color: '#EF4444' }}>
+          <div className="mb-6 flex items-center gap-3 px-5 py-3.5 rounded-xl bg-[#FEE2E2] border border-[#FECACA] text-sm" style={{ fontFamily: 'IBM Plex Sans, sans-serif', color: '#DC2626' }}>
             Could not load inventory —
-            <button onClick={fetchInventory} className="underline font-semibold ml-1 hover:text-[#FCA5A5] transition-colors">try again</button>.
+            <button onClick={fetchInventory} className="underline font-semibold ml-1 hover:text-[#EF4444] transition-colors">try again</button>.
           </div>
         )}
 
         {/* Add Item Form */}
         {showAddForm && (
           <div className="glass-card rounded-[12px] p-8 shadow-2xl mb-10">
-            <h2 className="text-[20px] font-medium text-[#F4F4F5] mb-6" style={{ fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.2px' }}>Add New Product</h2>
+            <h2 className="text-[20px] font-medium text-[#111827] mb-6" style={{ fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.2px' }}>Add New Product</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[
                 { label: 'Product Name', key: 'product_name', type: 'text', placeholder: 'e.g. Paracetamol 500mg' },
@@ -388,7 +385,7 @@ export function LiveInventory() {
                 { label: 'Expiry Date', key: 'expiry_date', type: 'date', placeholder: '' },
               ].map(({ label, key, type, placeholder }) => (
                 <div key={key}>
-                  <label className="block text-[12px] font-medium text-[#A1A1AA] mb-2 uppercase tracking-[0.3px]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{label}</label>
+                  <label className="block text-[12px] font-medium text-[#6B7280] mb-2 uppercase tracking-[0.3px]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{label}</label>
                   <input
                     type={type}
                     value={(form as Record<string, string | number>)[key] as string}
@@ -443,9 +440,9 @@ export function LiveInventory() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="glass-card rounded-[12px] p-8 min-h-[200px] flex flex-col items-center justify-center gap-4 animate-pulse">
-                <div className="w-12 h-12 rounded-full bg-[#27272A]" />
-                <div className="w-28 h-4 rounded-lg bg-[#27272A]" />
-                <div className="w-20 h-3 rounded-lg bg-[#1C1C1F]" />
+                <div className="w-12 h-12 rounded-full bg-[#E5E7EB]" />
+                <div className="w-28 h-4 rounded-lg bg-[#E5E7EB]" />
+                <div className="w-20 h-3 rounded-lg bg-[#F3F4F6]" />
               </div>
             ))}
           </div>
@@ -455,40 +452,40 @@ export function LiveInventory() {
         {!loading && !selectedCategory && viewMode === 'list' && (
           <div className="glass-card rounded-[12px] shadow-2xl overflow-hidden mb-8">
             {/* List sort controls */}
-            <div className="flex items-center gap-2 px-6 py-3 border-b border-[#27272A] bg-[#111113]">
-              <span className="text-xs text-[#52525B] font-semibold uppercase tracking-wide" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Sort:</span>
+            <div className="flex items-center gap-2 px-6 py-3 border-b border-[#E5E7EB] bg-white">
+              <span className="text-xs text-[#9CA3AF] font-semibold uppercase tracking-wide" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Sort:</span>
               {(['name', 'stock', 'expiry'] as const).map(k => (
                 <button key={k} onClick={() => toggleSort(k)}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                    sortKey === k ? 'bg-[#1A2535] text-[#3B82F6] border border-[#3B82F6]/30' : 'bg-[#18181B] text-[#71717A] border border-[#27272A] hover:text-[#A1A1AA]'
+                    sortKey === k ? 'bg-[#ECFDF5] text-[#22C55E] border border-[#22C55E]/30' : 'bg-white text-[#6B7280] border border-[#E5E7EB] hover:text-[#111827]'
                   }`} style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
                   {k.charAt(0).toUpperCase() + k.slice(1)} {sortKey === k ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                 </button>
               ))}
-              <span className="ml-auto text-xs text-[#3F3F46]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{allItems.length} product{allItems.length !== 1 ? 's' : ''}</span>
+              <span className="ml-auto text-xs text-[#9CA3AF]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{allItems.length} product{allItems.length !== 1 ? 's' : ''}</span>
             </div>
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-[#27272A]">
+                <tr className="border-b border-[#E5E7EB]">
                   {['Status', 'Product', 'Category', 'Batch', 'Expiry', 'Stock'].map(h => (
-                    <th key={h} className="px-5 py-4 text-xs font-bold text-[#52525B] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{h}</th>
+                    <th key={h} className="px-5 py-4 text-xs font-bold text-[#9CA3AF] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1A1A1D]">
+              <tbody className="divide-y divide-[#F3F4F6]">
                 {sortedItems(allItems).map(item => {
                   const { label, cls } = getStatusBadge(item.stock);
                   const expStyle = getExpiryStyle(item.expiry_date);
                   return (
-                    <tr key={item.doc_id} className="hover:bg-[#111113] transition-colors">
+                    <tr key={item.doc_id} className="hover:bg-[#F9FAFB] transition-colors">
                       <td className="px-5 py-3.5"><span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${cls}`}>{label}</span></td>
-                      <td className="px-5 py-3.5 font-semibold text-[#F4F4F5] text-sm" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.product_name}</td>
+                      <td className="px-5 py-3.5 font-semibold text-[#111827] text-sm" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.product_name}</td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-[#18181B] border border-[#27272A] text-[#71717A]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-white border border-[#E5E7EB] text-[#6B7280]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
                           {item.category}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 font-mono text-xs text-[#52525B]">{item.batch_number}</td>
+                      <td className="px-5 py-3.5 font-mono text-xs text-[#9CA3AF]">{item.batch_number}</td>
                       <td className="px-5 py-3.5">
                         <span style={{ color: expStyle.color, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13 }}>{item.expiry_date}</span>
                         {expStyle.label && (
@@ -496,7 +493,7 @@ export function LiveInventory() {
                         )}
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-sm font-bold text-[#F4F4F5] bg-[#18181B] px-2.5 py-1 rounded-lg" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.stock}</span>
+                        <span className="text-sm font-bold text-[#111827] bg-white border border-[#E5E7EB] px-2.5 py-1 rounded-lg" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.stock}</span>
                       </td>
                     </tr>
                   );
@@ -520,21 +517,21 @@ export function LiveInventory() {
                 );
                 if (!results.length) return (
                   <div className="col-span-3 flex flex-col items-center py-20 text-center">
-                    <Package className="w-10 h-10 text-[#27272A] mb-4" />
-                    <p className="text-[#A1A1AA]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>No results for <strong className="text-[#F4F4F5]">"{search}"</strong></p>
+                    <Package className="w-10 h-10 text-[#E5E7EB] mb-4" />
+                    <p className="text-[#6B7280]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>No results for <strong className="text-[#111827]">"{search}"</strong></p>
                   </div>
                 );
                 return results.map(item => {
                   const { label, cls } = getStatusBadge(item.stock);
                   return (
-                    <div key={item.doc_id} className="glass-card rounded-[12px] p-5 shadow-xl flex flex-col gap-2 cursor-pointer hover:bg-[#111113] transition-all"
+                    <div key={item.doc_id} className="glass-card rounded-[12px] p-5 shadow-xl flex flex-col gap-2 cursor-pointer hover:bg-[#F9FAFB] transition-all"
                       onClick={() => { const cat = categories.find(c => c.name === item.category); if (cat) setSelectedCategory(cat); }}>
                       <div className="flex items-center justify-between">
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-xl border ${cls}`}>{label}</span>
-                        <span className="text-xs text-[#71717A]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.category}</span>
+                        <span className="text-xs text-[#6B7280]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.category}</span>
                       </div>
-                      <p className="font-semibold text-[#F4F4F5] text-sm" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.product_name}</p>
-                      <p className="text-xs text-[#71717A]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch: {item.batch_number} · Exp: {item.expiry_date} · Stock: {item.stock}</p>
+                      <p className="font-semibold text-[#111827] text-sm" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.product_name}</p>
+                      <p className="text-xs text-[#6B7280]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch: {item.batch_number} · Exp: {item.expiry_date} · Stock: {item.stock}</p>
                     </div>
                   );
                 });
@@ -568,32 +565,32 @@ export function LiveInventory() {
                   return (
                     <div key={cat.name} className="flex flex-col gap-4 group">
                       <div
-                        className="glass-card rounded-[12px] p-6 shadow-xl flex flex-col min-h-[200px] hover:bg-[#111113] transition-all cursor-pointer"
+                        className="glass-card rounded-[12px] p-6 shadow-xl flex flex-col min-h-[200px] hover:bg-[#F9FAFB] transition-all cursor-pointer"
                         onClick={() => setSelectedCategory(cat)}
                       >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="text-[#3B82F6]">{icon}</div>
+                          <div className="text-[#22C55E]">{icon}</div>
                           <div className="flex gap-1.5 flex-wrap justify-end">
                             {outCount > 0 && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#1A0000] text-[#EF4444] border border-[#991B1B]">{outCount} out</span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA]">{outCount} out</span>
                             )}
                             {lowCount > 0 && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#451A03] text-[#FB923C] border border-[#92400E]">{lowCount} low</span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]">{lowCount} low</span>
                             )}
                             {expiringCount > 0 && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#1C1200] text-[#F59E0B] border border-[#78350F]">{expiringCount} exp</span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FEF3C7] text-[#F59E0B] border border-[#FDE68A]">{expiringCount} exp</span>
                             )}
                           </div>
                         </div>
-                        <h2 className="text-lg font-semibold text-[#F4F4F5] mb-1" style={{ fontFamily: 'DM Sans, sans-serif' }}>{cat.name}</h2>
-                        <p className="text-sm text-[#71717A] mb-4" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{cat.items.length} product{cat.items.length !== 1 ? 's' : ''} · {totalStock} units</p>
+                        <h2 className="text-lg font-semibold text-[#111827] mb-1" style={{ fontFamily: 'DM Sans, sans-serif' }}>{cat.name}</h2>
+                        <p className="text-sm text-[#6B7280] mb-4" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{cat.items.length} product{cat.items.length !== 1 ? 's' : ''} · {totalStock} units</p>
                         {/* Stock health bar */}
                         <div className="mt-auto">
                           <div className="flex justify-between mb-1.5">
-                            <span className="text-[10px] text-[#52525B] uppercase tracking-wide font-semibold">Stock health</span>
+                            <span className="text-[10px] text-[#9CA3AF] uppercase tracking-wide font-semibold">Stock health</span>
                             <span className="text-[10px] font-bold" style={{ color: healthPct >= 70 ? '#22C55E' : healthPct >= 40 ? '#F59E0B' : '#EF4444' }}>{healthPct}%</span>
                           </div>
-                          <div className="w-full h-1.5 bg-[#1C1C1F] rounded-full overflow-hidden">
+                          <div className="w-full h-1.5 bg-[#F3F4F6] rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-500"
                               style={{ width: `${healthPct}%`, background: healthPct >= 70 ? '#22C55E' : healthPct >= 40 ? '#F59E0B' : '#EF4444' }}
@@ -612,31 +609,31 @@ export function LiveInventory() {
         {/* Category detail */}
         {!loading && selectedCategory && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <button onClick={() => setSelectedCategory(null)} className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 py-2.5 rounded-full font-medium text-sm transition-all mb-8 shadow-lg shadow-[#3B82F6]/30 hover:shadow-xl inline-block hover:scale-[1.02]">
+            <button onClick={() => setSelectedCategory(null)} className="bg-[#22C55E] hover:bg-[#16A34A] text-white px-6 py-2.5 rounded-full font-medium text-sm transition-all mb-8 shadow-lg shadow-[#22C55E]/30 hover:shadow-xl inline-block hover:scale-[1.02]">
               ← Back to Categories
             </button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div className="flex items-center gap-3">
-                <span className="text-[#3B82F6]">{CAT_ICONS[selectedCategory.name] ?? CAT_ICONS['Other']}</span>
-                <h2 className="text-3xl font-bold text-[#F4F4F5]" style={{ fontFamily: 'DM Sans, sans-serif' }}>{selectedCategory.name}</h2>
-                <span className="text-sm text-[#71717A] font-medium" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{selectedCategory.items.length} item(s)</span>
+                <span className="text-[#22C55E]">{CAT_ICONS[selectedCategory.name] ?? CAT_ICONS['Other']}</span>
+                <h2 className="text-3xl font-bold text-[#111827]" style={{ fontFamily: 'DM Sans, sans-serif' }}>{selectedCategory.name}</h2>
+                <span className="text-sm text-[#6B7280] font-medium" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{selectedCategory.items.length} item(s)</span>
               </div>
               <button
                 onClick={() => downloadCSV(selectedCategory.items, `inventory_${selectedCategory.name.toLowerCase().replace(/ /g, '_')}`)}
-                className="flex items-center gap-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white px-5 py-2.5 rounded-lg font-medium shadow-lg shadow-[#3B82F6]/30 transition-all hover:scale-[1.02]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
+                className="flex items-center gap-2 bg-[#22C55E] hover:bg-[#16A34A] text-white px-5 py-2.5 rounded-lg font-medium shadow-lg shadow-[#22C55E]/30 transition-all hover:scale-[1.02]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
               >
                 <Download className="w-4 h-4" /> Download Sheet
               </button>
             </div>
             {/* Sort controls */}
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xs text-[#52525B] font-semibold uppercase tracking-wide" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Sort by:</span>
+              <span className="text-xs text-[#9CA3AF] font-semibold uppercase tracking-wide" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Sort by:</span>
               {(['name', 'stock', 'expiry'] as const).map(k => (
                 <button
                   key={k}
                   onClick={() => toggleSort(k)}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                    sortKey === k ? 'bg-[#1A2535] text-[#3B82F6] border border-[#3B82F6]/30' : 'bg-[#18181B] text-[#71717A] border border-[#27272A] hover:text-[#A1A1AA]'
+                    sortKey === k ? 'bg-[#ECFDF5] text-[#22C55E] border border-[#22C55E]/30' : 'bg-white text-[#6B7280] border border-[#E5E7EB] hover:text-[#111827]'
                   }`}
                   style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
                 >
@@ -648,25 +645,25 @@ export function LiveInventory() {
             <div className="glass-card rounded-[12px] shadow-2xl overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#27272A] bg-[#111113]">
-                    <th className="px-6 py-5 text-xs font-bold text-[#A1A1AA] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Status</th>
-                    <th className="px-6 py-5 text-xs font-bold text-[#A1A1AA] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Product</th>
-                    <th className="px-6 py-5 text-xs font-bold text-[#A1A1AA] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch #</th>
-                    <th className="px-6 py-5 text-xs font-bold text-[#A1A1AA] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Expiry</th>
-                    <th className="px-6 py-5 text-xs font-bold text-[#A1A1AA] uppercase tracking-wider text-center" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Stock</th>
-                    <th className="px-6 py-5 text-xs font-bold text-[#A1A1AA] uppercase tracking-wider text-center" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Actions</th>
+                  <tr className="border-b border-[#E5E7EB] bg-white">
+                    <th className="px-6 py-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Status</th>
+                    <th className="px-6 py-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Product</th>
+                    <th className="px-6 py-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch #</th>
+                    <th className="px-6 py-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Expiry</th>
+                    <th className="px-6 py-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider text-center" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Stock</th>
+                    <th className="px-6 py-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider text-center" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#27272A]">
+                <tbody className="divide-y divide-[#E5E7EB]">
                   {sortedItems(selectedCategory.items).map((item) => {
                     const { label, cls } = getStatusBadge(item.stock);
                     const expStyle = getExpiryStyle(item.expiry_date);
                     const isEditing = item.doc_id in editingStock;
                     return (
-                      <tr key={item.doc_id} className="hover:bg-[#111113] transition-colors">
+                      <tr key={item.doc_id} className="hover:bg-[#F9FAFB] transition-colors">
                         <td className="px-6 py-4"><span className={`text-xs font-bold px-3 py-1 rounded-xl border ${cls}`}>{label}</span></td>
-                        <td className="px-6 py-4 font-semibold text-[#F4F4F5]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.product_name}</td>
-                        <td className="px-6 py-4 font-mono text-sm text-[#A1A1AA]">{item.batch_number}</td>
+                        <td className="px-6 py-4 font-semibold text-[#111827]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.product_name}</td>
+                        <td className="px-6 py-4 font-mono text-sm text-[#6B7280]">{item.batch_number}</td>
                         <td className="px-6 py-4">
                           <span style={{ color: expStyle.color, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 500 }}>
                             {item.expiry_date}
@@ -682,35 +679,35 @@ export function LiveInventory() {
                             <div className="flex items-center justify-center gap-1">
                               <button
                                 onClick={() => setEditingStock(p => ({ ...p, [item.doc_id]: Math.max(0, (p[item.doc_id] ?? 0) - 1) }))}
-                                className="w-7 h-7 flex items-center justify-center bg-[#18181B] hover:bg-[#27272A] text-[#A1A1AA] rounded-lg border border-[#27272A] transition-colors font-bold"
+                                className="w-7 h-7 flex items-center justify-center bg-white hover:bg-[#F3F4F6] text-[#6B7280] rounded-lg border border-[#E5E7EB] transition-colors font-bold"
                               >−</button>
                               <input
                                 type="number" min={0}
                                 value={editingStock[item.doc_id]}
                                 onChange={e => setEditingStock(p => ({ ...p, [item.doc_id]: parseInt(e.target.value) || 0 }))}
-                                className="w-16 text-center border border-[#3B82F6] bg-[#18181B] text-[#F4F4F5] rounded-lg px-1 py-1 text-sm font-bold focus:outline-none"
+                                className="w-16 text-center border border-[#22C55E] bg-white text-[#111827] rounded-lg px-1 py-1 text-sm font-bold focus:outline-none"
                                 style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
                               />
                               <button
                                 onClick={() => setEditingStock(p => ({ ...p, [item.doc_id]: (p[item.doc_id] ?? 0) + 1 }))}
-                                className="w-7 h-7 flex items-center justify-center bg-[#18181B] hover:bg-[#27272A] text-[#A1A1AA] rounded-lg border border-[#27272A] transition-colors font-bold"
+                                className="w-7 h-7 flex items-center justify-center bg-white hover:bg-[#F3F4F6] text-[#6B7280] rounded-lg border border-[#E5E7EB] transition-colors font-bold"
                               >+</button>
-                              <button onClick={() => handleStockSave(item.doc_id)} disabled={savingStock === item.doc_id} className="w-7 h-7 flex items-center justify-center bg-[#052E16] hover:bg-[#166534] text-[#22C55E] rounded-lg transition-colors ml-1">
+                              <button onClick={() => handleStockSave(item.doc_id)} disabled={savingStock === item.doc_id} className="w-7 h-7 flex items-center justify-center bg-[#ECFDF5] hover:bg-[#A7F3D0] text-[#059669] rounded-lg transition-colors ml-1">
                                 <Check className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => setEditingStock(p => { const n = { ...p }; delete n[item.doc_id]; return n; })} className="w-7 h-7 flex items-center justify-center bg-[#18181B] hover:bg-[#27272A] text-[#71717A] rounded-lg transition-colors">
+                              <button onClick={() => setEditingStock(p => { const n = { ...p }; delete n[item.doc_id]; return n; })} className="w-7 h-7 flex items-center justify-center bg-white hover:bg-[#F3F4F6] text-[#6B7280] rounded-lg transition-colors">
                                 <X className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           ) : (
-                            <span className="text-sm font-bold text-[#F4F4F5] bg-[#18181B] px-3 py-1.5 rounded-lg" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.stock}</span>
+                            <span className="text-sm font-bold text-[#111827] bg-white border border-[#E5E7EB] px-3 py-1.5 rounded-lg" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.stock}</span>
                           )}
                         </td>
                         <td className="px-6 py-5 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => setEditingStock((p) => ({ ...p, [item.doc_id]: item.stock }))}
-                              className="w-8 h-8 flex items-center justify-center text-[#71717A] hover:bg-[#0C1A2E] hover:text-[#3B82F6] rounded-lg transition-colors"
+                              className="w-8 h-8 flex items-center justify-center text-[#6B7280] hover:bg-[#ECFDF5] hover:text-[#22C55E] rounded-lg transition-colors"
                               title="Edit stock"
                             >
                               <Pencil className="w-4 h-4" />
@@ -720,7 +717,7 @@ export function LiveInventory() {
                                 if (e.target.value) handleCategoryChange(item.doc_id, e.target.value);
                                 e.target.value = "";
                               }}
-                              className="text-xs bg-[#18181B] border border-[#3B82F6] rounded-lg px-2 py-1.5 outline-none focus:border-[#60A5FA] cursor-pointer text-[#F4F4F5] hover:bg-[#1F1F23] transition-colors"
+                              className="text-xs bg-white border border-[#22C55E] rounded-lg px-2 py-1.5 outline-none focus:border-[#16A34A] cursor-pointer text-[#111827] hover:bg-[#F9FAFB] transition-colors"
                               style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
                               title="Move to another category"
                             >
@@ -731,7 +728,7 @@ export function LiveInventory() {
                             </select>
                             <button
                               onClick={() => handleDelete(item.doc_id)}
-                              className="w-8 h-8 flex items-center justify-center text-[#71717A] hover:bg-[#1A0000] hover:text-[#EF4444] rounded-lg transition-colors"
+                              className="w-8 h-8 flex items-center justify-center text-[#6B7280] hover:bg-[#FEE2E2] hover:text-[#DC2626] rounded-lg transition-colors"
                               title="Delete product"
                             >
                               <Trash2 className="w-4 h-4" />

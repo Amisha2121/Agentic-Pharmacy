@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router';
 import { Bot, User, AlertCircle, XCircle, CheckCircle } from 'lucide-react';
-import { ChatArea } from '../components/ChatArea';
-import { ChatHistory } from '../components/ChatHistory';
+import { BoldChatArea } from '../components/BoldChatArea';
+import { BoldChatHistory } from '../components/BoldChatHistory';
 import { authenticatedFetch } from '../utils/api';
 
 interface ContextType {
@@ -89,7 +89,7 @@ export function AssistantChat() {
 
   return (
     <>
-      <ChatArea
+      <BoldChatArea
         selectedChat={threadId}
         isSidebarClosed={!isSidebarOpen}
         isHistoryClosed={!isHistoryOpen}
@@ -98,8 +98,9 @@ export function AssistantChat() {
         threadId={threadId}
         onNewMessage={handleNewMessage}
         initialMessages={activeMessages as never[]}
+        onNewChat={handleNewChat}
       />
-      <ChatHistory
+      <BoldChatHistory
         isOpen={isHistoryOpen}
         onToggle={() => setIsHistoryOpen(!isHistoryOpen)}
         onSelectChat={handleSelectChat}

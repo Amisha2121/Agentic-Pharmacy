@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet } from "react-router";
-import { Sidebar } from "./Sidebar";
+import { BoldSidebar } from "./BoldSidebar";
 import { OnboardingTour } from "./OnboardingTour";
 import { useAuth } from "../context/AuthContext";
 
@@ -9,9 +9,9 @@ export function RootLayout() {
   const { user } = useAuth();
 
   return (
-    <div className="flex h-screen bg-[#09090B] overflow-hidden font-sans relative">
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans relative">
       {/* Sidebar */}
-      <Sidebar 
+      <BoldSidebar 
         isOpen={isSidebarOpen} 
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)} 
       />

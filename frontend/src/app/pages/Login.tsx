@@ -5,7 +5,7 @@ import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
 function GoogleIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" aria-hidden="true">
       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
@@ -18,253 +18,168 @@ export function Login() {
   const { loginWithGoogle, loginWithEmail } = useAuth();
   const navigate = useNavigate();
 
-  const [showPwd,  setShowPwd]  = useState(false);
-  const [error,    setError]    = useState('');
-  const [loading,  setLoading]  = useState(false);
-  const [email,    setEmail]    = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [focused,  setFocused]  = useState<string | null>(null);
 
   const wrap = async (fn: () => Promise<void>) => {
-    setError(''); setLoading(true);
-    try { await fn(); navigate('/', { replace: true }); }
-    catch (e: unknown) { setError(e instanceof Error ? e.message : 'Something went wrong.'); }
-    finally { setLoading(false); }
+    setError('');
+    setLoading(true);
+    try {
+      await fn();
+      navigate('/', { replace: true });
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  /* ── shared input style ── */
-  const inputStyle = (name: string): React.CSSProperties => ({
-    width: '100%', height: 44, borderRadius: 10,
-    padding: '0 14px', boxSizing: 'border-box',
-    background: focused === name ? '#111318' : '#0D1117',
-    border: focused === name ? '1.5px solid #3B82F6' : '1.5px solid #27272A',
-    boxShadow: focused === name ? '0 0 0 3px rgba(59,130,246,0.12)' : 'none',
-    color: '#F4F4F5', fontSize: 14,
-    fontFamily: 'IBM Plex Sans, sans-serif',
-    outline: 'none', transition: 'all 0.15s',
-  });
-
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100%', background: '#09090B' }}>
-
-      {/* ── LEFT ─────────────────────────────────────────────────────── */}
-      <div className="left-panel" style={{
-        flex: '0 0 52%', position: 'relative', overflow: 'hidden',
-        background: '#09090B',
-      }}>
-        {/* Blue glow orbs — editorial, not techy */}
-        <div style={{
-          position: 'absolute', top: '-15%', left: '-20%',
-          width: '75%', height: '65%', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
-          filter: 'blur(50px)', pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '0%', right: '-10%',
-          width: '60%', height: '55%', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)',
-          filter: 'blur(60px)', pointerEvents: 'none',
-        }} />
-
-        {/* Top accent line */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-          background: 'linear-gradient(90deg, transparent, #3B82F6 50%, transparent)',
-          opacity: 0.6,
-        }} />
-
-        {/* Content */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', padding: '52px 64px' }}>
-
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10, fontSize: 18,
-              background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 16px rgba(59,130,246,0.35)',
-            }}>💊</div>
-            <span style={{ color: '#F4F4F5', fontSize: 18, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.3px' }}>PharmaAI</span>
-          </div>
-
-          {/* Hero text */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <p style={{
-              color: '#3B82F6', fontSize: 11, fontWeight: 600,
-              letterSpacing: '3px', textTransform: 'uppercase',
-              fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 24,
-            }}>
-              Pharmacy Intelligence
-            </p>
-            <h1 style={{
-              color: '#F4F4F5',
-              fontSize: 'clamp(34px, 3.5vw, 50px)',
-              fontWeight: 700, fontFamily: 'DM Sans, sans-serif',
-              lineHeight: 1.1, letterSpacing: '-1.5px', marginBottom: 24,
-            }}>
-              Inventory that<br />
-              <em style={{ fontStyle: 'italic', color: '#60A5FA', fontWeight: 400 }}>
-                thinks ahead.
-              </em>
-            </h1>
-            <p style={{ color: '#71717A', fontSize: 15, lineHeight: 1.75, fontFamily: 'IBM Plex Sans, sans-serif', maxWidth: 340 }}>
-              From scanning a barcode to catching a drug interaction — PharmaAI handles the complexity so you can focus on care.
-            </p>
-          </div>
-
-          {/* Footer rule */}
-          <div style={{ borderTop: '1px solid #18181B', paddingTop: 28 }}>
-            <p style={{ color: '#3F3F46', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>
-              Trusted by pharmacy teams worldwide
-            </p>
-          </div>
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-8">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-3 mb-12">
+          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#16a34a] to-[#15803d] border border-[#0F172A]" />
+          <span
+            className="text-[#0F172A] text-[24px] font-black uppercase tracking-tight"
+            style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
+          >
+            PHARMAAI
+          </span>
         </div>
-      </div>
 
-      {/* ── RIGHT ────────────────────────────────────────────────────── */}
-      <div style={{
-        flex: 1, background: '#0D1117',
-        borderLeft: '1px solid #18181B',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '48px 32px',
-      }}>
-        <div style={{ width: '100%', maxWidth: 380 }}>
-
-          {/* Mobile logo */}
-          <div className="mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 10, marginBottom: 40 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #3B82F6, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>💊</div>
-            <span style={{ color: '#F4F4F5', fontSize: 17, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}>PharmaAI</span>
-          </div>
-
+        {/* Card */}
+        <div className="bg-white border-2 border-[#0F172A] rounded-xl p-8">
           {/* Heading */}
-          <div style={{ marginBottom: 32 }}>
-            <h2 style={{ color: '#F4F4F5', fontSize: 26, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.5px', marginBottom: 6 }}>
-              Welcome back
-            </h2>
-            <p style={{ color: '#71717A', fontSize: 14, fontFamily: 'IBM Plex Sans, sans-serif' }}>
+          <div className="mb-8">
+            <h1
+              className="text-[28px] font-black uppercase text-[#0F172A] tracking-tight mb-2"
+              style={{ fontFamily: 'Inter, sans-serif', fontWeight: 900, letterSpacing: '-0.02em' }}
+            >
+              WELCOME BACK
+            </h1>
+            <p className="text-[14px] text-[#64748B] font-medium">
               Sign in to your account
             </p>
           </div>
 
-          {/* Google */}
+          {/* Google Button */}
           <button
             onClick={() => wrap(loginWithGoogle)}
             disabled={loading}
-            style={{
-              width: '100%', height: 44, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', gap: 10, borderRadius: 10,
-              border: '1.5px solid #27272A', background: '#18181B',
-              color: '#A1A1AA', fontSize: 14, fontWeight: 500,
-              fontFamily: 'IBM Plex Sans, sans-serif',
-              cursor: 'pointer', transition: 'all 0.15s', marginBottom: 20,
-              opacity: loading ? 0.4 : 1,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#1F1F23'; e.currentTarget.style.borderColor = '#3F3F46'; e.currentTarget.style.color = '#F4F4F5'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#18181B'; e.currentTarget.style.borderColor = '#27272A'; e.currentTarget.style.color = '#A1A1AA'; }}
+            className="w-full h-12 flex items-center justify-center gap-3 bg-white hover:bg-[#F8FAFC] border-2 border-[#0F172A] text-[#0F172A] font-bold text-[13px] uppercase tracking-wide transition-all mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ borderRadius: '999px' }}
           >
             <GoogleIcon />
-            Continue with Google
+            CONTINUE WITH GOOGLE
           </button>
 
           {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: '#18181B' }} />
-            <span style={{ color: '#3F3F46', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>or</span>
-            <div style={{ flex: 1, height: 1, background: '#18181B' }} />
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-[2px] bg-[#E2E8F0]" />
+            <span className="text-[11px] font-black uppercase tracking-wider text-[#94A3B8]">OR</span>
+            <div className="flex-1 h-[2px] bg-[#E2E8F0]" />
           </div>
 
           {/* Form */}
           <form onSubmit={(e: FormEvent) => { e.preventDefault(); wrap(() => loginWithEmail(email, password)); }}>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', color: '#A1A1AA', fontSize: 12, fontWeight: 500, fontFamily: 'IBM Plex Sans, sans-serif', letterSpacing: '0.3px', marginBottom: 7 }}>
-                Email address
+            {/* Email */}
+            <div className="mb-5">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-[#64748B] mb-2">
+                EMAIL ADDRESS
               </label>
               <input
-                type="email" value={email} required
-                onChange={e => setEmail(e.target.value)}
-                onFocus={() => setFocused('email')}
-                onBlur={() => setFocused(null)}
+                type="email"
+                value={email}
+                required
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                style={inputStyle('email')}
+                className="w-full h-12 px-4 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl text-[#0F172A] text-[14px] font-medium placeholder:text-[#94A3B8] focus:border-[#16a34a] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#DCFCE7] transition-all"
               />
             </div>
 
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-                <label style={{ color: '#A1A1AA', fontSize: 12, fontWeight: 500, fontFamily: 'IBM Plex Sans, sans-serif', letterSpacing: '0.3px' }}>
-                  Password
+            {/* Password */}
+            <div className="mb-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[11px] font-black uppercase tracking-wider text-[#64748B]">
+                  PASSWORD
                 </label>
-                <Link to="/forgot-password" style={{ color: '#3B82F6', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif', textDecoration: 'none', fontWeight: 500 }}>
-                  Forgot password?
+                <Link
+                  to="/forgot-password"
+                  className="text-[11px] font-bold text-[#16a34a] hover:text-[#15803d] uppercase tracking-wide transition-colors"
+                >
+                  FORGOT?
                 </Link>
               </div>
-              <div style={{ position: 'relative' }}>
+              <div className="relative">
                 <input
-                  type={showPwd ? 'text' : 'password'} value={password} required
-                  onChange={e => setPassword(e.target.value)}
-                  onFocus={() => setFocused('pwd')}
-                  onBlur={() => setFocused(null)}
+                  type={showPwd ? 'text' : 'password'}
+                  value={password}
+                  required
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••"
-                  style={{ ...inputStyle('pwd'), paddingRight: 44 }}
+                  className="w-full h-12 px-4 pr-12 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl text-[#0F172A] text-[14px] font-medium placeholder:text-[#94A3B8] focus:border-[#16a34a] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#DCFCE7] transition-all"
                 />
-                <button type="button" onClick={() => setShowPwd(p => !p)} style={{
-                  position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#52525B', padding: 0, display: 'flex', alignItems: 'center',
-                }}>
-                  {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                <button
+                  type="button"
+                  onClick={() => setShowPwd((p) => !p)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#0F172A] transition-colors"
+                >
+                  {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
+            {/* Error */}
             {error && (
-              <div style={{
-                background: '#1A0000', border: '1px solid rgba(239,68,68,0.3)',
-                borderRadius: 8, padding: '10px 14px', color: '#F87171',
-                fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 14,
-              }}>
-                {error}
+              <div className="mb-5 p-4 bg-[#FEE2E2] border-2 border-[#EF4444] rounded-xl">
+                <p className="text-[13px] font-bold text-[#DC2626]">{error}</p>
               </div>
             )}
 
+            {/* Submit */}
             <button
-              type="submit" disabled={loading}
-              style={{
-                width: '100%', height: 44, borderRadius: 10, border: 'none',
-                background: loading
-                  ? 'rgba(59,130,246,0.5)'
-                  : 'linear-gradient(135deg, #3B82F6, #6366F1)',
-                color: '#FFFFFF', fontSize: 14, fontWeight: 600,
-                fontFamily: 'IBM Plex Sans, sans-serif',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s', marginTop: 20,
-                boxShadow: loading ? 'none' : '0 4px 18px rgba(99,102,241,0.35)',
-              }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.boxShadow = '0 6px 24px rgba(99,102,241,0.5)'; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = loading ? 'none' : '0 4px 18px rgba(99,102,241,0.35)'; }}
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 flex items-center justify-center gap-2 bg-[#16a34a] hover:bg-[#15803d] text-white font-black text-[13px] uppercase tracking-wide transition-all mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ borderRadius: '999px' }}
             >
-              {loading
-                ? <><Loader2 size={16} className="animate-spin" /> Signing in…</>
-                : <>Sign in <ArrowRight size={15} /></>
-              }
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
+                  SIGNING IN...
+                </>
+              ) : (
+                <>
+                  SIGN IN
+                  <ArrowRight className="w-4 h-4" strokeWidth={3} />
+                </>
+              )}
             </button>
           </form>
 
-          <p style={{ textAlign: 'center', color: '#52525B', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginTop: 24 }}>
+          {/* Sign up link */}
+          <p className="text-center text-[13px] text-[#64748B] font-medium mt-6">
             Don't have an account?{' '}
-            <Link to="/signup" style={{ color: '#3B82F6', fontWeight: 600, textDecoration: 'none' }}>
+            <Link to="/signup" className="text-[#16a34a] font-bold hover:text-[#15803d] transition-colors">
               Create one
             </Link>
           </p>
         </div>
-      </div>
 
-      <style>{`
-        @media (min-width: 1024px) { .left-panel { display: flex !important; flex-direction: column; } }
-        @media (max-width: 1023px) { .left-panel { display: none !important; } .mobile-logo { display: flex !important; } }
-      `}</style>
+        {/* Back to landing */}
+        <div className="text-center mt-6">
+          <Link
+            to="/landing"
+            className="text-[12px] text-[#64748B] hover:text-[#0F172A] font-medium transition-colors"
+          >
+            ← Back to home
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

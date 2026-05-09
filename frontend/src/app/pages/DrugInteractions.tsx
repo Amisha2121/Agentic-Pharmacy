@@ -39,27 +39,27 @@ const SEVERITY: Record<Severity, {
     label: 'Interaction Detected',
     sublabel: 'Clinically significant — review recommended',
     color: '#D97706',
-    bg: '#0D0900',
-    border: '#78350F',
-    headerBg: '#1C1200',
+    bg: '#FEF3C7',
+    border: '#FDE68A',
+    headerBg: '#FEF3C7',
     Icon: ShieldAlert,
   },
   safe: {
     label: 'No Interaction Identified',
     sublabel: 'No direct interaction found in FDA records',
     color: '#16A34A',
-    bg: '#030D05',
-    border: '#166534',
-    headerBg: '#052E16',
+    bg: '#ECFDF5',
+    border: '#A7F3D0',
+    headerBg: '#ECFDF5',
     Icon: CheckCircle2,
   },
   unknown: {
     label: 'Insufficient Data',
     sublabel: 'One or both drugs not found in database',
     color: '#6B7280',
-    bg: '#0A0A0B',
-    border: '#27272A',
-    headerBg: '#111113',
+    bg: '#F9FAFB',
+    border: '#E5E7EB',
+    headerBg: '#F9FAFB',
     Icon: XCircle,
   },
 };
@@ -87,8 +87,8 @@ function FormattedText({ text }: { text: string }) {
             <div
               key={i}
               style={{
-                background: '#0E0E11',
-                border: '1px solid #1C1C1F',
+                background: '#F9FAFB',
+                border: '1px solid #E5E7EB',
                 borderLeft: '3px solid #3B82F6',
                 borderRadius: '0 8px 8px 0',
                 padding: '12px 16px',
@@ -97,7 +97,7 @@ function FormattedText({ text }: { text: string }) {
               <p style={{ margin: '0 0 8px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
                 FDA Label Excerpt
               </p>
-              <p style={{ margin: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: 12.5, color: '#A1A1AA', lineHeight: 1.7 }}>
+              <p style={{ margin: 0, fontFamily: 'IBM Plex Mono, monospace', fontSize: 12.5, color: '#6B7280', lineHeight: 1.7 }}>
                 {lines.slice(1).join('\n')}
               </p>
             </div>
@@ -109,16 +109,16 @@ function FormattedText({ text }: { text: string }) {
             <div
               key={i}
               style={{
-                background: '#0E0E11',
-                border: '1px solid #1C1C1F',
+                background: '#F9FAFB',
+                border: '1px solid #E5E7EB',
                 borderRadius: 8,
                 padding: '12px 16px',
               }}
             >
-              <p style={{ margin: '0 0 6px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+              <p style={{ margin: '0 0 6px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
                 Clinical Guidance
               </p>
-              <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13.5, color: '#D4D4D8', lineHeight: 1.7 }}>
+              <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13.5, color: '#374151', lineHeight: 1.7 }}>
                 {para.replace(/^(Clinical Guidance:|Recommendation:)\s*/, '')}
               </p>
             </div>
@@ -127,7 +127,7 @@ function FormattedText({ text }: { text: string }) {
 
         if (isNote) {
           return (
-            <p key={i} style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, color: '#52525B', lineHeight: 1.6, fontStyle: 'italic' }}>
+            <p key={i} style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, color: '#9CA3AF', lineHeight: 1.6, fontStyle: 'italic' }}>
               {para}
             </p>
           );
@@ -135,14 +135,14 @@ function FormattedText({ text }: { text: string }) {
 
         if (isDisclosure) {
           return (
-            <p key={i} style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, color: '#71717A', lineHeight: 1.6 }}>
+            <p key={i} style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, color: '#6B7280', lineHeight: 1.6 }}>
               {para}
             </p>
           );
         }
 
         return (
-          <p key={i} style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#A1A1AA', lineHeight: 1.75 }}>
+          <p key={i} style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#6B7280', lineHeight: 1.75 }}>
             {para}
           </p>
         );
@@ -205,11 +205,11 @@ function ResultCard({ result }: { result: CheckResult }) {
             alignItems: 'center',
             gap: 6,
             flexShrink: 0,
-            background: '#18181B',
-            border: '1px solid #27272A',
+            background: 'white',
+            border: '1px solid #E5E7EB',
             borderRadius: 7,
             padding: '6px 12px',
-            color: copied ? '#22C55E' : '#71717A',
+            color: copied ? '#22C55E' : '#6B7280',
             fontFamily: 'IBM Plex Sans, sans-serif',
             fontSize: 12,
             fontWeight: 600,
@@ -232,14 +232,14 @@ function ResultCard({ result }: { result: CheckResult }) {
           gap: 8,
         }}
       >
-        <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, fontWeight: 600, color: '#93C5FD', background: '#0C1A2E', border: '1px solid #1E3A5F', borderRadius: 5, padding: '3px 10px' }}>
+        <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, fontWeight: 600, color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 5, padding: '3px 10px' }}>
           {result.drug_a}
         </span>
-        <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 10, fontWeight: 700, color: '#3F3F46' }}>AND</span>
-        <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, fontWeight: 600, color: '#C4B5FD', background: '#1A0A2E', border: '1px solid #3B1F6E', borderRadius: 5, padding: '3px 10px' }}>
+        <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 10, fontWeight: 700, color: '#9CA3AF' }}>AND</span>
+        <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, fontWeight: 600, color: '#7C3AED', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 5, padding: '3px 10px' }}>
           {result.drug_b}
         </span>
-        <span style={{ marginLeft: 'auto', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 10, fontWeight: 600, color: '#3F3F46', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <span style={{ marginLeft: 'auto', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 10, fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           FDA openFDA Drug Labels
         </span>
       </div>
@@ -296,7 +296,7 @@ function InputField({
           fontFamily: 'IBM Plex Sans, sans-serif',
           fontSize: 11,
           fontWeight: 700,
-          color: '#52525B',
+          color: '#9CA3AF',
           textTransform: 'uppercase',
           letterSpacing: '0.7px',
           marginBottom: 8,
@@ -311,19 +311,19 @@ function InputField({
         placeholder={placeholder}
         style={{
           width: '100%',
-          background: '#0E0E11',
-          border: '1px solid #27272A',
+          background: '#F9FAFB',
+          border: '1px solid #E5E7EB',
           borderRadius: 8,
           padding: '11px 14px',
           fontFamily: 'IBM Plex Sans, sans-serif',
           fontSize: 14,
-          color: '#F4F4F5',
+          color: '#111827',
           outline: 'none',
           boxSizing: 'border-box',
           transition: 'border-color 0.15s',
         }}
         onFocus={e => (e.target.style.borderColor = accentColor)}
-        onBlur={e => (e.target.style.borderColor = '#27272A')}
+        onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
         onKeyDown={e => { if (e.key === 'Enter') (document.getElementById('ddi-check-btn') as HTMLButtonElement)?.click(); }}
       />
     </div>
@@ -336,7 +336,14 @@ export function DrugInteractions() {
   const [drugB, setDrugB] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CheckResult | null>(null);
-  const [history, setHistory] = useState<CheckResult[]>([]);
+  const [history, setHistory] = useState<CheckResult[]>(() => {
+    try {
+      const saved = localStorage.getItem('pharmaai_drug_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [error, setError] = useState('');
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -359,7 +366,9 @@ export function DrugInteractions() {
         checkedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setResult(entry);
-      setHistory(h => [entry, ...h.slice(0, 9)]);
+      const updatedHistory = [entry, ...history.slice(0, 9)];
+      setHistory(updatedHistory);
+      localStorage.setItem('pharmaai_drug_history', JSON.stringify(updatedHistory));
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
     } catch {
       setError('Unable to reach the server. Ensure the backend is running on port 8000.');
@@ -368,36 +377,50 @@ export function DrugInteractions() {
     }
   };
 
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem('pharmaai_drug_history');
+  };
+
+  const fillExample = (a: string, b: string) => {
+    setDrugA(a);
+    setDrugB(b);
+  };
+
+  const rerunCheck = (entry: CheckResult) => {
+    setDrugA(entry.drug_a);
+    setDrugB(entry.drug_b);
+    setResult(entry);
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+  };
+
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', background: '#09090B' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', background: '#F9FAFB' }}>
 
       {/* Topbar */}
-      <div style={{ height: 56, background: '#0E0E11', borderBottom: '1px solid #1C1C1F', display: 'flex', alignItems: 'center', gap: 14, padding: '0 24px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div style={{ height: 56, background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 14, padding: '0 24px', position: 'sticky', top: 0, zIndex: 20 }}>
         {!isSidebarOpen && (
-          <button onClick={() => setIsSidebarOpen(true)} style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 7, background: '#18181B', border: '1px solid #27272A', color: '#71717A', cursor: 'pointer' }}>
+          <button onClick={() => setIsSidebarOpen(true)} style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 7, background: '#FFFFFF', border: '1px solid #E5E7EB', color: '#6B7280', cursor: 'pointer' }}>
             <Menu size={17} />
           </button>
         )}
-        <FlaskConical size={16} style={{ color: '#7C3AED' }} />
-        <h1 style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600, color: '#F4F4F5', letterSpacing: '-0.2px' }}>
+        <FlaskConical size={16} style={{ color: '#8B5CF6' }} />
+        <h1 style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 18, fontWeight: 700, color: '#111827', letterSpacing: '-0.2px' }}>
           Drug Interaction Checker
         </h1>
-        <span style={{ marginLeft: 'auto', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 10, fontWeight: 700, color: '#3F3F46', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-          FDA openFDA · ChromaDB RAG
-        </span>
       </div>
 
       <div style={{ maxWidth: 820, margin: '0 auto', width: '100%', padding: '40px 24px 80px' }}>
 
         {/* Page heading */}
         <div style={{ marginBottom: 32 }}>
-          <h2 style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 700, color: '#F4F4F5', letterSpacing: '-0.4px' }}>
-            Drug Interaction Check
+          <h2 style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 24, fontWeight: 700, color: '#111827', letterSpacing: '-0.4px' }}>
+            Drug interaction check
           </h2>
         </div>
 
         {/* Input panel */}
-        <div style={{ background: '#111113', border: '1px solid #1C1C1F', borderRadius: 12, padding: 24, marginBottom: 24 }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: 24, marginBottom: 24 }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <InputField
               label="Drug A"
@@ -407,7 +430,7 @@ export function DrugInteractions() {
               placeholder="e.g. Warfarin"
             />
 
-            <div style={{ paddingBottom: 4, flexShrink: 0, color: '#3F3F46', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, fontWeight: 700 }}>
+            <div style={{ paddingBottom: 4, flexShrink: 0, color: '#9CA3AF', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, fontWeight: 700 }}>
               AND
             </div>
 
@@ -428,8 +451,8 @@ export function DrugInteractions() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                background: loading || !drugA.trim() || !drugB.trim() ? '#1C1C1F' : '#7C3AED',
-                color: loading || !drugA.trim() || !drugB.trim() ? '#52525B' : '#fff',
+                background: loading || !drugA.trim() || !drugB.trim() ? '#F3F4F6' : '#7C3AED',
+                color: loading || !drugA.trim() || !drugB.trim() ? '#9CA3AF' : '#fff',
                 border: 'none',
                 borderRadius: 8,
                 padding: '11px 22px',
@@ -446,7 +469,7 @@ export function DrugInteractions() {
             >
               {loading ? (
                 <>
-                  <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #52525B', borderTopColor: '#A78BFA', animation: 'spin 0.6s linear infinite' }} />
+                  <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #9CA3AF', borderTopColor: '#A78BFA', animation: 'spin 0.6s linear infinite' }} />
                   Checking
                 </>
               ) : (
@@ -467,7 +490,7 @@ export function DrugInteractions() {
           )}
 
           {/* Disclaimer */}
-          <p style={{ margin: '16px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11.5, color: '#3F3F46', lineHeight: 1.5, borderTop: '1px solid #1A1A1D', paddingTop: 12 }}>
+          <p style={{ margin: '16px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11.5, color: '#9CA3AF', lineHeight: 1.5, borderTop: '1px solid #E5E7EB', paddingTop: 12 }}>
             Results are sourced from FDA openFDA drug labels. This tool is for reference only and does not constitute medical advice. Always verify with clinical sources.
           </p>
         </div>
@@ -477,8 +500,52 @@ export function DrugInteractions() {
           {result && <ResultCard result={result} />}
         </div>
 
+        {/* Metadata footer */}
+        <div style={{ marginTop: 24, padding: '12px 16px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, textAlign: 'center' }}>
+          <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Data Source: FDA openFDA · ChromaDB RAG
+          </p>
+        </div>
+
+        {/* Example chips - shown when no result */}
+        {!result && history.length === 0 && (
+          <div style={{ marginTop: 24, padding: '20px 24px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 12 }}>
+            <p style={{ margin: '0 0 12px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, fontWeight: 600, color: '#6B7280' }}>
+              Common drug pairs to check:
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                ['Warfarin', 'Aspirin'],
+                ['Metformin', 'Ibuprofen'],
+                ['Amoxicillin', 'Alcohol'],
+              ].map(([a, b]) => (
+                <button
+                  key={`${a}-${b}`}
+                  onClick={() => fillExample(a, b)}
+                  style={{
+                    padding: '6px 12px',
+                    background: 'white',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: 8,
+                    fontFamily: 'IBM Plex Sans, sans-serif',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: '#6B7280',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#7C3AED'; e.currentTarget.style.color = '#7C3AED'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.color = '#6B7280'; }}
+                >
+                  {a} + {b}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* History */}
-        {history.length > 1 && (
+        {history.length > 0 && (
           <div style={{ marginTop: 32 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -488,7 +555,7 @@ export function DrugInteractions() {
                 </span>
               </div>
               <button
-                onClick={() => setHistory([])}
+                onClick={clearHistory}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: '#3F3F46', cursor: 'pointer', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, padding: 0 }}
               >
                 <Trash2 size={11} /> Clear history
@@ -496,18 +563,18 @@ export function DrugInteractions() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {history.slice(1).map((h, i) => {
+              {history.map((h, i) => {
                 const sev = SEVERITY[getSeverity(h)];
                 return (
                   <button
                     key={i}
-                    onClick={() => { setDrugA(h.drug_a); setDrugB(h.drug_b); setResult(h); }}
+                    onClick={() => rerunCheck(h)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: 10,
-                      background: '#0E0E11',
-                      border: '1px solid #1A1A1D',
+                      background: '#FFFFFF',
+                      border: '1px solid #E5E7EB',
                       borderRadius: 8,
                       padding: '9px 14px',
                       cursor: 'pointer',
@@ -515,20 +582,20 @@ export function DrugInteractions() {
                       width: '100%',
                       transition: 'border-color 0.15s',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#27272A')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#1A1A1D')}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
                   >
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: sev.color, flexShrink: 0 }} />
-                    <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#A1A1AA', flex: 1 }}>
-                      {h.drug_a} <span style={{ color: '#3F3F46' }}>+</span> {h.drug_b}
+                    <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#6B7280', flex: 1 }}>
+                      {h.drug_a} <span style={{ color: '#9CA3AF' }}>↔</span> {h.drug_b}
                     </span>
                     <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, color: sev.color, fontWeight: 600 }}>
                       {sev.label}
                     </span>
-                    <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, color: '#3F3F46' }}>
+                    <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, color: '#9CA3AF' }}>
                       {h.checkedAt}
                     </span>
-                    <ChevronRight size={12} style={{ color: '#27272A' }} />
+                    <ChevronRight size={12} style={{ color: '#D1D5DB' }} />
                   </button>
                 );
               })}

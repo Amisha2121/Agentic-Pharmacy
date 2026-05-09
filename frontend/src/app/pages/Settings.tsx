@@ -30,14 +30,14 @@ function Section({ icon, title, subtitle, children }: {
   icon: React.ReactNode; title: string; subtitle: string; children: React.ReactNode;
 }) {
   return (
-    <div style={{ background: '#111113', border: '1px solid #27272A', borderRadius: 16, overflow: 'hidden' }}>
-      <div style={{ padding: '18px 24px', borderBottom: '1px solid #1C1C1F', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 9, background: '#18181B', border: '1px solid #27272A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6', flexShrink: 0 }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid #0F172A', borderRadius: 24, overflow: 'hidden' }}>
+      <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#16a34a', border: '1px solid #0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', flexShrink: 0 }}>
           {icon}
         </div>
         <div>
-          <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 14.5, fontWeight: 600, color: '#F4F4F5' }}>{title}</p>
-          <p style={{ margin: '2px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11.5, color: '#52525B' }}>{subtitle}</p>
+          <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 14.5, fontWeight: 700, color: '#0F172A' }}>{title}</p>
+          <p style={{ margin: '2px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11.5, color: '#64748B' }}>{subtitle}</p>
         </div>
       </div>
       <div style={{ padding: '16px 24px' }}>{children}</div>
@@ -52,11 +52,11 @@ function Row({ label, sub, right, danger, noBorder }: {
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       gap: 16, padding: '11px 0',
-      borderBottom: noBorder ? 'none' : '1px solid #1A1A1D',
+      borderBottom: noBorder ? 'none' : '1px solid #E2E8F0',
     }}>
       <div>
-        <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13.5, fontWeight: 500, color: danger ? '#EF4444' : '#E4E4E7' }}>{label}</p>
-        {sub && <p style={{ margin: '2px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#52525B' }}>{sub}</p>}
+        <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13.5, fontWeight: 600, color: danger ? '#EF4444' : '#0F172A' }}>{label}</p>
+        {sub && <p style={{ margin: '2px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B' }}>{sub}</p>}
       </div>
       {right}
     </div>
@@ -68,14 +68,15 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button
       onClick={() => onChange(!checked)}
       style={{
-        width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
-        background: checked ? '#3B82F6' : '#27272A',
+        width: 44, height: 24, borderRadius: 999, border: '1px solid #0F172A', cursor: 'pointer',
+        background: checked ? '#16a34a' : '#F8FAFC',
         position: 'relative', transition: 'background 0.2s', flexShrink: 0,
       }}
     >
       <span style={{
-        position: 'absolute', top: 3, left: checked ? 23 : 3,
-        width: 18, height: 18, borderRadius: 9, background: '#fff',
+        position: 'absolute', top: 2, left: checked ? 21 : 2,
+        width: 18, height: 18, borderRadius: '50%', background: '#fff',
+        border: '1px solid #0F172A',
         transition: 'left 0.2s', display: 'block',
       }} />
     </button>
@@ -85,9 +86,9 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 function Chip({ label, color, icon }: { label: string; color: string; icon?: React.ReactNode }) {
   return (
     <span style={{
-      fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 600,
-      padding: '3px 10px', borderRadius: 20, background: color + '20',
-      color, border: `1px solid ${color}40`,
+      fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700,
+      padding: '4px 12px', borderRadius: 999, background: color + '15',
+      color, border: `1px solid #0F172A`,
       display: 'inline-flex', alignItems: 'center', gap: 5,
     }}>
       {icon}{label}
@@ -106,11 +107,11 @@ function ActionBtn({ children, onClick, danger, icon }: {
       onMouseLeave={() => setHover(false)}
       style={{
         display: 'flex', alignItems: 'center', gap: 6,
-        background: hover ? (danger ? '#3B0000' : '#1F2937') : (danger ? '#1A0A0A' : '#18181B'),
-        border: `1px solid ${danger ? '#3B1111' : '#27272A'}`,
-        borderRadius: 8, padding: '7px 14px',
-        color: danger ? '#EF4444' : '#A1A1AA',
-        fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, fontWeight: 600,
+        background: hover ? (danger ? '#FEE2E2' : '#F0FDF4') : '#FFFFFF',
+        border: `1px solid #0F172A`,
+        borderRadius: 999, padding: '7px 14px',
+        color: danger ? '#EF4444' : '#0F172A',
+        fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, fontWeight: 700,
         cursor: 'pointer', transition: 'all 0.2s',
       }}
     >
@@ -213,35 +214,35 @@ export function Settings() {
                         user?.provider === 'email'  ? '#22C55E' : '#A1A1AA';
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', background: '#09090B' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', background: '#F8FAFC' }}>
 
       {/* ── Topbar ── */}
-      <div style={{ height: 56, background: '#0E0E11', borderBottom: '1px solid #27272A', display: 'flex', alignItems: 'center', gap: 16, padding: '0 28px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div style={{ height: 56, background: '#FFFFFF', borderBottom: '1px solid #0F172A', display: 'flex', alignItems: 'center', gap: 16, padding: '0 28px', position: 'sticky', top: 0, zIndex: 20 }}>
         {!isSidebarOpen && (
-          <button onClick={() => setIsSidebarOpen(true)} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, background: '#18181B', border: '1px solid #27272A', color: '#A1A1AA', cursor: 'pointer' }}>
+          <button onClick={() => setIsSidebarOpen(true)} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: '#FFFFFF', border: '1px solid #0F172A', color: '#0F172A', cursor: 'pointer' }}>
             <Menu size={18} />
           </button>
         )}
-        <h1 style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 17, fontWeight: 600, color: '#F4F4F5', letterSpacing: '-0.2px' }}>Settings</h1>
+        <h1 style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 17, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.2px' }}>Settings</h1>
       </div>
 
       <div style={{ maxWidth: 780, margin: '0 auto', width: '100%', padding: '28px 24px 64px', display: 'flex', flexDirection: 'column', gap: 18 }}>
 
         {/* ── Profile card ── */}
-        <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #111827 60%, #0F1629 100%)', border: '1px solid #1E3A5F', borderRadius: 20, padding: 26, display: 'flex', gap: 22, alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ background: '#16a34a', border: '1px solid #0F172A', borderRadius: 24, padding: 26, display: 'flex', gap: 22, alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{ width: 76, height: 76, borderRadius: '50%', background: 'linear-gradient(135deg, #1D4ED8, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: '#fff', fontFamily: 'DM Sans, sans-serif', boxShadow: '0 0 0 3px #1E3A5F, 0 0 24px rgba(59,130,246,0.25)' }}>
+            <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 900, color: '#16a34a', fontFamily: 'DM Sans, sans-serif', border: '2px solid #0F172A' }}>
               {user?.initials || 'AM'}
             </div>
             <div style={{ position: 'absolute', bottom: 2, right: 2, width: 13, height: 13, borderRadius: '50%', background: '#22C55E', border: '2px solid #0F172A' }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: '0 0 2px', fontFamily: 'DM Sans, sans-serif', fontSize: 20, fontWeight: 700, color: '#F4F4F5' }}>{user?.name || 'User'}</p>
-            <p style={{ margin: '0 0 10px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, color: '#60A5FA' }}>{user?.email ?? 'No email'}</p>
+            <p style={{ margin: '0 0 2px', fontFamily: 'DM Sans, sans-serif', fontSize: 20, fontWeight: 900, color: '#FFFFFF' }}>{user?.name || 'User'}</p>
+            <p style={{ margin: '0 0 10px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, color: '#FFFFFF', opacity: 0.9 }}>{user?.email ?? 'No email'}</p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <Chip label={providerLabel} color={providerColor} icon={providerIcon} />
-              <Chip label="Staff Access" color="#94A3B8" icon={<Shield size={10} />} />
+              <Chip label="Staff Access" color="#0F172A" icon={<Shield size={10} />} />
               <Chip label="Active" color="#22C55E" icon={<Activity size={10} />} />
             </div>
           </div>
@@ -251,34 +252,39 @@ export function Settings() {
         <Section icon={<UserCircle size={16} />} title="Profile" subtitle="Update your display name and personal info">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <label style={{ display: 'block', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 600, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>Display Name</label>
+              <label style={{ display: 'block', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>Display Name</label>
               <input
                 type="text" value={name} onChange={e => setName(e.target.value)}
                 placeholder="Your full name"
                 onKeyDown={e => e.key === 'Enter' && handleSave()}
-                style={{ width: '100%', background: '#0E0E11', border: '1px solid #27272A', borderRadius: 10, padding: '10px 14px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#F4F4F5', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
-                onFocus={e => (e.target as HTMLInputElement).style.borderColor = '#3B82F6'}
-                onBlur={e => (e.target as HTMLInputElement).style.borderColor = '#27272A'}
+                style={{ width: '100%', background: '#F8FAFC', border: '1px solid #0F172A', borderRadius: 999, padding: '10px 16px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#0F172A', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                onFocus={e => (e.target as HTMLInputElement).style.borderColor = '#16a34a'}
+                onBlur={e => (e.target as HTMLInputElement).style.borderColor = '#0F172A'}
               />
-              <p style={{ margin: '5px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#52525B' }}>Used to greet you in the chat and personalise your experience.</p>
+              <p style={{ margin: '5px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B' }}>
+                This name appears in the AI chat interface and throughout the app. Choose a name that's easy to recognize and professional for your pharmacy team.
+              </p>
             </div>
             <div>
-              <label style={{ display: 'block', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 600, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>Email Address</label>
-              <div style={{ background: '#0E0E11', border: '1px solid #1C1C1F', borderRadius: 10, padding: '10px 14px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#52525B', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ display: 'block', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>Email Address</label>
+              <div style={{ background: '#F8FAFC', border: '1px solid #0F172A', borderRadius: 999, padding: '10px 16px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#64748B', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>{user?.email ?? '—'}</span>
-                <span style={{ fontSize: 11, color: '#3F3F46', background: '#1C1C1F', padding: '2px 8px', borderRadius: 6 }}>Read-only</span>
+                <span style={{ fontSize: 11, color: '#64748B', background: '#E2E8F0', padding: '2px 8px', borderRadius: 999, border: '1px solid #0F172A' }}>Read-only</span>
               </div>
+              <p style={{ margin: '5px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B' }}>
+                Your email is linked to your authentication provider and cannot be changed here. To update your email, please contact your authentication provider directly.
+              </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 2 }}>
               <button
                 onClick={handleSave}
                 disabled={!name.trim() || name === user?.name || saving}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, background: (!name.trim() || name === user?.name) ? '#1C1C1F' : '#3B82F6', color: (!name.trim() || name === user?.name) ? '#52525B' : '#fff', border: 'none', borderRadius: 10, padding: '9px 20px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13.5, fontWeight: 600, cursor: (!name.trim() || name === user?.name) ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 7, background: (!name.trim() || name === user?.name) ? '#E2E8F0' : '#16a34a', color: (!name.trim() || name === user?.name) ? '#64748B' : '#fff', border: '1px solid #0F172A', borderRadius: 999, padding: '9px 20px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13.5, fontWeight: 700, cursor: (!name.trim() || name === user?.name) ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
               >
                 {saving ? <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Saving…</> : <><Save size={14} /> Save Changes</>}
               </button>
               {saved && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#22C55E', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 500 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#22C55E', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 600 }}>
                   <CheckCircle2 size={15} /> Profile updated!
                 </div>
               )}
@@ -288,40 +294,53 @@ export function Settings() {
 
         {/* ── Notifications ── */}
         <Section icon={<Bell size={16} />} title="Notifications" subtitle="Control when and how you receive alerts">
+          <div style={{ marginBottom: 16, padding: 12, background: '#F0FDF4', border: '1px solid #16a34a', borderRadius: 16 }}>
+            <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+              <strong>Stay informed:</strong> Enable notifications to receive real-time alerts about critical inventory events. These settings help you maintain optimal stock levels and prevent medication shortages.
+            </p>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <Row label="Reorder Alerts" sub="Notify when stock falls below threshold" right={<Toggle checked={notifReorder} onChange={v => { setNotifReorder(v); pref('notifReorder', v); }} />} />
-            <Row label="Expiry Warnings" sub="Remind me 30 days before medicines expire" right={<Toggle checked={notifExpiry} onChange={v => { setNotifExpiry(v); pref('notifExpiry', v); }} />} />
-            <Row label="Chat Notifications" sub="Alert when AI assistant responds" right={<Toggle checked={notifChat} onChange={v => { setNotifChat(v); pref('notifChat', v); }} />} />
-            <Row label="Weekly Summary" sub="Email digest of inventory health every Monday" right={<Toggle checked={notifWeekly} onChange={v => { setNotifWeekly(v); pref('notifWeekly', v); }} />} noBorder />
+            <Row label="Reorder Alerts" sub="Get notified immediately when any medicine falls below its minimum stock threshold. Helps prevent stockouts and ensures continuous availability of essential medications." right={<Toggle checked={notifReorder} onChange={v => { setNotifReorder(v); pref('notifReorder', v); }} />} />
+            <Row label="Expiry Warnings" sub="Receive advance notifications 30 days before medicines expire. This gives you time to plan promotions, returns, or proper disposal of expiring stock." right={<Toggle checked={notifExpiry} onChange={v => { setNotifExpiry(v); pref('notifExpiry', v); }} />} />
+            <Row label="Chat Notifications" sub="Get alerts when the AI assistant completes processing your requests or has important information to share about inventory queries." right={<Toggle checked={notifChat} onChange={v => { setNotifChat(v); pref('notifChat', v); }} />} />
+            <Row label="Weekly Summary" sub="Receive a comprehensive email digest every Monday morning with inventory health metrics, low stock items, upcoming expirations, and sales trends from the previous week." right={<Toggle checked={notifWeekly} onChange={v => { setNotifWeekly(v); pref('notifWeekly', v); }} />} noBorder />
           </div>
         </Section>
 
         {/* ── Appearance ── */}
         <Section icon={<Palette size={16} />} title="Appearance" subtitle="Customise how the interface looks and feels">
           <div>
-            <p style={{ margin: '0 0 10px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 600, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Theme</p>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #1A1A1D' }}>
+            <p style={{ margin: '0 0 10px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Theme</p>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #E2E8F0' }}>
               {([['dark', 'Dark', <Pill size={16} />], ['system', 'System', <Monitor size={16} />]] as const).map(([val, label, icon]) => (
                 <button key={val} onClick={() => { setTheme(val as 'dark' | 'system'); pref('theme', val); }}
-                  style={{ flex: 1, background: theme === val ? '#1E3A5F' : '#0E0E11', border: `1px solid ${theme === val ? '#3B82F6' : '#27272A'}`, borderRadius: 10, padding: '12px 8px', cursor: 'pointer', color: theme === val ? '#60A5FA' : '#71717A', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
+                  style={{ flex: 1, background: theme === val ? '#F0FDF4' : '#FFFFFF', border: `1px solid #0F172A`, borderRadius: 24, padding: '12px 8px', cursor: 'pointer', color: theme === val ? '#16a34a' : '#64748B', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
                 >
                   {icon}{label}
                 </button>
               ))}
             </div>
-            <Row label="Compact Mode" sub="Reduce spacing for a denser layout" right={<Toggle checked={compactMode} onChange={v => { setCompactMode(v); pref('compactMode', v); }} />} />
-            <Row label="Animations" sub="Enable smooth transitions and micro-interactions" right={<Toggle checked={animations} onChange={v => { setAnimations(v); pref('animations', v); }} />} noBorder />
+            <p style={{ margin: '0 0 16px', padding: 12, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B', lineHeight: 1.6 }}>
+              Choose between dark mode for reduced eye strain during night shifts, or system mode to automatically match your device's appearance settings.
+            </p>
+            <Row label="Compact Mode" sub="Reduces spacing and padding throughout the interface for a denser layout. Ideal for smaller screens or when you need to view more information at once." right={<Toggle checked={compactMode} onChange={v => { setCompactMode(v); pref('compactMode', v); }} />} />
+            <Row label="Animations" sub="Enable smooth transitions, hover effects, and micro-interactions. Disable this option if you prefer a more static interface or experience performance issues." right={<Toggle checked={animations} onChange={v => { setAnimations(v); pref('animations', v); }} />} noBorder />
           </div>
         </Section>
 
         {/* ── Privacy & Data ── */}
         <Section icon={<Shield size={16} />} title="Privacy & Data" subtitle="Control what data is saved and how it's used">
+          <div style={{ marginBottom: 16, padding: 12, background: '#EFF6FF', border: '1px solid #3B82F6', borderRadius: 16 }}>
+            <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+              <strong>Your data, your control:</strong> We take your privacy seriously. All data is encrypted and stored securely in Firebase. You can export or delete your data at any time.
+            </p>
+          </div>
           <div>
-            <Row label="Save Chat History" sub="Store conversation sessions in Firestore" right={<Toggle checked={saveHistory} onChange={v => { setSaveHistory(v); pref('saveHistory', v); }} />} />
-            <Row label="Analytics" sub="Help improve the app with anonymous usage data" right={<Toggle checked={analytics} onChange={v => { setAnalytics(v); pref('analytics', v); }} />} />
+            <Row label="Save Chat History" sub="Store all conversation sessions with the AI assistant in Firestore. This allows you to review past interactions and maintain context across sessions. Disabling this will delete conversations after each session ends." right={<Toggle checked={saveHistory} onChange={v => { setSaveHistory(v); pref('saveHistory', v); }} />} />
+            <Row label="Analytics" sub="Share anonymous usage data to help us improve PharmaAI. This includes feature usage patterns, performance metrics, and error reports. No personal or inventory data is ever shared." right={<Toggle checked={analytics} onChange={v => { setAnalytics(v); pref('analytics', v); }} />} />
             <Row
               label="Export My Data"
-              sub="Download all your inventory and session data as JSON"
+              sub="Download a complete copy of your inventory records, sales logs, and chat sessions as a JSON file. This export can be used for backup purposes or to migrate to another system."
               noBorder
               right={<ActionBtn onClick={handleExport} icon={<Download size={13} />}>Export</ActionBtn>}
             />
@@ -330,25 +349,30 @@ export function Settings() {
 
         {/* ── Session & Security ── */}
         <Section icon={<Lock size={16} />} title="Session & Security" subtitle="Manage your login sessions and account security">
+          <div style={{ marginBottom: 16, padding: 12, background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 16 }}>
+            <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+              <strong>Security tip:</strong> Always sign out when using shared devices. Your session remains active until you explicitly log out or your authentication token expires.
+            </p>
+          </div>
           <div>
             <Row
               label="Signed-in With"
-              sub="Your current authentication method"
+              sub="Your current authentication method determines how you access PharmaAI. This cannot be changed without creating a new account."
               right={
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: providerColor }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: providerColor, background: providerColor + '15', padding: '4px 12px', borderRadius: 999, border: '1px solid #0F172A' }}>
                   {providerIcon}
-                  <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, fontWeight: 500 }}>{providerLabel}</span>
+                  <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, fontWeight: 700 }}>{providerLabel}</span>
                 </div>
               }
             />
             <Row
               label="Session Timeout"
-              sub="Automatically sign out after inactivity"
+              sub="Configure automatic sign-out after a period of inactivity. Currently set to never expire for convenience. Contact support to enable custom timeout periods."
               noBorder
               right={
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#52525B' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748B', background: '#F8FAFC', padding: '4px 12px', borderRadius: 999, border: '1px solid #0F172A' }}>
                   <Clock size={13} />
-                  <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12 }}>Never</span>
+                  <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, fontWeight: 600 }}>Never</span>
                   <ChevronRight size={13} />
                 </div>
               }
@@ -358,35 +382,48 @@ export function Settings() {
 
         {/* ── About ── */}
         <Section icon={<Database size={16} />} title="About" subtitle="App version and system information">
+          <div style={{ marginBottom: 16, padding: 12, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16 }}>
+            <p style={{ margin: '0 0 8px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+              <strong>PharmaAI</strong> is an AI-powered pharmacy management system designed to streamline inventory tracking, prevent stockouts, and ensure medication safety through intelligent drug interaction checking.
+            </p>
+            <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, color: '#64748B', lineHeight: 1.5 }}>
+              Built with modern cloud technologies for reliability, security, and real-time synchronization across all your devices.
+            </p>
+          </div>
           <div>
-            <Row label="App Version" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#52525B', background: '#18181B', padding: '3px 10px', borderRadius: 6 }}>v1.0.0</span>} />
-            <Row label="Database" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#52525B' }}>Firebase Firestore</span>} />
-            <Row label="AI Model" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#52525B' }}>Groq · llama-3.1-8b-instant</span>} />
-            <Row label="Vector Store" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#52525B' }}>ChromaDB Cloud</span>} noBorder />
+            <Row label="App Version" sub="Current release version of PharmaAI" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', background: '#F8FAFC', padding: '4px 12px', borderRadius: 999, border: '1px solid #0F172A', fontWeight: 700 }}>v1.0.0</span>} />
+            <Row label="Database" sub="Cloud-hosted NoSQL database for real-time data sync" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B', fontWeight: 600 }}>Firebase Firestore</span>} />
+            <Row label="AI Model" sub="Large language model powering the intelligent assistant" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B', fontWeight: 600 }}>Groq · llama-3.1-8b-instant</span>} />
+            <Row label="Vector Store" sub="Semantic search engine for drug interaction database" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B', fontWeight: 600 }}>ChromaDB Cloud</span>} noBorder />
           </div>
         </Section>
 
         {/* ── Danger Zone ── */}
-        <div style={{ background: '#110A0A', border: '1px solid #3B1111', borderRadius: 16, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 24px', borderBottom: '1px solid #2A1111', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ background: '#FEE2E2', border: '1px solid #0F172A', borderRadius: 24, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid #EF4444', display: 'flex', alignItems: 'center', gap: 10, background: '#FEE2E2' }}>
             <AlertTriangle size={15} style={{ color: '#EF4444' }} />
-            <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, color: '#EF4444' }}>Danger Zone</p>
+            <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 700, color: '#EF4444' }}>Danger Zone</p>
           </div>
-          <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', background: '#FFFFFF' }}>
+            <div style={{ marginBottom: 16, padding: 12, background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 16 }}>
+              <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+                <strong>⚠️ Warning:</strong> Actions in this section are permanent and cannot be undone. Please proceed with caution and ensure you have backups of any important data before performing destructive operations.
+              </p>
+            </div>
             <Row
               label="Clear Chat History"
-              sub="Permanently delete all saved conversations from Firestore"
+              sub="Permanently delete all saved conversations with the AI assistant from Firestore. This action cannot be undone. Your inventory data will not be affected, only chat logs will be removed."
               danger
               right={<ActionBtn onClick={handleClearHistory} danger icon={<Trash2 size={13} />}>Clear All</ActionBtn>}
             />
             <Row
               label="Migrate Legacy Data"
-              sub="Copy original global inventory into your private account"
+              sub="Copy all items from the original global inventory collection into your private account. This is a one-time migration for users upgrading from the legacy system. Existing items will not be duplicated."
               right={<ActionBtn onClick={handleMigrateLegacy} icon={<Database size={13} />}>Migrate</ActionBtn>}
             />
             <Row
               label="Sign Out"
-              sub="End your current session on this device"
+              sub="End your current session on this device and return to the login screen. You'll need to sign in again to access your account. This does not delete any data."
               danger
               noBorder
               right={<ActionBtn onClick={logout} danger icon={<LogOut size={13} />}>Sign Out</ActionBtn>}

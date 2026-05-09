@@ -38,37 +38,37 @@ export function ConfirmModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+      style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <div
         className="relative w-full max-w-md mx-4 rounded-2xl shadow-2xl"
         style={{
-          background: '#111113',
-          border: danger ? '1px solid #3B1111' : '1px solid #27272A',
+          background: 'white',
+          border: danger ? '1px solid #FECACA' : '1px solid #E5E7EB',
           animation: 'modal-in 0.18s ease',
         }}
       >
         {/* Header */}
         <div
           className="flex items-center gap-3 px-6 py-5"
-          style={{ borderBottom: '1px solid #1C1C1F' }}
+          style={{ borderBottom: '1px solid #F3F4F6' }}
         >
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: danger ? '#1A0A0A' : '#18181B' }}
+            style={{ background: danger ? '#FEE2E2' : '#F9FAFB' }}
           >
-            <AlertTriangle size={18} style={{ color: danger ? '#EF4444' : '#F59E0B' }} />
+            <AlertTriangle size={18} style={{ color: danger ? '#DC2626' : '#F59E0B' }} />
           </div>
           <p
             className="font-semibold text-base flex-1"
-            style={{ fontFamily: 'DM Sans, sans-serif', color: '#F4F4F5' }}
+            style={{ fontFamily: 'DM Sans, sans-serif', color: '#111827' }}
           >
             {title}
           </p>
           <button
             onClick={onCancel}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#71717A] hover:text-[#F4F4F5] hover:bg-[#27272A] transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] transition-colors"
           >
             <X size={16} />
           </button>
@@ -76,7 +76,7 @@ export function ConfirmModal({
 
         {/* Body */}
         <div className="px-6 py-5">
-          <p style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#A1A1AA', lineHeight: 1.6 }}>
+          <p style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#6B7280', lineHeight: 1.6 }}>
             {message}
           </p>
         </div>
@@ -84,19 +84,19 @@ export function ConfirmModal({
         {/* Actions */}
         <div
           className="flex items-center justify-end gap-3 px-6 py-4"
-          style={{ borderTop: '1px solid #1C1C1F' }}
+          style={{ borderTop: '1px solid #F3F4F6' }}
         >
           <button
             onClick={onCancel}
             className="px-5 py-2 rounded-lg text-sm font-medium transition-colors"
             style={{
               fontFamily: 'IBM Plex Sans, sans-serif',
-              background: '#18181B',
-              border: '1px solid #27272A',
-              color: '#A1A1AA',
+              background: 'white',
+              border: '1px solid #E5E7EB',
+              color: '#6B7280',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#27272A')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#18181B')}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F3F4F6')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
             {cancelLabel}
           </button>
@@ -106,12 +106,12 @@ export function ConfirmModal({
             className="px-5 py-2 rounded-lg text-sm font-semibold transition-all"
             style={{
               fontFamily: 'IBM Plex Sans, sans-serif',
-              background: danger ? '#7F1D1D' : '#3B82F6',
+              background: danger ? '#DC2626' : '#22C55E',
               color: '#fff',
               border: 'none',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = danger ? '#991B1B' : '#2563EB')}
-            onMouseLeave={e => (e.currentTarget.style.background = danger ? '#7F1D1D' : '#3B82F6')}
+            onMouseEnter={e => (e.currentTarget.style.background = danger ? '#B91C1C' : '#16A34A')}
+            onMouseLeave={e => (e.currentTarget.style.background = danger ? '#DC2626' : '#22C55E')}
           >
             {confirmLabel}
           </button>

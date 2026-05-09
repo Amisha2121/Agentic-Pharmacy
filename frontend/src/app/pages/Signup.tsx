@@ -137,7 +137,7 @@ export function Signup() {
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', padding: '52px 64px' }}>
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, fontSize: 18, background: 'linear-gradient(135deg, #3B82F6, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(59,130,246,0.35)' }}>💊</div>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #16a34a, #15803d)', border: '1px solid #0F172A' }} />
             <span style={{ color: '#F4F4F5', fontSize: 18, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.3px' }}>PharmaAI</span>
           </div>
 
@@ -179,7 +179,7 @@ export function Signup() {
 
           {/* Mobile logo */}
           <div className="mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 10, marginBottom: 36 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #3B82F6, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>💊</div>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #16a34a, #15803d)', border: '1px solid #0F172A' }} />
             <span style={{ color: '#F4F4F5', fontSize: 17, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}>PharmaAI</span>
           </div>
 
