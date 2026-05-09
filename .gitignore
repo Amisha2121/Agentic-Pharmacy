@@ -1,0 +1,27 @@
+# Sensitive API keys and credentials
+.env
+firebase_key.json
+agentic-pharmacy-*.json
+# NOTE: *.json is intentionally NOT ignored globally — it would block tsconfig etc.
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Local databases and temp files
+chroma_db/
+temp_*
+
+# Large binary installers — never commit these
+*.msi
+*.zip
+node/
+
+# Temp uploads (server-generated)
+uploads/
+
+# OS artefacts
+.DS_Store
+Thumbs.db

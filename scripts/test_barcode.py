@@ -1,0 +1,2 @@
+import zxingcpp
+print('test')
