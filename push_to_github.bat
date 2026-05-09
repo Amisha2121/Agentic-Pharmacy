@@ -18,8 +18,11 @@ git add .
 echo Committing changes...
 git commit -m "feat: comprehensive UI/UX overhaul, dark theme updates, Agentic workflows, Firebase frontend sync, and expanded detailed README"
 
-echo Pushing to GitHub...
-git push -u origin main || git push -u origin master
+echo Renaming local branch to main...
+git branch -M main
+
+echo Pushing to GitHub (Force updating the remote to match your local code)...
+git push -u origin main --force
 
 echo Done!
 pause
