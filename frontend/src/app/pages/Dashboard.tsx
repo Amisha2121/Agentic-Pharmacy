@@ -1,5 +1,5 @@
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { Menu, MessageSquare, PackageSearch, ClipboardList, BellRing, Clock, FlaskConical, ArrowRight, Plus, Minus, Save, X as XIcon, TrendingUp, AlertCircle, Package, Activity } from 'lucide-react';
+import { Menu, MessageSquare, PackageSearch, ClipboardList, BellRing, Clock, FlaskConical, ArrowRight, Plus, Minus, Save, TrendingUp, AlertCircle, Package, Activity } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { authenticatedFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Bot, Package, Clock, Shield, Zap, BarChart3, CheckCircle2, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, Bot, Package, Clock, Shield, Zap, BarChart3 } from 'lucide-react';
 
 export function Landing() {
   const navigate = useNavigate();

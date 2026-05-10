@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Mic, ArrowUp, Paperclip, Menu, History, X, ImageIcon, ScanLine, Bot, User, CheckCircle, AlertCircle, XCircle, ArrowRight } from 'lucide-react';
+import { Plus, Mic, ArrowUp, Paperclip, Menu, History, Bot, User, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MessageBubble, TypingIndicator } from './MessageBubble';
 import { useAuth } from '../context/AuthContext';

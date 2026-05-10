@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
-import { Menu, RefreshCw, BellRing, PackageX, Check, ArrowUpDown } from 'lucide-react';
+import { Menu, RefreshCw, PackageX, Check, ArrowUpDown } from 'lucide-react';
 import { authenticatedFetch } from '../utils/api';
 
 interface ContextType {
