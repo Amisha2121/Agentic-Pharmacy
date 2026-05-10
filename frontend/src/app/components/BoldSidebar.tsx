@@ -68,7 +68,7 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
               className="text-[#0F172A] dark:text-[#F8FAFC] text-[20px] font-black uppercase tracking-tight transition-colors duration-300"
               style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
             >
-              PHARMAAI
+              AGENTIC PHARMACY
             </span>
           </div>
         </div>

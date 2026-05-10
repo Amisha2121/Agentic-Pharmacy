@@ -57,7 +57,7 @@ export function Landing() {
 
   const testimonials = [
     {
-      quote: "PharmaAI transformed how we manage inventory. The AI assistant saves us hours every day.",
+      quote: "Agentic Pharmacy transformed how we manage inventory. The AI assistant saves us hours every day.",
       author: "Dr. Sarah Chen",
       role: "Lead Pharmacist, MediCare Pharmacy",
     },
@@ -84,7 +84,7 @@ export function Landing() {
               className="text-[#0F172A] text-[20px] font-black uppercase tracking-tight"
               style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
             >
-              PHARMAAI
+              AGENTIC PHARMACY
             </span>
           </div>
 
@@ -137,7 +137,7 @@ export function Landing() {
 
             {/* Subheading */}
             <p className="text-[20px] text-[#64748B] font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
-              From scanning a barcode to catching a drug interaction — PharmaAI handles the complexity so you can focus on care.
+              From scanning a barcode to catching a drug interaction — Agentic Pharmacy handles the complexity so you can focus on care.
             </p>
 
             {/* CTA Buttons */}
@@ -215,7 +215,7 @@ export function Landing() {
               PROVEN RESULTS
             </h2>
             <p className="text-[18px] text-white/80 max-w-2xl mx-auto">
-              Join hundreds of pharmacies already using PharmaAI
+              Join hundreds of pharmacies already using Agentic Pharmacy
             </p>
           </div>
 
@@ -358,7 +358,7 @@ export function Landing() {
             <div className="col-span-1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-[#0F172A] text-[18px] font-black uppercase tracking-tight">
-                  PHARMAAI
+                  AGENTIC PHARMACY
                 </span>
               </div>
               <p className="text-[13px] text-[#64748B] leading-relaxed">
@@ -417,7 +417,7 @@ export function Landing() {
 
           <div className="border-t border-[#E2E8F0] pt-8 flex items-center justify-between">
             <p className="text-[12px] text-[#94A3B8] font-medium">
-              © 2026 PharmaAI. All rights reserved.
+              © 2026 Agentic Pharmacy. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <a href="#" className="text-[#64748B] hover:text-[#0F172A] transition-colors">

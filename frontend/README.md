@@ -1,6 +1,6 @@
-# PharmaAI Frontend
+# Agentic Pharmacy Frontend
 
-This is the frontend Vite + React application for the PharmaAI project. 
+This is the frontend Vite + React application for the Agentic Pharmacy project. 
 
 For the complete documentation involving installation instructions, architecture layers, features, and API configuration, please read the **primary documentation** located at the root of the project folder:
 `../README.md`

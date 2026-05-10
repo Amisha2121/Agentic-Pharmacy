@@ -46,7 +46,7 @@ export function Login() {
             className="text-[#0F172A] text-[24px] font-black uppercase tracking-tight"
             style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
           >
-            PHARMAAI
+            AGENTIC PHARMACY
           </span>
         </div>
 

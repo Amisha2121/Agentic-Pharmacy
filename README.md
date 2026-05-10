@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💊 PharmaAI
+# 💊 Agentic Pharmacy
 
 ![React](https://img.shields.io/badge/React_18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
@@ -19,9 +19,9 @@
 
 ## 📖 About the Project
 
-PharmaAI is a modern pharmacy management system that combines AI-powered automation with an intuitive user interface. Built for pharmacists and medical staff, it streamlines inventory management, sales tracking, and operational workflows through conversational AI and intelligent automation.
+Agentic Pharmacy is a modern pharmacy management system that combines AI-powered automation with an intuitive user interface. Built for pharmacists and medical staff, it streamlines inventory management, sales tracking, and operational workflows through conversational AI and intelligent automation.
 
-The system features a bold, editorial design with complete dark mode support, per-account data isolation, and real-time inventory tracking. By integrating multimodal AI capabilities with traditional pharmacy operations, PharmaAI reduces manual data entry and enhances operational efficiency.
+The system features a bold, editorial design with complete dark mode support, per-account data isolation, and real-time inventory tracking. By integrating multimodal AI capabilities with traditional pharmacy operations, Agentic Pharmacy reduces manual data entry and enhances operational efficiency.
 
 ---
 
@@ -307,7 +307,7 @@ Agentic-Pharmacy/
 
 ## 🎨 Design Philosophy
 
-PharmaAI features a bold, editorial design system inspired by modern SaaS applications:
+Agentic Pharmacy features a bold, editorial design system inspired by modern SaaS applications:
 
 - **Typography:** Inter font family with bold weights and uppercase labels
 - **Color Palette:** Green accent (#16a34a), near-black borders (#0F172A), clean backgrounds
@@ -364,6 +364,6 @@ Project Link: [https://github.com/Amisha2121/Agentic-Pharmacy](https://github.co
 
 *Built with ❤️ using LangGraph · Groq · Firebase · React · FastAPI*
 
-**[⬆ Back to Top](#-pharmaai)**
+**[⬆ Back to Top](#-agentic-pharmacy)**
 
 </div>
