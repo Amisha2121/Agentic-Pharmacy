@@ -278,7 +278,7 @@ export function LiveInventory() {
 
   return (
     <div className="flex-1 flex flex-col h-full w-full relative z-10 overflow-y-auto scrollbar-hide">
-      <div className="flex items-center justify-between p-4 absolute top-0 w-full z-20">
+      <div className="flex items-center justify-between p-3 sm:p-4 absolute top-0 w-full z-20">
         <div className="flex items-center">
           {!isSidebarOpen && (
             <button 
@@ -291,25 +291,25 @@ export function LiveInventory() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col pt-16 px-8 pb-12 max-w-7xl mx-auto w-full">
+      <div className="flex-1 flex flex-col pt-14 sm:pt-16 px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 max-w-7xl mx-auto w-full">
         {/* Header */}
-        <div className="mb-8 flex items-baseline justify-between">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black uppercase text-[#0F172A] tracking-tight mb-2">
+            <h1 className="text-2xl sm:text-3xl font-black uppercase text-[#0F172A] tracking-tight mb-1 sm:mb-2">
               Inventory
             </h1>
-            <p className="text-sm text-[#64748B]">
+            <p className="text-xs sm:text-sm text-[#64748B]">
               Real-time stock · Auto-refreshes every 30s
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* View toggle */}
             {!selectedCategory && (
               <div className="flex items-center bg-white border border-gray-300 rounded-lg p-1 gap-1">
                 <button
                   onClick={() => setViewMode('grid')}
                   title="Category grid view"
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all ${
                     viewMode === 'grid' ? 'bg-[#16a34a] text-white' : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >

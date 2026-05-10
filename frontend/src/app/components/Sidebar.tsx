@@ -51,12 +51,12 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   };
 
   const menuItems: MenuItem[] = [
-    { icon: <MessageSquare className="w-[18px] h-[18px]" />, label: 'Assistant Chat', path: '/', tourId: 'nav-chat' },
-    { icon: <PackageSearch className="w-[18px] h-[18px]" />, label: 'Live Inventory', path: '/inventory', tourId: 'nav-inventory' },
-    { icon: <ClipboardList className="w-[18px] h-[18px]" />, label: 'Log Daily Sales', path: '/sales', tourId: 'nav-sales' },
-    { icon: <BellRing className="w-[18px] h-[18px]" />, label: 'Reorder Alerts', path: '/reorder', badge: reorderCount, tourId: 'nav-reorder' },
-    { icon: <AlertTriangle className="w-[18px] h-[18px]" />, label: 'Expirations', path: '/expired', badge: expiredCount, tourId: 'nav-expired' },
-    { icon: <FlaskConical className="w-[18px] h-[18px]" />, label: 'Drug Interactions', path: '/interactions', accent: '#A78BFA', tourId: 'nav-ddi' },
+    { icon: <MessageSquare className="w-[18px] h-[18px]" />, label: 'Assistant Chat', path: '/dashboard/chat', tourId: 'nav-chat' },
+    { icon: <PackageSearch className="w-[18px] h-[18px]" />, label: 'Live Inventory', path: '/dashboard/inventory', tourId: 'nav-inventory' },
+    { icon: <ClipboardList className="w-[18px] h-[18px]" />, label: 'Log Daily Sales', path: '/dashboard/sales', tourId: 'nav-sales' },
+    { icon: <BellRing className="w-[18px] h-[18px]" />, label: 'Reorder Alerts', path: '/dashboard/reorder', badge: reorderCount, tourId: 'nav-reorder' },
+    { icon: <AlertTriangle className="w-[18px] h-[18px]" />, label: 'Expirations', path: '/dashboard/expired', badge: expiredCount, tourId: 'nav-expired' },
+    { icon: <FlaskConical className="w-[18px] h-[18px]" />, label: 'Drug Interactions', path: '/dashboard/interactions', accent: '#A78BFA', tourId: 'nav-ddi' },
   ];
 
   return (
@@ -133,7 +133,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {/* Bottom Section */}
         <div className="px-3 py-2 space-y-1 border-t border-[#E5E7EB]">
           <NavLink
-            to="/settings"
+            to="/dashboard/settings"
             data-tour="nav-settings"
             className={({ isActive }) => `flex items-center gap-3 h-10 px-3 rounded-lg font-medium transition-all duration-200 group ${
               isActive

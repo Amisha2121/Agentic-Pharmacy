@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Outlet } from "react-router";
 import { BoldSidebar } from "./BoldSidebar";
+import { Menu, X } from "lucide-react";
 
 const PREFS_KEY = 'pharma_prefs_v1';
 
@@ -10,7 +11,26 @@ function loadPrefs() {
 }
 
 export function RootLayout() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Start closed on mobile
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    // Check if mobile on mount and resize
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setIsSidebarOpen(true); // Always open on desktop
+      } else {
+        setIsSidebarOpen(false); // Closed by default on mobile
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   useEffect(() => {
     const prefs = loadPrefs();
@@ -55,9 +75,34 @@ export function RootLayout() {
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] dark:bg-[#0F172A] overflow-hidden font-sans relative transition-colors duration-300">
+      {/* Mobile Menu Button */}
+      {isMobile && (
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="fixed top-4 left-4 z-50 p-2 bg-white dark:bg-[#1E293B] border-2 border-[#0F172A] dark:border-[#F8FAFC] rounded-lg shadow-lg md:hidden"
+          aria-label="Toggle menu"
+        >
+          {isSidebarOpen ? (
+            <X className="w-6 h-6 text-[#0F172A] dark:text-[#F8FAFC]" strokeWidth={2.5} />
+          ) : (
+            <Menu className="w-6 h-6 text-[#0F172A] dark:text-[#F8FAFC]" strokeWidth={2.5} />
+          )}
+        </button>
+      )}
+
+      {/* Mobile Overlay */}
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       <BoldSidebar 
         isOpen={isSidebarOpen} 
-        onToggle={() => setIsSidebarOpen(!isSidebarOpen)} 
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        isMobile={isMobile}
+        onClose={() => setIsSidebarOpen(false)}
       />
       
       <div className="flex-1 flex relative min-w-0 transition-all duration-300 z-10">

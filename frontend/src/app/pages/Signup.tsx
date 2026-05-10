@@ -56,7 +56,7 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export function Signup() {
-  const { loginWithGoogle, signupWithEmail, sendOtp, confirmOtp } = useAuth();
+  const { loginWithGoogle, signupWithEmail, sendOtp, confirmOtp, user, isLoading } = useAuth();
   const navigate   = useNavigate();
   const recaptchaId = useId();
 
@@ -80,9 +80,16 @@ export function Signup() {
   const [displayName,  setDisplayName]  = useState('');
   const [otp,          setOtp]          = useState('');
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, isLoading, navigate]);
+
   const wrap = async (fn: () => Promise<void>) => {
     setError(''); setSuccess(''); setLoading(true);
-    try { await fn(); navigate('/', { replace: true }); }
+    try { await fn(); navigate('/dashboard', { replace: true }); }
     catch (e: unknown) { setError(friendlyError(e instanceof Error ? e.message : 'Something went wrong.')); }
     finally { setLoading(false); }
   };
@@ -93,6 +100,9 @@ export function Signup() {
     catch (e: unknown) { setError(friendlyError(e instanceof Error ? e.message : 'Failed to send OTP')); }
     finally { setLoading(false); }
   };
+
+  // Show nothing while checking auth state
+  if (isLoading) return null;
 
   /* ── shared styles ── */
   const inputStyle: React.CSSProperties = {
@@ -441,7 +451,7 @@ export function Signup() {
         {/* Back to landing */}
         <div className="text-center mt-6">
           <Link
-            to="/landing"
+            to="/"
             className="text-[12px] text-[#64748B] hover:text-[#0F172A] font-medium transition-colors"
           >
             ← Back to home

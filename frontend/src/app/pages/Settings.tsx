@@ -30,17 +30,17 @@ function Section({ icon, title, subtitle, children }: {
   icon: React.ReactNode; title: string; subtitle: string; children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white dark:bg-[#1E293B] border-2 border-[#0F172A] dark:border-[#F8FAFC] rounded-3xl overflow-hidden mb-6 transition-colors duration-300">
-      <div className="px-6 py-5 border-b-2 border-[#E2E8F0] dark:border-[#334155] flex items-center gap-3 transition-colors duration-300">
-        <div className="w-9 h-9 rounded-full bg-[#16a34a] border-2 border-[#0F172A] dark:border-[#F8FAFC] flex items-center justify-center text-white flex-shrink-0 transition-colors duration-300">
+    <div className="bg-white dark:bg-[#1E293B] border-2 border-[#0F172A] dark:border-[#F8FAFC] rounded-2xl sm:rounded-3xl overflow-hidden mb-4 sm:mb-6 transition-colors duration-300">
+      <div className="px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-[#E2E8F0] dark:border-[#334155] flex items-center gap-2 sm:gap-3 transition-colors duration-300">
+        <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-full bg-[#16a34a] border-2 border-[#0F172A] dark:border-[#F8FAFC] flex items-center justify-center text-white flex-shrink-0 transition-colors duration-300">
           {icon}
         </div>
         <div>
-          <p className="m-0 text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] uppercase tracking-wide transition-colors duration-300">{title}</p>
-          <p className="mt-0.5 text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">{subtitle}</p>
+          <p className="m-0 text-xs sm:text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] uppercase tracking-wide transition-colors duration-300">{title}</p>
+          <p className="mt-0.5 text-[11px] sm:text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">{subtitle}</p>
         </div>
       </div>
-      <div className="px-6 py-4">{children}</div>
+      <div className="px-4 sm:px-6 py-3 sm:py-4">{children}</div>
     </div>
   );
 }
@@ -221,7 +221,7 @@ export function Settings() {
   return (
     <div className="flex-1 flex flex-col h-screen w-full relative z-10 bg-[#F8FAFC] dark:bg-[#0F172A] overflow-hidden transition-colors duration-300">
       {/* Top bar */}
-      <div className="flex items-center justify-between p-4 absolute top-0 w-full z-20">
+      <div className="flex items-center justify-between p-3 sm:p-4 absolute top-0 w-full z-20">
         <div className="flex items-center">
           {!isSidebarOpen && (
             <button 
@@ -235,16 +235,16 @@ export function Settings() {
       </div>
 
       {/* Main Content - Scrollable */}
-      <div className="flex-1 pt-20 px-8 pb-12 max-w-7xl mx-auto w-full overflow-y-auto" style={{ 
+      <div className="flex-1 pt-16 sm:pt-20 px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 max-w-7xl mx-auto w-full overflow-y-auto" style={{ 
         scrollbarWidth: 'thin',
         scrollbarColor: '#CBD5E1 transparent'
       }}>
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-black uppercase text-[#0F172A] dark:text-[#F8FAFC] tracking-tight mb-2 transition-colors duration-300" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-black uppercase text-[#0F172A] dark:text-[#F8FAFC] tracking-tight mb-1 sm:mb-2 transition-colors duration-300" style={{ fontFamily: 'Inter, sans-serif' }}>
             SETTINGS
           </h1>
-          <p className="text-sm text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">
+          <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">
             Manage your account, preferences, and app configuration
           </p>
         </div>

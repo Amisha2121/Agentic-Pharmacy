@@ -7,9 +7,11 @@ import { authenticatedFetch } from '../utils/api';
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+  isMobile?: boolean;
+  onClose?: () => void;
 }
 
-export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
+export function BoldSidebar({ isOpen, onToggle, isMobile = false, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [reorderCount, setReorderCount] = useState(0);
@@ -42,25 +44,27 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
   };
 
   const mainItems = [
-    { icon: Home, label: 'Home', path: '/' },
-    { icon: MessageSquare, label: 'Assistant Chat', path: '/chat' },
-    { icon: PackageSearch, label: 'Live Inventory', path: '/inventory' },
-    { icon: ClipboardList, label: 'Log Daily Sales', path: '/sales' },
+    { icon: Home, label: 'Home', path: '/dashboard' },
+    { icon: MessageSquare, label: 'Assistant Chat', path: '/dashboard/chat' },
+    { icon: PackageSearch, label: 'Live Inventory', path: '/dashboard/inventory' },
+    { icon: ClipboardList, label: 'Log Daily Sales', path: '/dashboard/sales' },
   ];
 
   const alertItems = [
-    { icon: BellRing, label: 'Reorder Alerts', path: '/reorder', badge: reorderCount },
-    { icon: Clock, label: 'Expirations', path: '/expired', badge: expiredCount },
+    { icon: BellRing, label: 'Reorder Alerts', path: '/dashboard/reorder', badge: reorderCount },
+    { icon: Clock, label: 'Expirations', path: '/dashboard/expired', badge: expiredCount },
   ];
 
   return (
     <div
       className={`bg-white dark:bg-[#1E293B] flex flex-col border-r border-[#0F172A] dark:border-[#F8FAFC] transition-all duration-300 ease-in-out ${
-        isOpen ? 'w-[220px]' : 'w-0 -translate-x-full'
+        isMobile 
+          ? `fixed left-0 top-0 h-full z-50 ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-[280px]`
+          : `${isOpen ? 'w-[220px]' : 'w-0 -translate-x-full'}`
       }`}
-      style={{ height: '100vh', position: 'relative', zIndex: 30 }}
+      style={{ height: '100vh', position: isMobile ? 'fixed' : 'relative', zIndex: isMobile ? 50 : 30 }}
     >
-      <div className="w-[220px] flex flex-col h-full">
+      <div className={`${isMobile ? 'w-[280px]' : 'w-[220px]'} flex flex-col h-full`}>
         {/* Logo */}
         <div className="px-6 py-6 border-b border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300">
           <div className="flex items-center">
@@ -121,7 +125,8 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  end={item.path === '/'}
+                  end={item.path === '/dashboard'}
+                  onClick={() => isMobile && onClose?.()}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold transition-all ${
                       isActive
@@ -160,6 +165,7 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  onClick={() => isMobile && onClose?.()}
                   className={({ isActive }) =>
                     `flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold transition-all ${
                       isActive
@@ -197,7 +203,8 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
         {/* Bottom Section */}
         <div className="px-3 py-3 space-y-1 border-t border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300">
           <NavLink
-            to="/settings"
+            to="/dashboard/settings"
+            onClick={() => isMobile && onClose?.()}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium transition-all ${
                 isActive

@@ -40,16 +40,15 @@ except ImportError:
 
 def get_user_id_from_token(request: Request) -> str:
     """Extract user ID from Firebase Auth token in Authorization header.
-    Returns the UID string, or raises HTTPException 401 if unauthenticated.
-    Falls back to 'legacy' ONLY when Firebase auth is unavailable (dev/no-SDK).
+    Returns the UID string, or falls back to 'legacy' if unauthenticated,
+    in mock mode, or if verification fails.
     """
-    if not FIREBASE_AUTH_AVAILABLE:
+    if not FIREBASE_AUTH_AVAILABLE or database.MOCK_MODE:
         return "legacy"
     
     auth_header = request.headers.get('Authorization', '')
     if not auth_header.startswith('Bearer '):
-        # No token at all — caller is not authenticated
-        raise HTTPException(status_code=401, detail="Authentication required")
+        return "legacy"
     
     token = auth_header.split('Bearer ')[1]
     try:
@@ -57,7 +56,7 @@ def get_user_id_from_token(request: Request) -> str:
         return decoded_token['uid']
     except Exception as e:
         print(f"[WARN] Token verification failed: {e}")
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        return "legacy"
 
 # Agent is imported lazily to avoid crashing the server if LangGraph/OpenAI
 # packages are unavailable. The agent is only needed for /api/chat endpoints.

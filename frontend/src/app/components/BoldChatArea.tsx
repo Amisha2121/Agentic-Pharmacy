@@ -220,7 +220,7 @@ export function BoldChatArea({
   return (
     <div className="flex-1 flex flex-col h-screen w-full relative z-10 bg-[#F8FAFC] overflow-hidden">
       {/* Top bar with menu buttons */}
-      <div className="flex items-center justify-between p-4 bg-transparent absolute top-0 w-full z-20">
+      <div className="flex items-center justify-between p-3 sm:p-4 bg-transparent absolute top-0 w-full z-20">
         <div className="flex items-center">
           {isSidebarClosed && (
             <button 
@@ -243,18 +243,18 @@ export function BoldChatArea({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col pt-20 px-8 pb-6 max-w-7xl mx-auto w-full overflow-y-auto" style={{ 
+      <div className="flex-1 flex flex-col pt-16 sm:pt-20 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 max-w-7xl mx-auto w-full overflow-y-auto" style={{ 
         scrollbarWidth: 'thin',
         scrollbarColor: '#CBD5E1 transparent'
       }}>
         {messages.length === 0 && !isLoading && !hitlPending ? (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-[14px] text-[#64748B] font-medium text-center">
+          <div className="flex-1 flex items-center justify-center px-4">
+            <p className="text-[13px] sm:text-[14px] text-[#64748B] font-medium text-center">
               Select a conversation or start a new one
             </p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto mb-4 px-4 space-y-8 min-h-0 scroll-smooth">
+          <div className="flex-1 overflow-y-auto mb-3 sm:mb-4 px-2 sm:px-4 space-y-6 sm:space-y-8 min-h-0 scroll-smooth">
             {messages.map((msg) => (
               <MessageBubble 
                 key={msg.id} 
@@ -268,10 +268,10 @@ export function BoldChatArea({
             ))}
             {isLoading && <TypingIndicator />}
             {hitlPending && (
-              <div className="flex gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
                 <button 
                   onClick={() => handleHitl('approve')} 
-                  className="bg-[#16a34a] hover:bg-[#15803d] text-white px-6 py-3 font-black uppercase text-sm tracking-wide transition-all"
+                  className="bg-[#16a34a] hover:bg-[#15803d] text-white px-6 py-3 font-black uppercase text-xs sm:text-sm tracking-wide transition-all"
                   style={{ borderRadius: '999px' }}
                 >
                   Approve
@@ -334,43 +334,43 @@ export function BoldChatArea({
           )}
 
           <div 
-            className="relative bg-white p-4 flex items-center gap-3 border-2 border-[#0F172A] focus-within:shadow-[0_0_0_3px_#DCFCE7] transition-all"
+            className="relative bg-white p-2 sm:p-4 flex items-center gap-2 sm:gap-3 border-2 border-[#0F172A] focus-within:shadow-[0_0_0_3px_#DCFCE7] transition-all"
             style={{ 
-              height: '56px',
+              height: '48px sm:56px',
               borderRadius: '999px'
             }}
           >
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors"
+              className="w-8 sm:w-10 h-8 sm:h-10 rounded-full flex items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors flex-shrink-0"
             >
-              <Plus className="w-5 h-5" strokeWidth={2.5} />
+              <Plus className="w-4 sm:w-5 h-4 sm:h-5" strokeWidth={2.5} />
             </button>
             <input
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask anything — inventory, drug interactions, expiry dates..."
-              className="flex-1 bg-transparent px-4 outline-none text-[#0F172A] placeholder:text-[#94A3B8] font-medium text-[14px]"
+              placeholder="Ask anything..."
+              className="flex-1 bg-transparent px-2 sm:px-4 outline-none text-[#0F172A] placeholder:text-[#94A3B8] font-medium text-[13px] sm:text-[14px] min-w-0"
               disabled={isLoading}
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors"
+              className="hidden sm:flex w-10 h-10 rounded-full items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors flex-shrink-0"
             >
               <Paperclip className="w-5 h-5" strokeWidth={2.5} />
             </button>
             <button
               onClick={isListening ? undefined : startListening}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors"
+              className="hidden sm:flex w-10 h-10 rounded-full items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors flex-shrink-0"
             >
               <Mic className="w-5 h-5" strokeWidth={2.5} />
             </button>
             <button
               onClick={handleSend}
               disabled={isLoading || scanning || (!message.trim() && !attachedImage)}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+              className={`w-9 sm:w-11 h-9 sm:h-11 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
                 (message.trim() || attachedImage) && !isLoading && !scanning
                   ? 'bg-[#16a34a] hover:bg-[#15803d] text-white'
                   : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
@@ -380,7 +380,7 @@ export function BoldChatArea({
                 opacity: (message.trim() || attachedImage) && !isLoading && !scanning ? 1 : 0.4
               }}
             >
-              <ArrowUp className="w-5 h-5" strokeWidth={3} />
+              <ArrowUp className="w-4 sm:w-5 h-4 sm:h-5" strokeWidth={3} />
             </button>
           </div>
         </div>

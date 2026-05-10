@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
@@ -15,7 +15,7 @@ function GoogleIcon() {
 }
 
 export function Login() {
-  const { loginWithGoogle, loginWithEmail } = useAuth();
+  const { loginWithGoogle, loginWithEmail, user, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [showPwd, setShowPwd] = useState(false);
@@ -24,12 +24,19 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, isLoading, navigate]);
+
   const wrap = async (fn: () => Promise<void>) => {
     setError('');
     setLoading(true);
     try {
       await fn();
-      navigate('/', { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally {
@@ -37,13 +44,16 @@ export function Login() {
     }
   };
 
+  // Show nothing while checking auth state
+  if (isLoading) return null;
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-8">
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-12">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-8 sm:mb-12">
           <span
-            className="text-[#0F172A] text-[24px] font-black uppercase tracking-tight"
+            className="text-[#0F172A] text-[18px] sm:text-[24px] font-black uppercase tracking-tight text-center"
             style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
           >
             AGENTIC PHARMACY
@@ -51,16 +61,16 @@ export function Login() {
         </div>
 
         {/* Card */}
-        <div className="bg-white border-2 border-[#0F172A] rounded-xl p-8">
+        <div className="bg-white border-2 border-[#0F172A] rounded-xl p-6 sm:p-8">
           {/* Heading */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <h1
-              className="text-[28px] font-black uppercase text-[#0F172A] tracking-tight mb-2"
+              className="text-[24px] sm:text-[28px] font-black uppercase text-[#0F172A] tracking-tight mb-2"
               style={{ fontFamily: 'Inter, sans-serif', fontWeight: 900, letterSpacing: '-0.02em' }}
             >
               WELCOME BACK
             </h1>
-            <p className="text-[14px] text-[#64748B] font-medium">
+            <p className="text-[13px] sm:text-[14px] text-[#64748B] font-medium">
               Sign in to your account
             </p>
           </div>
@@ -172,7 +182,7 @@ export function Login() {
         {/* Back to landing */}
         <div className="text-center mt-6">
           <Link
-            to="/landing"
+            to="/"
             className="text-[12px] text-[#64748B] hover:text-[#0F172A] font-medium transition-colors"
           >
             ← Back to home

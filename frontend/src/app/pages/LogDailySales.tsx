@@ -103,12 +103,12 @@ export function LogDailySales() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 pt-16 px-8 pb-12 max-w-7xl mx-auto w-full">
+      <div className="flex-1 pt-14 sm:pt-16 px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 max-w-7xl mx-auto w-full">
         
         {/* Header */}
-        <div className="mb-8 flex items-baseline justify-between">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black uppercase text-[#0F172A] tracking-tight mb-2">
+            <h1 className="text-2xl sm:text-3xl font-black uppercase text-[#0F172A] tracking-tight mb-1 sm:mb-2">
               Daily sales
             </h1>
             <p className="text-sm text-[#64748B] font-medium">
