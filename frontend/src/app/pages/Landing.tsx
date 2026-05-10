@@ -80,7 +80,6 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#16a34a] to-[#15803d] border border-[#0F172A]" />
             <span 
               className="text-[#0F172A] text-[20px] font-black uppercase tracking-tight"
               style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
@@ -358,7 +357,6 @@ export function Landing() {
             {/* Brand */}
             <div className="col-span-1">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#16a34a] to-[#15803d] border border-[#0F172A] shadow-lg" />
                 <span className="text-[#0F172A] text-[18px] font-black uppercase tracking-tight">
                   PHARMAAI
                 </span>

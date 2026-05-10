@@ -42,7 +42,6 @@ export function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-12">
-          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#16a34a] to-[#15803d] border border-[#0F172A]" />
           <span
             className="text-[#0F172A] text-[24px] font-black uppercase tracking-tight"
             style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
