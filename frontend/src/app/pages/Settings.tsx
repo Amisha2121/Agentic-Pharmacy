@@ -30,17 +30,17 @@ function Section({ icon, title, subtitle, children }: {
   icon: React.ReactNode; title: string; subtitle: string; children: React.ReactNode;
 }) {
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid #0F172A', borderRadius: 24, overflow: 'hidden' }}>
-      <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#16a34a', border: '1px solid #0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', flexShrink: 0 }}>
+    <div className="bg-white dark:bg-[#1E293B] border-2 border-[#0F172A] dark:border-[#F8FAFC] rounded-3xl overflow-hidden mb-6 transition-colors duration-300">
+      <div className="px-6 py-5 border-b-2 border-[#E2E8F0] dark:border-[#334155] flex items-center gap-3 transition-colors duration-300">
+        <div className="w-9 h-9 rounded-full bg-[#16a34a] border-2 border-[#0F172A] dark:border-[#F8FAFC] flex items-center justify-center text-white flex-shrink-0 transition-colors duration-300">
           {icon}
         </div>
         <div>
-          <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 14.5, fontWeight: 700, color: '#0F172A' }}>{title}</p>
-          <p style={{ margin: '2px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11.5, color: '#64748B' }}>{subtitle}</p>
+          <p className="m-0 text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] uppercase tracking-wide transition-colors duration-300">{title}</p>
+          <p className="mt-0.5 text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">{subtitle}</p>
         </div>
       </div>
-      <div style={{ padding: '16px 24px' }}>{children}</div>
+      <div className="px-6 py-4">{children}</div>
     </div>
   );
 }
@@ -49,16 +49,12 @@ function Row({ label, sub, right, danger, noBorder }: {
   label: string; sub?: string; right: React.ReactNode; danger?: boolean; noBorder?: boolean;
 }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      gap: 16, padding: '11px 0',
-      borderBottom: noBorder ? 'none' : '1px solid #E2E8F0',
-    }}>
-      <div>
-        <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13.5, fontWeight: 600, color: danger ? '#EF4444' : '#0F172A' }}>{label}</p>
-        {sub && <p style={{ margin: '2px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B' }}>{sub}</p>}
+    <div className={`flex items-center justify-between gap-4 py-3 transition-colors duration-300 ${noBorder ? '' : 'border-b border-[#E2E8F0] dark:border-[#334155]'}`}>
+      <div className="flex-1">
+        <p className={`m-0 text-sm font-bold transition-colors duration-300 ${danger ? 'text-[#EF4444] dark:text-[#FCA5A5]' : 'text-[#0F172A] dark:text-[#F8FAFC]'}`}>{label}</p>
+        {sub && <p className="mt-1 text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed transition-colors duration-300">{sub}</p>}
       </div>
-      {right}
+      <div className="flex-shrink-0">{right}</div>
     </div>
   );
 }
@@ -67,30 +63,30 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   return (
     <button
       onClick={() => onChange(!checked)}
-      style={{
-        width: 44, height: 24, borderRadius: 999, border: '1px solid #0F172A', cursor: 'pointer',
-        background: checked ? '#16a34a' : '#F8FAFC',
-        position: 'relative', transition: 'background 0.2s', flexShrink: 0,
-      }}
+      className={`w-11 h-6 rounded-full border-2 cursor-pointer relative transition-all duration-200 flex-shrink-0 ${
+        checked 
+          ? 'bg-[#16a34a] border-[#0F172A] dark:border-[#F8FAFC]' 
+          : 'bg-[#F8FAFC] dark:bg-[#334155] border-[#0F172A] dark:border-[#F8FAFC]'
+      }`}
     >
-      <span style={{
-        position: 'absolute', top: 2, left: checked ? 21 : 2,
-        width: 18, height: 18, borderRadius: '50%', background: '#fff',
-        border: '1px solid #0F172A',
-        transition: 'left 0.2s', display: 'block',
-      }} />
+      <span 
+        className={`absolute top-0.5 w-[18px] h-[18px] rounded-full bg-white dark:bg-[#F8FAFC] border-2 border-[#0F172A] dark:border-[#0F172A] transition-all duration-200 ${
+          checked ? 'left-[21px]' : 'left-0.5'
+        }`}
+      />
     </button>
   );
 }
 
 function Chip({ label, color, icon }: { label: string; color: string; icon?: React.ReactNode }) {
   return (
-    <span style={{
-      fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700,
-      padding: '4px 12px', borderRadius: 999, background: color + '15',
-      color, border: `1px solid #0F172A`,
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-    }}>
+    <span 
+      className="text-[11px] font-bold px-3 py-1 rounded-full border-2 border-[#0F172A] dark:border-white inline-flex items-center gap-1.5 transition-colors duration-300"
+      style={{ 
+        backgroundColor: color === '#0F172A' ? 'rgba(15, 23, 42, 0.15)' : color + '15', 
+        color: color === '#0F172A' ? '#0F172A' : color 
+      }}
+    >
       {icon}{label}
     </span>
   );
@@ -105,15 +101,15 @@ function ActionBtn({ children, onClick, danger, icon }: {
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        background: hover ? (danger ? '#FEE2E2' : '#F0FDF4') : '#FFFFFF',
-        border: `1px solid #0F172A`,
-        borderRadius: 999, padding: '7px 14px',
-        color: danger ? '#EF4444' : '#0F172A',
-        fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, fontWeight: 700,
-        cursor: 'pointer', transition: 'all 0.2s',
-      }}
+      className={`flex items-center gap-1.5 border-2 rounded-full px-4 py-2 text-xs font-bold cursor-pointer transition-all duration-200 uppercase tracking-wide ${
+        danger 
+          ? hover 
+            ? 'bg-[#FEE2E2] dark:bg-[#7F1D1D] text-[#EF4444] dark:text-[#FCA5A5] border-[#0F172A] dark:border-[#F8FAFC]' 
+            : 'bg-white dark:bg-[#1E293B] text-[#EF4444] dark:text-[#FCA5A5] border-[#0F172A] dark:border-[#F8FAFC]'
+          : hover 
+            ? 'bg-[#F0FDF4] dark:bg-[#334155] text-[#0F172A] dark:text-[#F8FAFC] border-[#0F172A] dark:border-[#F8FAFC]' 
+            : 'bg-white dark:bg-[#1E293B] text-[#0F172A] dark:text-[#F8FAFC] border-[#0F172A] dark:border-[#F8FAFC]'
+      }`}
     >
       {icon}{children}
     </button>
@@ -141,7 +137,7 @@ export function Settings() {
   const [animations,   setAnimations]   = useState<boolean>(prefs.animations   ?? true);
   const [saveHistory,  setSaveHistory]  = useState<boolean>(prefs.saveHistory  ?? true);
   const [analytics,    setAnalytics]    = useState<boolean>(prefs.analytics    ?? false);
-  const [theme,        setTheme]        = useState<'dark' | 'system'>(prefs.theme ?? 'dark');
+  const [theme,        setTheme]        = useState<'light' | 'dark'>(prefs.theme ?? 'light');
 
   // Persist pref changes immediately
   const pref = useCallback((key: string, val: unknown) => savePrefs({ [key]: val }), []);
@@ -155,6 +151,15 @@ export function Settings() {
   useEffect(() => {
     document.documentElement.style.setProperty('--transition-speed', animations ? '0.3s' : '0s');
   }, [animations]);
+
+  // Apply theme
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   useEffect(() => { if (user?.name) setName(user.name); }, [user]);
 
@@ -214,77 +219,104 @@ export function Settings() {
                         user?.provider === 'email'  ? '#22C55E' : '#A1A1AA';
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', background: '#F8FAFC' }}>
-
-      {/* ── Topbar ── */}
-      <div style={{ height: 56, background: '#FFFFFF', borderBottom: '1px solid #0F172A', display: 'flex', alignItems: 'center', gap: 16, padding: '0 28px', position: 'sticky', top: 0, zIndex: 20 }}>
-        {!isSidebarOpen && (
-          <button onClick={() => setIsSidebarOpen(true)} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: '#FFFFFF', border: '1px solid #0F172A', color: '#0F172A', cursor: 'pointer' }}>
-            <Menu size={18} />
-          </button>
-        )}
-        <h1 style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 17, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.2px' }}>Settings</h1>
+    <div className="flex-1 flex flex-col h-screen w-full relative z-10 bg-[#F8FAFC] dark:bg-[#0F172A] overflow-hidden transition-colors duration-300">
+      {/* Top bar */}
+      <div className="flex items-center justify-between p-4 absolute top-0 w-full z-20">
+        <div className="flex items-center">
+          {!isSidebarOpen && (
+            <button 
+              onClick={() => setIsSidebarOpen(true)} 
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-[#1E293B] border-2 border-[#0F172A] dark:border-[#F8FAFC] text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F0FDF4] dark:hover:bg-[#334155] transition-all"
+            >
+              <Menu className="w-5 h-5" strokeWidth={2.5} />
+            </button>
+          )}
+        </div>
       </div>
 
-      <div style={{ maxWidth: 780, margin: '0 auto', width: '100%', padding: '28px 24px 64px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 pt-20 px-8 pb-12 max-w-7xl mx-auto w-full overflow-y-auto" style={{ 
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#CBD5E1 transparent'
+      }}>
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-black uppercase text-[#0F172A] dark:text-[#F8FAFC] tracking-tight mb-2 transition-colors duration-300" style={{ fontFamily: 'Inter, sans-serif' }}>
+            SETTINGS
+          </h1>
+          <p className="text-sm text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">
+            Manage your account, preferences, and app configuration
+          </p>
+        </div>
 
         {/* ── Profile card ── */}
-        <div style={{ background: '#16a34a', border: '1px solid #0F172A', borderRadius: 24, padding: 26, display: 'flex', gap: 22, alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 900, color: '#16a34a', fontFamily: 'DM Sans, sans-serif', border: '2px solid #0F172A' }}>
+        <div className="bg-[#16a34a] dark:bg-[#15803d] border-2 border-[#0F172A] dark:border-[#F8FAFC] rounded-3xl p-7 flex gap-6 items-center relative overflow-hidden mb-6 transition-colors duration-300">
+          <div className="absolute -top-10 -right-10 w-[200px] h-[200px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)' }} />
+          <div className="relative flex-shrink-0">
+            <div className="w-[76px] h-[76px] rounded-full bg-white dark:bg-[#F8FAFC] flex items-center justify-center text-[26px] font-black text-[#16a34a] dark:text-[#15803d] border-2 border-[#0F172A] dark:border-[#0F172A] transition-colors duration-300">
               {user?.initials || 'AM'}
             </div>
-            <div style={{ position: 'absolute', bottom: 2, right: 2, width: 13, height: 13, borderRadius: '50%', background: '#22C55E', border: '2px solid #0F172A' }} />
+            <div className="absolute bottom-0.5 right-0.5 w-[13px] h-[13px] rounded-full bg-[#22C55E] border-2 border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300" />
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: '0 0 2px', fontFamily: 'DM Sans, sans-serif', fontSize: 20, fontWeight: 900, color: '#FFFFFF' }}>{user?.name || 'User'}</p>
-            <p style={{ margin: '0 0 10px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, color: '#FFFFFF', opacity: 0.9 }}>{user?.email ?? 'No email'}</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <Chip label={providerLabel} color={providerColor} icon={providerIcon} />
-              <Chip label="Staff Access" color="#0F172A" icon={<Shield size={10} />} />
-              <Chip label="Active" color="#22C55E" icon={<Activity size={10} />} />
+          <div className="flex-1 min-w-0">
+            <p className="m-0 mb-0.5 text-xl font-black text-white">{user?.name || 'User'}</p>
+            <p className="m-0 mb-2.5 text-sm text-white opacity-90">{user?.email ?? 'No email'}</p>
+            <div className="flex gap-2 flex-wrap">
+              <span className="text-[11px] font-bold px-3 py-1 rounded-full border-2 border-white inline-flex items-center gap-1.5 bg-white/20 text-white backdrop-blur-sm">
+                {providerIcon}
+                {providerLabel}
+              </span>
+              <span className="text-[11px] font-bold px-3 py-1 rounded-full border-2 border-white inline-flex items-center gap-1.5 bg-white/20 text-white backdrop-blur-sm">
+                <Shield size={10} />
+                Staff Access
+              </span>
+              <span className="text-[11px] font-bold px-3 py-1 rounded-full border-2 border-white inline-flex items-center gap-1.5 bg-white/20 text-white backdrop-blur-sm">
+                <Activity size={10} />
+                Active
+              </span>
             </div>
           </div>
         </div>
 
         {/* ── Profile Settings ── */}
         <Section icon={<UserCircle size={16} />} title="Profile" subtitle="Update your display name and personal info">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="flex flex-col gap-4">
             <div>
-              <label style={{ display: 'block', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>Display Name</label>
+              <label className="block text-[11px] font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-widest mb-2 transition-colors duration-300">Display Name</label>
               <input
                 type="text" value={name} onChange={e => setName(e.target.value)}
                 placeholder="Your full name"
                 onKeyDown={e => e.key === 'Enter' && handleSave()}
-                style={{ width: '100%', background: '#F8FAFC', border: '1px solid #0F172A', borderRadius: 999, padding: '10px 16px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#0F172A', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
-                onFocus={e => (e.target as HTMLInputElement).style.borderColor = '#16a34a'}
-                onBlur={e => (e.target as HTMLInputElement).style.borderColor = '#0F172A'}
+                className="w-full bg-[#F8FAFC] dark:bg-[#334155] border-2 border-[#0F172A] dark:border-[#F8FAFC] rounded-full px-4 py-2.5 text-sm text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] dark:placeholder:text-[#64748B] outline-none transition-colors duration-300 focus:border-[#16a34a]"
               />
-              <p style={{ margin: '5px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B' }}>
+              <p className="mt-1.5 text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed transition-colors duration-300">
                 This name appears in the AI chat interface and throughout the app. Choose a name that's easy to recognize and professional for your pharmacy team.
               </p>
             </div>
             <div>
-              <label style={{ display: 'block', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 7 }}>Email Address</label>
-              <div style={{ background: '#F8FAFC', border: '1px solid #0F172A', borderRadius: 999, padding: '10px 16px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, color: '#64748B', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="block text-[11px] font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-widest mb-2 transition-colors duration-300">Email Address</label>
+              <div className="bg-[#F8FAFC] dark:bg-[#334155] border-2 border-[#0F172A] dark:border-[#F8FAFC] rounded-full px-4 py-2.5 text-sm text-[#64748B] dark:text-[#94A3B8] flex justify-between items-center transition-colors duration-300">
                 <span>{user?.email ?? '—'}</span>
-                <span style={{ fontSize: 11, color: '#64748B', background: '#E2E8F0', padding: '2px 8px', borderRadius: 999, border: '1px solid #0F172A' }}>Read-only</span>
+                <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] bg-[#E2E8F0] dark:bg-[#475569] px-2 py-0.5 rounded-full border border-[#0F172A] dark:border-[#F8FAFC] font-bold transition-colors duration-300">Read-only</span>
               </div>
-              <p style={{ margin: '5px 0 0', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B' }}>
+              <p className="mt-1.5 text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed transition-colors duration-300">
                 Your email is linked to your authentication provider and cannot be changed here. To update your email, please contact your authentication provider directly.
               </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 2 }}>
+            <div className="flex items-center gap-3 pt-1">
               <button
                 onClick={handleSave}
                 disabled={!name.trim() || name === user?.name || saving}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, background: (!name.trim() || name === user?.name) ? '#E2E8F0' : '#16a34a', color: (!name.trim() || name === user?.name) ? '#64748B' : '#fff', border: '1px solid #0F172A', borderRadius: 999, padding: '9px 20px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13.5, fontWeight: 700, cursor: (!name.trim() || name === user?.name) ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+                className={`flex items-center gap-2 border-2 rounded-full px-5 py-2.5 text-sm font-bold transition-all uppercase tracking-wide ${
+                  (!name.trim() || name === user?.name) 
+                    ? 'bg-[#E2E8F0] dark:bg-[#475569] text-[#64748B] dark:text-[#94A3B8] border-[#0F172A] dark:border-[#F8FAFC] cursor-not-allowed' 
+                    : 'bg-[#16a34a] text-white border-[#0F172A] dark:border-[#F8FAFC] cursor-pointer hover:bg-[#15803d]'
+                }`}
               >
-                {saving ? <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Saving…</> : <><Save size={14} /> Save Changes</>}
+                {saving ? <><RefreshCw size={14} className="animate-spin" /> Saving…</> : <><Save size={14} /> Save Changes</>}
               </button>
               {saved && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#22C55E', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 600 }}>
+                <div className="flex items-center gap-1.5 text-[#22C55E] dark:text-[#4ADE80] text-sm font-semibold transition-colors duration-300">
                   <CheckCircle2 size={15} /> Profile updated!
                 </div>
               )}
@@ -294,12 +326,12 @@ export function Settings() {
 
         {/* ── Notifications ── */}
         <Section icon={<Bell size={16} />} title="Notifications" subtitle="Control when and how you receive alerts">
-          <div style={{ marginBottom: 16, padding: 12, background: '#F0FDF4', border: '1px solid #16a34a', borderRadius: 16 }}>
-            <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+          <div className="mb-4 p-3 bg-[#F0FDF4] dark:bg-[#14532D] border-2 border-[#16a34a] dark:border-[#4ADE80] rounded-2xl transition-colors duration-300">
+            <p className="m-0 text-xs text-[#0F172A] dark:text-[#F8FAFC] leading-relaxed transition-colors duration-300">
               <strong>Stay informed:</strong> Enable notifications to receive real-time alerts about critical inventory events. These settings help you maintain optimal stock levels and prevent medication shortages.
             </p>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="flex flex-col">
             <Row label="Reorder Alerts" sub="Get notified immediately when any medicine falls below its minimum stock threshold. Helps prevent stockouts and ensures continuous availability of essential medications." right={<Toggle checked={notifReorder} onChange={v => { setNotifReorder(v); pref('notifReorder', v); }} />} />
             <Row label="Expiry Warnings" sub="Receive advance notifications 30 days before medicines expire. This gives you time to plan promotions, returns, or proper disposal of expiring stock." right={<Toggle checked={notifExpiry} onChange={v => { setNotifExpiry(v); pref('notifExpiry', v); }} />} />
             <Row label="Chat Notifications" sub="Get alerts when the AI assistant completes processing your requests or has important information to share about inventory queries." right={<Toggle checked={notifChat} onChange={v => { setNotifChat(v); pref('notifChat', v); }} />} />
@@ -310,18 +342,24 @@ export function Settings() {
         {/* ── Appearance ── */}
         <Section icon={<Palette size={16} />} title="Appearance" subtitle="Customise how the interface looks and feels">
           <div>
-            <p style={{ margin: '0 0 10px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Theme</p>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #E2E8F0' }}>
-              {([['dark', 'Dark', <Pill size={16} />], ['system', 'System', <Monitor size={16} />]] as const).map(([val, label, icon]) => (
-                <button key={val} onClick={() => { setTheme(val as 'dark' | 'system'); pref('theme', val); }}
-                  style={{ flex: 1, background: theme === val ? '#F0FDF4' : '#FFFFFF', border: `1px solid #0F172A`, borderRadius: 24, padding: '12px 8px', cursor: 'pointer', color: theme === val ? '#16a34a' : '#64748B', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 13, fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
+            <p className="m-0 mb-2.5 text-[11px] font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-widest transition-colors duration-300">Theme</p>
+            <div className="flex gap-2.5 mb-4 pb-4 border-b border-[#E2E8F0] dark:border-[#334155] transition-colors duration-300">
+              {([['light', 'Light', <Pill size={16} />], ['dark', 'Dark', <Monitor size={16} />]] as const).map(([val, label, icon]) => (
+                <button 
+                  key={val} 
+                  onClick={() => { setTheme(val as 'light' | 'dark'); pref('theme', val); }}
+                  className={`flex-1 border-2 rounded-3xl py-3 px-2 cursor-pointer text-sm font-bold flex flex-col items-center gap-1.5 transition-all uppercase tracking-wide ${
+                    theme === val 
+                      ? 'bg-[#F0FDF4] dark:bg-[#334155] text-[#16a34a] dark:text-[#4ADE80] border-[#0F172A] dark:border-[#F8FAFC]' 
+                      : 'bg-white dark:bg-[#1E293B] text-[#64748B] dark:text-[#94A3B8] border-[#0F172A] dark:border-[#F8FAFC]'
+                  }`}
                 >
                   {icon}{label}
                 </button>
               ))}
             </div>
-            <p style={{ margin: '0 0 16px', padding: 12, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B', lineHeight: 1.6 }}>
-              Choose between dark mode for reduced eye strain during night shifts, or system mode to automatically match your device's appearance settings.
+            <p className="m-0 mb-4 p-3 bg-[#F8FAFC] dark:bg-[#334155] border border-[#E2E8F0] dark:border-[#475569] rounded-2xl text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed transition-colors duration-300">
+              Choose between light mode for bright environments or dark mode for reduced eye strain during night shifts.
             </p>
             <Row label="Compact Mode" sub="Reduces spacing and padding throughout the interface for a denser layout. Ideal for smaller screens or when you need to view more information at once." right={<Toggle checked={compactMode} onChange={v => { setCompactMode(v); pref('compactMode', v); }} />} />
             <Row label="Animations" sub="Enable smooth transitions, hover effects, and micro-interactions. Disable this option if you prefer a more static interface or experience performance issues." right={<Toggle checked={animations} onChange={v => { setAnimations(v); pref('animations', v); }} />} noBorder />
@@ -330,8 +368,8 @@ export function Settings() {
 
         {/* ── Privacy & Data ── */}
         <Section icon={<Shield size={16} />} title="Privacy & Data" subtitle="Control what data is saved and how it's used">
-          <div style={{ marginBottom: 16, padding: 12, background: '#EFF6FF', border: '1px solid #3B82F6', borderRadius: 16 }}>
-            <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+          <div className="mb-4 p-3 bg-[#EFF6FF] dark:bg-[#1E3A8A] border-2 border-[#3B82F6] dark:border-[#60A5FA] rounded-2xl transition-colors duration-300">
+            <p className="m-0 text-xs text-[#0F172A] dark:text-[#F8FAFC] leading-relaxed transition-colors duration-300">
               <strong>Your data, your control:</strong> We take your privacy seriously. All data is encrypted and stored securely in Firebase. You can export or delete your data at any time.
             </p>
           </div>
@@ -349,8 +387,8 @@ export function Settings() {
 
         {/* ── Session & Security ── */}
         <Section icon={<Lock size={16} />} title="Session & Security" subtitle="Manage your login sessions and account security">
-          <div style={{ marginBottom: 16, padding: 12, background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 16 }}>
-            <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+          <div className="mb-4 p-3 bg-[#FEF3C7] dark:bg-[#78350F] border-2 border-[#F59E0B] dark:border-[#FCD34D] rounded-2xl transition-colors duration-300">
+            <p className="m-0 text-xs text-[#0F172A] dark:text-[#F8FAFC] leading-relaxed transition-colors duration-300">
               <strong>Security tip:</strong> Always sign out when using shared devices. Your session remains active until you explicitly log out or your authentication token expires.
             </p>
           </div>
@@ -359,9 +397,12 @@ export function Settings() {
               label="Signed-in With"
               sub="Your current authentication method determines how you access PharmaAI. This cannot be changed without creating a new account."
               right={
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: providerColor, background: providerColor + '15', padding: '4px 12px', borderRadius: 999, border: '1px solid #0F172A' }}>
+                <div 
+                  className="flex items-center gap-2 px-3 py-1 rounded-full border-2 border-[#0F172A] dark:border-[#F8FAFC] text-xs font-bold transition-colors duration-300"
+                  style={{ color: providerColor, backgroundColor: providerColor + '15' }}
+                >
                   {providerIcon}
-                  <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12.5, fontWeight: 700 }}>{providerLabel}</span>
+                  <span>{providerLabel}</span>
                 </div>
               }
             />
@@ -370,9 +411,9 @@ export function Settings() {
               sub="Configure automatic sign-out after a period of inactivity. Currently set to never expire for convenience. Contact support to enable custom timeout periods."
               noBorder
               right={
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748B', background: '#F8FAFC', padding: '4px 12px', borderRadius: 999, border: '1px solid #0F172A' }}>
+                <div className="flex items-center gap-1.5 text-[#64748B] dark:text-[#94A3B8] bg-[#F8FAFC] dark:bg-[#334155] px-3 py-1 rounded-full border-2 border-[#0F172A] dark:border-[#F8FAFC] text-xs font-semibold transition-colors duration-300">
                   <Clock size={13} />
-                  <span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, fontWeight: 600 }}>Never</span>
+                  <span>Never</span>
                   <ChevronRight size={13} />
                 </div>
               }
@@ -382,31 +423,31 @@ export function Settings() {
 
         {/* ── About ── */}
         <Section icon={<Database size={16} />} title="About" subtitle="App version and system information">
-          <div style={{ marginBottom: 16, padding: 12, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16 }}>
-            <p style={{ margin: '0 0 8px', fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+          <div className="mb-4 p-3 bg-[#F8FAFC] dark:bg-[#334155] border border-[#E2E8F0] dark:border-[#475569] rounded-2xl transition-colors duration-300">
+            <p className="m-0 mb-2 text-xs text-[#0F172A] dark:text-[#F8FAFC] leading-relaxed transition-colors duration-300">
               <strong>PharmaAI</strong> is an AI-powered pharmacy management system designed to streamline inventory tracking, prevent stockouts, and ensure medication safety through intelligent drug interaction checking.
             </p>
-            <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 11, color: '#64748B', lineHeight: 1.5 }}>
+            <p className="m-0 text-[11px] text-[#64748B] dark:text-[#94A3B8] leading-relaxed transition-colors duration-300">
               Built with modern cloud technologies for reliability, security, and real-time synchronization across all your devices.
             </p>
           </div>
           <div>
-            <Row label="App Version" sub="Current release version of PharmaAI" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', background: '#F8FAFC', padding: '4px 12px', borderRadius: 999, border: '1px solid #0F172A', fontWeight: 700 }}>v1.0.0</span>} />
-            <Row label="Database" sub="Cloud-hosted NoSQL database for real-time data sync" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B', fontWeight: 600 }}>Firebase Firestore</span>} />
-            <Row label="AI Model" sub="Large language model powering the intelligent assistant" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B', fontWeight: 600 }}>Groq · llama-3.1-8b-instant</span>} />
-            <Row label="Vector Store" sub="Semantic search engine for drug interaction database" right={<span style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#64748B', fontWeight: 600 }}>ChromaDB Cloud</span>} noBorder />
+            <Row label="App Version" sub="Current release version of PharmaAI" right={<span className="text-xs text-[#0F172A] dark:text-[#F8FAFC] bg-[#F8FAFC] dark:bg-[#334155] px-3 py-1 rounded-full border-2 border-[#0F172A] dark:border-[#F8FAFC] font-bold transition-colors duration-300">v1.0.0</span>} />
+            <Row label="Database" sub="Cloud-hosted NoSQL database for real-time data sync" right={<span className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">Firebase Firestore</span>} />
+            <Row label="AI Model" sub="Large language model powering the intelligent assistant" right={<span className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">Groq · llama-3.1-8b-instant</span>} />
+            <Row label="Vector Store" sub="Semantic search engine for drug interaction database" right={<span className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">ChromaDB Cloud</span>} noBorder />
           </div>
         </Section>
 
         {/* ── Danger Zone ── */}
-        <div style={{ background: '#FEE2E2', border: '1px solid #0F172A', borderRadius: 24, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 24px', borderBottom: '1px solid #EF4444', display: 'flex', alignItems: 'center', gap: 10, background: '#FEE2E2' }}>
-            <AlertTriangle size={15} style={{ color: '#EF4444' }} />
-            <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 700, color: '#EF4444' }}>Danger Zone</p>
+        <div className="bg-[#FEE2E2] dark:bg-[#7F1D1D] border-2 border-[#0F172A] dark:border-[#F8FAFC] rounded-3xl overflow-hidden transition-colors duration-300">
+          <div className="px-6 py-4 border-b-2 border-[#EF4444] dark:border-[#FCA5A5] flex items-center gap-2.5 bg-[#FEE2E2] dark:bg-[#7F1D1D] transition-colors duration-300">
+            <AlertTriangle size={15} className="text-[#EF4444] dark:text-[#FCA5A5] transition-colors duration-300" />
+            <p className="m-0 text-sm font-black text-[#EF4444] dark:text-[#FCA5A5] uppercase tracking-wide transition-colors duration-300">Danger Zone</p>
           </div>
-          <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', background: '#FFFFFF' }}>
-            <div style={{ marginBottom: 16, padding: 12, background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 16 }}>
-              <p style={{ margin: 0, fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 12, color: '#0F172A', lineHeight: 1.6 }}>
+          <div className="px-6 py-4 flex flex-col bg-white dark:bg-[#1E293B] transition-colors duration-300">
+            <div className="mb-4 p-3 bg-[#FEF3C7] dark:bg-[#78350F] border-2 border-[#F59E0B] dark:border-[#FCD34D] rounded-2xl transition-colors duration-300">
+              <p className="m-0 text-xs text-[#0F172A] dark:text-[#F8FAFC] leading-relaxed transition-colors duration-300">
                 <strong>⚠️ Warning:</strong> Actions in this section are permanent and cannot be undone. Please proceed with caution and ensure you have backups of any important data before performing destructive operations.
               </p>
             </div>
@@ -433,9 +474,7 @@ export function Settings() {
 
       </div>
 
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
+
     </div>
   );
 }

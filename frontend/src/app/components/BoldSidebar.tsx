@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LogOut, MessageSquare, PackageSearch, ClipboardList, BellRing, Clock, Settings, FlaskConical, Home } from 'lucide-react';
+import { LogOut, MessageSquare, PackageSearch, ClipboardList, BellRing, Clock, Settings, Home } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { authenticatedFetch } from '../utils/api';
@@ -51,22 +51,21 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
   const alertItems = [
     { icon: BellRing, label: 'Reorder Alerts', path: '/reorder', badge: reorderCount },
     { icon: Clock, label: 'Expirations', path: '/expired', badge: expiredCount },
-    { icon: FlaskConical, label: 'Drug Interactions', path: '/interactions' },
   ];
 
   return (
     <div
-      className={`bg-white flex flex-col border-r border-[#0F172A] transition-all duration-300 ease-in-out ${
+      className={`bg-white dark:bg-[#1E293B] flex flex-col border-r border-[#0F172A] dark:border-[#F8FAFC] transition-all duration-300 ease-in-out ${
         isOpen ? 'w-[220px]' : 'w-0 -translate-x-full'
       }`}
       style={{ height: '100vh', position: 'relative', zIndex: 30 }}
     >
       <div className="w-[220px] flex flex-col h-full">
         {/* Logo */}
-        <div className="px-6 py-6 border-b border-[#0F172A]">
+        <div className="px-6 py-6 border-b border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300">
           <div className="flex items-center">
             <span 
-              className="text-[#0F172A] text-[20px] font-black uppercase tracking-tight"
+              className="text-[#0F172A] dark:text-[#F8FAFC] text-[20px] font-black uppercase tracking-tight transition-colors duration-300"
               style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
             >
               PHARMAAI
@@ -81,21 +80,21 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
               <img 
                 src={user.photoURL} 
                 alt={user.name} 
-                className="w-11 h-11 rounded-full object-cover border border-[#0F172A]" 
+                className="w-11 h-11 rounded-full object-cover border border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300" 
                 referrerPolicy="no-referrer" 
               />
             ) : (
-              <div className="w-11 h-11 rounded-full bg-[#16a34a] flex items-center justify-center text-white text-base font-black border border-[#0F172A]">
+              <div className="w-11 h-11 rounded-full bg-[#16a34a] flex items-center justify-center text-white text-base font-black border border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300">
                 {user?.initials ?? 'AM'}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-[#0F172A] truncate">
+              <p className="text-[13px] font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate transition-colors duration-300">
                 {user?.name || 'Amisha'}
               </p>
               <div className="mt-1.5">
                 <span 
-                  className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#16a34a] text-white border border-[#0F172A]"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#16a34a] text-white border border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300"
                   style={{ borderRadius: '999px' }}
                 >
                   Pharmacist
@@ -111,7 +110,7 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
           <div className="mb-6">
             <div className="px-3 mb-3">
               <span 
-                className="text-[10px] font-black uppercase tracking-widest text-[#94A3B8]"
+                className="text-[10px] font-black uppercase tracking-widest text-[#94A3B8] dark:text-[#64748B] transition-colors duration-300"
                 style={{ letterSpacing: '0.1em' }}
               >
                 MAIN
@@ -127,7 +126,7 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
                     `flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold transition-all ${
                       isActive
                         ? 'bg-[#16a34a] text-white rounded-full'
-                        : 'text-[#64748B] hover:bg-[#F0FDF4] rounded-full'
+                        : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F0FDF4] dark:hover:bg-[#334155] rounded-full'
                     }`
                   }
                   style={{ borderRadius: '999px' }}
@@ -150,7 +149,7 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
           <div>
             <div className="px-3 mb-3">
               <span 
-                className="text-[10px] font-black uppercase tracking-widest text-[#94A3B8]"
+                className="text-[10px] font-black uppercase tracking-widest text-[#94A3B8] dark:text-[#64748B] transition-colors duration-300"
                 style={{ letterSpacing: '0.1em' }}
               >
                 ALERTS
@@ -165,7 +164,7 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
                     `flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold transition-all ${
                       isActive
                         ? 'bg-[#16a34a] text-white rounded-full'
-                        : 'text-[#64748B] hover:bg-[#F0FDF4] rounded-full'
+                        : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F0FDF4] dark:hover:bg-[#334155] rounded-full'
                     }`
                   }
                   style={{ borderRadius: '999px' }}
@@ -196,14 +195,14 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
         </nav>
 
         {/* Bottom Section */}
-        <div className="px-3 py-3 space-y-1 border-t border-[#0F172A]">
+        <div className="px-3 py-3 space-y-1 border-t border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300">
           <NavLink
             to="/settings"
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium transition-all ${
                 isActive
-                  ? 'bg-[#F0FDF4] text-[#0F172A] rounded-full'
-                  : 'text-[#64748B] hover:bg-[#F8FAFC] rounded-full'
+                  ? 'bg-[#F0FDF4] dark:bg-[#334155] text-[#0F172A] dark:text-[#F8FAFC] rounded-full'
+                  : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F8FAFC] dark:hover:bg-[#334155] rounded-full'
               }`
             }
             style={{ borderRadius: '999px' }}
@@ -218,7 +217,7 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
           
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium transition-all text-[#64748B] hover:bg-[#F8FAFC] rounded-full"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium transition-all text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F8FAFC] dark:hover:bg-[#334155] rounded-full"
             style={{ borderRadius: '999px' }}
           >
             <LogOut className="w-[18px] h-[18px]" strokeWidth={2} />
@@ -227,9 +226,9 @@ export function BoldSidebar({ isOpen, onToggle }: SidebarProps) {
         </div>
 
         {/* System Status */}
-        <div className="px-4 py-4 border-t border-[#0F172A]">
+        <div className="px-4 py-4 border-t border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300">
           <div 
-            className="flex items-center justify-center gap-2 px-3 py-2 bg-[#16a34a] rounded-full border border-[#0F172A]"
+            className="flex items-center justify-center gap-2 px-3 py-2 bg-[#16a34a] rounded-full border border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300"
             style={{ borderRadius: '999px' }}
           >
             <div className="w-2 h-2 rounded-full bg-white animate-pulse" />

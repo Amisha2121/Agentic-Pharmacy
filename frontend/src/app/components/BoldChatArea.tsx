@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Mic, ArrowUp, Paperclip, Menu, History, Bot, User, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Plus, Mic, ArrowUp, Paperclip, Menu, History, Bot, User, CheckCircle, AlertCircle, XCircle, FileText, ScanLine } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MessageBubble, TypingIndicator } from './MessageBubble';
 import { useAuth } from '../context/AuthContext';
@@ -293,6 +293,46 @@ export function BoldChatArea({
 
         {/* Input Bar - Always Visible */}
         <div className="relative group mx-4 shrink-0 mt-auto">
+          {/* Indicators Container */}
+          {(scanning || attachedImage || (barcodeResult && barcodeResult.found)) && (
+            <div className="absolute left-0 right-0 flex flex-col items-center justify-center gap-2 mb-4" style={{ bottom: '72px' }}>
+              {/* Scanning Animation */}
+              {scanning && (
+                <div className="bg-white border-2 border-[#0F172A] px-6 py-3 flex items-center gap-3 animate-pulse" style={{ borderRadius: '999px' }}>
+                  <ScanLine className="w-5 h-5 text-[#16a34a] animate-bounce" strokeWidth={2.5} />
+                  <span className="text-[13px] font-bold text-[#0F172A]">SCANNING BARCODE...</span>
+                </div>
+              )}
+
+              {/* Barcode Result Indicator */}
+              {barcodeResult && barcodeResult.found && !scanning && (
+                <div className="bg-[#16a34a] border-2 border-[#0F172A] px-6 py-3 flex items-center gap-3" style={{ borderRadius: '999px' }}>
+                  <CheckCircle className="w-5 h-5 text-white" strokeWidth={2.5} />
+                  <span className="text-[13px] font-bold text-white">
+                    BARCODE DETECTED: {barcodeResult.batch_number || 'Unknown'}
+                  </span>
+                </div>
+              )}
+
+              {/* Attached File Indicator */}
+              {attachedImage && !scanning && (
+                <div className="bg-[#16a34a] border-2 border-[#0F172A] px-6 py-3 flex items-center gap-3" style={{ borderRadius: '999px' }}>
+                  <FileText className="w-5 h-5 text-white" strokeWidth={2.5} />
+                  <span className="text-[13px] font-bold text-white">{attachedImage.name}</span>
+                  <button
+                    onClick={() => {
+                      setAttachedImage(null);
+                      setBarcodeResult(null);
+                    }}
+                    className="w-5 h-5 rounded-full bg-white text-[#16a34a] flex items-center justify-center hover:bg-[#F0FDF4] transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" strokeWidth={2.5} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div 
             className="relative bg-white p-4 flex items-center gap-3 border-2 border-[#0F172A] focus-within:shadow-[0_0_0_3px_#DCFCE7] transition-all"
             style={{ 

@@ -214,8 +214,13 @@ export function LiveInventory() {
   const handleDelete = async (docId: string) => {
     const ok = await askConfirm();
     if (!ok) return;
-    await authenticatedFetch(`/api/inventory/${docId}`, { method: 'DELETE' });
-    await fetchInventory();
+    try {
+      await authenticatedFetch(`/api/inventory/${docId}`, { method: 'DELETE' });
+      await fetchInventory();
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert('Failed to delete item. Please try again or contact support.');
+    }
   };
 
   const handleStockSave = async (docId: string) => {
@@ -290,7 +295,7 @@ export function LiveInventory() {
         {/* Header */}
         <div className="mb-8 flex items-baseline justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#0F172A] mb-2">
+            <h1 className="text-3xl font-black uppercase text-[#0F172A] tracking-tight mb-2">
               Inventory
             </h1>
             <p className="text-sm text-[#64748B]">
@@ -540,16 +545,23 @@ export function LiveInventory() {
               // Normal category cards
               <>
                 {categories.length === 0 && (
-                  <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col items-center justify-center py-24 text-center animate-in fade-in zoom-in duration-500">
-                    <div className="w-24 h-24 bg-[#111113] rounded-full flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(59,130,246,0.15)] ring-1 ring-[#27272A]">
-                      <Package className="w-12 h-12 text-[#3B82F6]" />
+                  <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col items-center justify-center py-24 text-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-[#16a34a] to-[#15803d] rounded-full flex items-center justify-center mb-6 border-2 border-[#0F172A] shadow-xl">
+                      <Package className="w-12 h-12 text-white" strokeWidth={2.5} />
                     </div>
-                    <h3 className="text-2xl font-bold text-[#F4F4F5] mb-3" style={{ fontFamily: 'DM Sans, sans-serif' }}>Your inventory is empty</h3>
-                    <p className="text-[#A1A1AA] max-w-md mx-auto mb-8 leading-relaxed" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                    <h3 className="text-3xl font-black uppercase text-[#0F172A] mb-3 tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      YOUR INVENTORY IS EMPTY
+                    </h3>
+                    <p className="text-[#64748B] max-w-md mx-auto mb-8 leading-relaxed font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>
                       Welcome to Agentic Pharmacy! Start by adding your first product manually above, or head over to the chat to scan a medicine box.
                     </p>
-                    <button onClick={() => setShowAddForm(true)} className="btn-primary px-8 py-3 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform">
-                      <Plus className="w-5 h-5" /> Add Your First Item
+                    <button 
+                      onClick={() => setShowAddForm(true)} 
+                      className="bg-[#16a34a] text-white hover:bg-[#15803d] px-8 py-3 text-sm font-black uppercase tracking-wide border-2 border-[#0F172A] flex items-center gap-2 shadow-lg transition-all hover:scale-105"
+                      style={{ borderRadius: '999px' }}
+                    >
+                      <Plus className="w-5 h-5" strokeWidth={3} /> 
+                      Add Your First Item
                     </button>
                   </div>
                 )}

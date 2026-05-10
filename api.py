@@ -378,10 +378,10 @@ def get_today_sales(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/sales/history")
-def get_sales_history(request: Request):
+def get_sales_history(request: Request, days: int = 30):
     try:
         user_id = get_user_id_from_token(request)
-        history = database.get_sales_history(days=5, user_id=user_id)
+        history = database.get_sales_history(days=days, user_id=user_id)
         return {"history": history}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

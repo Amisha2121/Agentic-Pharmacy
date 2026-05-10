@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
-import { Menu, RefreshCw, PackageX, Check, ArrowUpDown } from 'lucide-react';
+import { Menu, RefreshCw, PackageX, Check } from 'lucide-react';
 import { authenticatedFetch } from '../utils/api';
 
 interface ContextType {
@@ -17,16 +17,11 @@ interface ReorderAlert {
   stock: number;
 }
 
-type SortKey = 'name' | 'stock' | 'category';
-
 export function ReorderAlerts() {
   const { isSidebarOpen, setIsSidebarOpen } = useOutletContext<ContextType>();
   const [alerts, setAlerts] = useState<ReorderAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissed, setDismissed] = useState<string[]>([]);
-  const [sortKey, setSortKey] = useState<SortKey>('stock');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
-  const [filter, setFilter] = useState<'all' | 'out' | 'low'>('all');
 
   const fetchAlerts = async () => {
     setLoading(true);
@@ -51,150 +46,105 @@ export function ReorderAlerts() {
     setTimeout(() => setAlerts(prev => prev.filter(a => a.doc_id !== docId)), 400);
   };
 
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(key); setSortDir('asc'); }
-  };
-
-  const outCount = alerts.filter(a => a.stock === 0).length;
-  const lowCount = alerts.filter(a => a.stock > 0).length;
-
-  const filtered = alerts.filter(a => {
-    if (filter === 'out') return a.stock === 0;
-    if (filter === 'low') return a.stock > 0;
-    return true;
-  });
-
-  const sorted = [...filtered].sort((a, b) => {
-    let cmp = 0;
-    if (sortKey === 'name') cmp = a.product_name.localeCompare(b.product_name);
-    else if (sortKey === 'stock') cmp = a.stock - b.stock;
-    else if (sortKey === 'category') cmp = a.category.localeCompare(b.category);
-    return sortDir === 'asc' ? cmp : -cmp;
-  });
-
   return (
-    <div className="flex-1 flex flex-col h-full w-full relative z-10 overflow-y-auto scrollbar-hide bg-[#F9FAFB]">
+    <div className="flex-1 flex flex-col h-full w-full relative z-10 overflow-y-auto scrollbar-hide bg-[#F8FAFC]">
       {/* Topbar */}
-      <div className="h-14 bg-white border-b border-[#E5E7EB] flex items-center justify-between px-8 py-6 sticky top-0 z-20">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between p-4 absolute top-0 w-full z-20">
+        <div className="flex items-center">
           {!isSidebarOpen && (
-            <button onClick={() => setIsSidebarOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-[#E5E7EB] text-[#6B7280] hover:text-[#111827] transition-all">
-              <Menu className="w-5 h-5" />
+            <button 
+              onClick={() => setIsSidebarOpen(true)} 
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-[#0F172A] text-[#0F172A] hover:bg-[#F0FDF4] transition-all"
+            >
+              <Menu className="w-5 h-5" strokeWidth={2.5} />
             </button>
           )}
-          <h1 className="text-3xl font-bold text-[#0F172A]">
-            Reorder alerts
-          </h1>
         </div>
-        <button onClick={fetchAlerts} className="border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 text-sm flex items-center gap-2">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-        </button>
       </div>
 
-      <div className="flex-1 p-6 px-8 py-6 max-w-[1100px] mx-auto w-full space-y-6">
-
+      <div className="flex-1 pt-16 px-8 pb-12 max-w-7xl mx-auto w-full">
         {/* Page heading */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="mb-8 flex items-baseline justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-[#111827]">Reorder alerts</h2>
-            <p className="text-sm text-[#6B7280] mt-1">
+            <h1 className="text-3xl font-black uppercase text-[#0F172A] tracking-tight mb-2">
+              Reorder Alerts
+            </h1>
+            <p className="text-sm text-[#64748B] font-medium">
               {loading ? 'Loading…' : alerts.length === 0 ? 'All products are well-stocked.' : `${alerts.length} product${alerts.length !== 1 ? 's' : ''} require restocking`}
             </p>
           </div>
-          {/* Filter tabs */}
-          {!loading && alerts.length > 0 && (
-            <div className="flex items-center bg-white border border-gray-300 rounded-lg p-1 gap-1">
-              {([
-                { key: 'all', label: `All (${alerts.length})` },
-                { key: 'out', label: `Out of Stock (${outCount})` },
-                { key: 'low', label: `Low Stock (${lowCount})` },
-              ] as const).map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setFilter(tab.key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    filter === tab.key ? 'bg-[#16a34a] text-white' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
+          <button 
+            onClick={fetchAlerts} 
+            className="px-5 py-2.5 text-sm font-bold text-[#0F172A] border-2 border-[#0F172A] bg-white hover:bg-[#F0FDF4] transition-all flex items-center gap-2"
+            style={{ borderRadius: '999px' }}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
+            Refresh
+          </button>
         </div>
 
         {/* Empty state */}
         {!loading && alerts.length === 0 && (
-          <div className="glass-card rounded-[12px] flex flex-col items-center justify-center py-24 gap-4">
-            <div className="w-16 h-16 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] flex items-center justify-center">
-              <Check className="w-7 h-7 text-[#22C55E]" />
+          <div className="bg-white border-2 border-[#0F172A] rounded-3xl flex flex-col items-center justify-center py-24 gap-4">
+            <div className="w-16 h-16 rounded-full bg-[#F0FDF4] border-2 border-[#16a34a] flex items-center justify-center">
+              <Check className="w-7 h-7 text-[#16a34a]" strokeWidth={3} />
             </div>
-            <p className="text-[#111827] font-semibold text-lg" style={{ fontFamily: 'DM Sans, sans-serif' }}>All products are well-stocked</p>
-            <p className="text-[#6B7280] text-sm" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>No reorder alerts at this time.</p>
+            <p className="text-[#0F172A] font-black text-lg uppercase tracking-wide">All Products Well-Stocked</p>
+            <p className="text-[#64748B] text-sm font-medium">No reorder alerts at this time.</p>
           </div>
         )}
 
         {/* Table */}
-        {!loading && sorted.length > 0 && (
-          <div className="glass-card rounded-[12px] overflow-hidden shadow-lg">
+        {!loading && alerts.length > 0 && (
+          <div className="bg-white border-2 border-[#0F172A] rounded-3xl overflow-hidden">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-[#E5E7EB] bg-[#F9FAFB]">
-                  <th className="px-5 py-4 text-xs font-bold text-[#6B7280] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Status</th>
-                  <th className="px-5 py-4 cursor-pointer select-none" onClick={() => toggleSort('name')}>
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-[#6B7280] uppercase tracking-wider hover:text-[#111827] transition-colors" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-                      Product <ArrowUpDown className="w-3 h-3" />
-                      {sortKey === 'name' && <span className="text-[#22C55E]">{sortDir === 'asc' ? '↑' : '↓'}</span>}
-                    </span>
-                  </th>
-                  <th className="px-5 py-4 cursor-pointer select-none" onClick={() => toggleSort('category')}>
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-[#6B7280] uppercase tracking-wider hover:text-[#111827] transition-colors" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-                      Category <ArrowUpDown className="w-3 h-3" />
-                      {sortKey === 'category' && <span className="text-[#22C55E]">{sortDir === 'asc' ? '↑' : '↓'}</span>}
-                    </span>
-                  </th>
-                  <th className="px-5 py-4 text-xs font-bold text-[#6B7280] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Batch</th>
-                  <th className="px-5 py-4 cursor-pointer select-none" onClick={() => toggleSort('stock')}>
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-[#6B7280] uppercase tracking-wider hover:text-[#111827] transition-colors" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-                      Stock <ArrowUpDown className="w-3 h-3" />
-                      {sortKey === 'stock' && <span className="text-[#22C55E]">{sortDir === 'asc' ? '↑' : '↓'}</span>}
-                    </span>
-                  </th>
-                  <th className="px-5 py-4 text-xs font-bold text-[#6B7280] uppercase tracking-wider" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>Action</th>
+                <tr className="border-b-2 border-[#E2E8F0]">
+                  <th className="px-6 py-4 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Product</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Category</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Batch</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Stock</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F3F4F6]">
-                {sorted.map(item => (
+                {alerts.map(item => (
                   <tr
                     key={item.doc_id}
-                    className="hover:bg-[#F9FAFB] transition-all"
+                    className="hover:bg-[#F8FAFC] transition-all"
                     style={{ opacity: dismissed.includes(item.doc_id) ? 0.3 : 1, transition: 'opacity 0.3s' }}
                   >
-                    <td className="px-5 py-4">
+                    <td className="px-6 py-4">
                       {item.stock === 0
-                        ? <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] text-xs font-bold h-6"><PackageX className="w-3 h-3" /> Out of Stock</span>
-                        : <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A] text-xs font-bold h-6">Low Stock</span>
+                        ? <span className="inline-flex items-center gap-2 px-4 py-2 bg-[#FEE2E2] text-[#DC2626] border-2 border-[#0F172A] text-xs font-black" style={{ borderRadius: '999px' }}>
+                            <PackageX className="w-3.5 h-3.5" strokeWidth={2.5} /> OUT OF STOCK
+                          </span>
+                        : <span className="inline-flex items-center px-4 py-2 bg-[#FEF3C7] text-[#D97706] border-2 border-[#0F172A] text-xs font-black" style={{ borderRadius: '999px' }}>
+                            LOW STOCK
+                          </span>
                       }
                     </td>
-                    <td className="px-5 py-4 font-semibold text-[#111827] text-sm" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.product_name}</td>
-                    <td className="px-5 py-4">
-                      <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] text-[#6B7280]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{item.category}</span>
+                    <td className="px-6 py-4 font-bold text-[#0F172A] text-sm">{item.product_name}</td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] text-[#64748B]">
+                        {item.category}
+                      </span>
                     </td>
-                    <td className="px-5 py-4 font-mono text-xs text-[#9CA3AF]">{item.batch_number}</td>
-                    <td className="px-5 py-4">
-                      <span className={`text-sm font-bold ${item.stock === 0 ? 'text-[#EF4444]' : 'text-[#F59E0B]'}`} style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                    <td className="px-6 py-4 font-mono text-xs text-[#94A3B8]">{item.batch_number}</td>
+                    <td className="px-6 py-4">
+                      <span className={`text-sm font-black ${item.stock === 0 ? 'text-[#EF4444]' : 'text-[#F59E0B]'}`}>
                         {item.stock}
                       </span>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-6 py-4">
                       <button
                         onClick={() => handleDismiss(item.doc_id)}
                         disabled={dismissed.includes(item.doc_id)}
-                        className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-white border border-[#E5E7EB] text-[#6B7280] hover:border-[#22C55E] hover:text-[#22C55E] text-xs font-semibold transition-all disabled:opacity-40"
-                        style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
+                        className="flex items-center gap-2 px-5 py-2 text-xs font-bold text-[#0F172A] border-2 border-[#0F172A] bg-white hover:bg-[#F0FDF4] transition-all disabled:opacity-40"
+                        style={{ borderRadius: '999px' }}
                       >
-                        <Check className="w-3 h-3" /> Dismiss
+                        <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> Dismiss
                       </button>
                     </td>
                   </tr>
@@ -206,9 +156,9 @@ export function ReorderAlerts() {
 
         {/* Skeleton */}
         {loading && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="glass-card rounded-[12px] h-16 animate-pulse" />
+              <div key={i} className="bg-white border-2 border-[#0F172A] rounded-3xl h-20 animate-pulse" />
             ))}
           </div>
         )}

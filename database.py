@@ -169,8 +169,8 @@ def insert_quarantine(batch_number: str, expiry_date: str, product_name: str = "
 
 def get_inventory(user_id: str = "legacy"):
     """Returns a list of tuples: (batch_number, expiry_date, product_name, category, logged_at, stock)
-    Reads from ALL possible Firestore paths (user-scoped + root collections) so
-    items added via the Firebase Console or legacy code are always included.
+    For authenticated users (user_id != "legacy"), reads ONLY from users/{user_id}/batches.
+    For legacy users, reads from root collections for backwards compatibility.
     """
     if MOCK_MODE:
         return mock_data.MOCK_BATCHES
@@ -203,18 +203,14 @@ def get_inventory(user_id: str = "legacy"):
         return out
 
     try:
-        # 1. User-scoped
-        results = _read_as_tuples(_user_collection(user_id, COLLECTION))
-        seen_bns = {r[0] for r in results}  # deduplicate by batch_number
-
-        # 2. Root 'batches' (legacy / Firebase Console adds)
+        # For authenticated users: ONLY read from user-scoped collection
         if user_id != "legacy":
-            for row in _read_as_tuples(COLLECTION):
-                if row[0] not in seen_bns:
-                    results.append(row)
-                    seen_bns.add(row[0])
+            return _read_as_tuples(_user_collection(user_id, COLLECTION))
+        
+        # For legacy users: read from root collections
+        results = _read_as_tuples(COLLECTION)
+        seen_bns = {r[0] for r in results}
 
-        # 3. Root 'inventory' collection
         for row in _read_as_tuples(INVENTORY_COLLECTION):
             if row[0] not in seen_bns:
                 results.append(row)
@@ -231,11 +227,43 @@ CHAT_SESSIONS_COLLECTION = "chat_sessions"
 COLLECTION = "batches"
 
 def delete_batch(doc_id: str, user_id: str = "legacy") -> bool:
-    """Delete a product/batch from the batches collection."""
+    """Delete a product/batch from all possible collections.
+    Ensures complete removal regardless of where the item was originally stored.
+    This handles edge cases where items might exist in root collections from before
+    data isolation was implemented.
+    """
     if MOCK_MODE:
         return True
-    db.collection(_user_collection(user_id, COLLECTION)).document(doc_id).delete()
-    return True
+    
+    deleted = False
+    
+    # Try user-scoped collection first (primary location for authenticated users)
+    if user_id != "legacy":
+        try:
+            doc_ref = db.collection(_user_collection(user_id, COLLECTION)).document(doc_id)
+            if doc_ref.get().exists:
+                doc_ref.delete()
+                print(f"[delete_batch] Deleted {doc_id} from users/{user_id}/batches")
+                deleted = True
+        except Exception as e:
+            print(f"[delete_batch] Error deleting from user collection: {e}")
+    
+    # For legacy users OR if not found in user collection, try root collections
+    if user_id == "legacy" or not deleted:
+        for col in [COLLECTION, INVENTORY_COLLECTION]:
+            try:
+                doc_ref = db.collection(col).document(doc_id)
+                if doc_ref.get().exists:
+                    doc_ref.delete()
+                    print(f"[delete_batch] Deleted {doc_id} from {col}")
+                    deleted = True
+            except Exception as e:
+                print(f"[delete_batch] Could not delete from {col}: {e}")
+    
+    if not deleted:
+        print(f"[delete_batch] WARNING: Document {doc_id} not found in any collection")
+    
+    return deleted
 
 def update_stock(doc_id: str, new_stock: int, user_id: str = "legacy"):
     """Directly set the stock level for a specific product."""
@@ -320,11 +348,8 @@ def delete_chat_session(thread_id: str, user_id: str = "legacy") -> None:
 
 def get_inventory_with_stock(user_id: str = "legacy") -> list[dict]:
     """Fetch all medicines with stock info.
-    Reads from ALL possible Firestore paths so nothing is missed:
-      1. users/{uid}/batches   — user-scoped (new app writes)
-      2. batches               — root legacy collection (console / old agent)
-      3. inventory             — root inventory collection (some older writes)
-    Results are deduplicated by doc_id.
+    For authenticated users (user_id != "legacy"), reads ONLY from users/{user_id}/batches.
+    For legacy users, reads from root collections for backwards compatibility.
     """
     if MOCK_MODE:
         return [{
@@ -342,7 +367,7 @@ def get_inventory_with_stock(user_id: str = "legacy") -> list[dict]:
             out = []
             for doc in db.collection(col_path).stream():
                 d = doc.to_dict()
-                if not d:  # skip empty docs
+                if not d:
                     continue
                 stock_val = 0
                 for field in _STOCK_FIELDS:
@@ -360,37 +385,29 @@ def get_inventory_with_stock(user_id: str = "legacy") -> list[dict]:
                     "expiry_date":       d.get("expiry_date", ""),
                     "stock":             stock_val,
                     "reorder_dismissed": bool(d.get("reorder_dismissed", False)),
-                    "_source_col":       col_path,  # debug only
                 })
             return out
         except Exception as e:
             print(f"[db] read error ({col_path}): {e}")
             return []
 
-    # 1. Primary: user-scoped collection
-    user_col = _user_collection(user_id, COLLECTION)
-    results = _read_col(user_col)
+    # For authenticated users: ONLY read from user-scoped collection
+    if user_id != "legacy":
+        user_col = _user_collection(user_id, COLLECTION)
+        results = _read_col(user_col)
+        print(f"[db] inventory: {len(results)} item(s) for user={user_id} (path: {user_col})")
+        return results
+
+    # For legacy users: read from root collections
+    results = _read_col(COLLECTION)
     seen_ids = {r["doc_id"] for r in results}
 
-    # 2. Root 'batches' collection — items added via Firebase Console or old agent code
-    if user_id != "legacy":
-        for item in _read_col(COLLECTION):
-            if item["doc_id"] not in seen_ids:
-                results.append(item)
-                seen_ids.add(item["doc_id"])
-
-    # 3. Root 'inventory' collection — some older writes used this name
     for item in _read_col(INVENTORY_COLLECTION):
         if item["doc_id"] not in seen_ids:
             results.append(item)
             seen_ids.add(item["doc_id"])
 
-    # Strip internal debug field before returning
-    for r in results:
-        r.pop("_source_col", None)
-
-    print(f"[db] inventory: {len(results)} item(s) total for user={user_id} "
-          f"(paths checked: {user_col}, {COLLECTION}, {INVENTORY_COLLECTION})")
+    print(f"[db] inventory: {len(results)} item(s) for legacy user (paths: {COLLECTION}, {INVENTORY_COLLECTION})")
     return results
 
 
@@ -536,10 +553,9 @@ def process_midnight_deductions(user_id: str = "legacy"):
     return f"✅ Archived {len(past_docs)} logs."
 
 def get_reorder_alerts(user_id: str = "legacy") -> list[dict]:
-    """Return items with zero or low stock — scans ALL Firestore paths."""
+    """Return items with zero or low stock from user's inventory."""
     if MOCK_MODE:
         return []
-    # Reuse get_inventory_with_stock which already merges all collection paths
     all_items = get_inventory_with_stock(user_id)
     results = []
     for item in all_items:
@@ -562,10 +578,9 @@ def dismiss_reorder_alert(doc_id: str, user_id: str = "legacy"):
     db.collection(_user_collection(user_id, COLLECTION)).document(doc_id).update({"reorder_dismissed": True})
 
 def get_expired_items(user_id: str = "legacy") -> list[dict]:
-    """Return items past or approaching expiry — scans ALL Firestore paths."""
+    """Return items past or approaching expiry from user's inventory."""
     if MOCK_MODE:
         return []
-    # Reuse get_inventory_with_stock which already merges all collection paths
     all_items = get_inventory_with_stock(user_id)
     results = []
     for item in all_items:
@@ -578,7 +593,6 @@ def get_expired_items(user_id: str = "legacy") -> list[dict]:
             days_expired = (datetime.date.today() - datetime.date.fromisoformat(expiry)).days
         except Exception:
             days_expired = 0
-        # Skip items expiring more than 90 days in the future
         if days_expired < -90:
             continue
         results.append({

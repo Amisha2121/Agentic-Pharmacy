@@ -1,4 +1,4 @@
-import { useState, useId, type FormEvent, type CSSProperties } from 'react';
+import { useState, useId, useEffect, type FormEvent, type CSSProperties } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Phone, ArrowRight, Loader2, User, ShieldCheck, Zap, Activity } from 'lucide-react';
@@ -35,19 +35,20 @@ function PasswordStrength({ password }: { password: string }) {
     (/[0-9]/.test(password) ? 1 : 0) +
     (/[^A-Za-z0-9]/.test(password) ? 1 : 0);
   const colors = ['', '#EF4444', '#F59E0B', '#84CC16', '#22C55E'];
-  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const labels = ['', 'WEAK', 'FAIR', 'GOOD', 'STRONG'];
   return (
-    <div style={{ marginTop: 8 }}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+    <div style={{ marginTop: 10 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
         {[1,2,3,4].map(i => (
           <div key={i} style={{
-            flex: 1, height: 3, borderRadius: 2,
-            background: i <= score ? colors[score] : '#27272A',
+            flex: 1, height: 4, borderRadius: 999,
+            background: i <= score ? colors[score] : '#E2E8F0',
             transition: 'background 0.2s',
+            border: '1px solid #0F172A',
           }} />
         ))}
       </div>
-      <span style={{ fontSize: 11, color: colors[score], fontFamily: 'IBM Plex Sans, sans-serif', fontWeight: 500 }}>
+      <span style={{ fontSize: 11, color: colors[score], fontFamily: 'Inter, sans-serif', fontWeight: 800, letterSpacing: '0.5px' }}>
         {labels[score]}
       </span>
     </div>
@@ -94,128 +95,113 @@ export function Signup() {
   };
 
   /* ── shared styles ── */
-  const inputStyle = (name: string): CSSProperties => ({
-    width: '100%', height: 44, borderRadius: 10, boxSizing: 'border-box',
-    padding: '0 14px', background: focused === name ? '#111318' : '#0D1117',
-    border: focused === name ? '1.5px solid #3B82F6' : '1.5px solid #27272A',
-    boxShadow: focused === name ? '0 0 0 3px rgba(59,130,246,0.12)' : 'none',
-    color: '#F4F4F5', fontSize: 14, fontFamily: 'IBM Plex Sans, sans-serif',
-    outline: 'none', transition: 'all 0.15s',
-  });
-
-  const inputWithIconStyle = (name: string): CSSProperties => ({ ...inputStyle(name), paddingLeft: 40 });
-
-  const labelStyle: CSSProperties = {
-    display: 'block', color: '#A1A1AA', fontSize: 12, fontWeight: 500,
-    fontFamily: 'IBM Plex Sans, sans-serif', letterSpacing: '0.3px', marginBottom: 7,
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    height: 48,
+    padding: '0 16px',
+    background: '#F8FAFC',
+    border: '2px solid #E2E8F0',
+    borderRadius: 12,
+    color: '#0F172A',
+    fontSize: 14,
+    fontFamily: 'Inter, sans-serif',
+    fontWeight: 500,
+    outline: 'none',
+    transition: 'all 0.2s',
   };
 
-  const submitBtn: CSSProperties = {
-    width: '100%', height: 44, borderRadius: 10, border: 'none',
-    background: loading ? 'rgba(59,130,246,0.5)' : 'linear-gradient(135deg, #3B82F6, #6366F1)',
-    color: '#FFFFFF', fontSize: 14, fontWeight: 600,
-    fontFamily: 'IBM Plex Sans, sans-serif', cursor: loading ? 'not-allowed' : 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-    transition: 'all 0.2s', marginTop: 8,
-    boxShadow: loading ? 'none' : '0 4px 18px rgba(99,102,241,0.35)',
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: 900,
+    fontFamily: 'Inter, sans-serif',
+    letterSpacing: '0.05em',
+    marginBottom: 8,
+    textTransform: 'uppercase',
   };
 
-  const iconWrap: CSSProperties = {
-    position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
-    color: '#52525B', display: 'flex', alignItems: 'center', pointerEvents: 'none',
+  const submitBtn: React.CSSProperties = {
+    width: '100%',
+    height: 48,
+    borderRadius: 999,
+    border: 'none',
+    background: loading ? '#94A3B8' : '#16a34a',
+    color: 'white',
+    fontSize: 13,
+    fontWeight: 900,
+    fontFamily: 'Inter, sans-serif',
+    cursor: loading ? 'not-allowed' : 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    transition: 'all 0.2s',
+    marginTop: 24,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100%', background: '#09090B' }}>
-
-      {/* ── LEFT ── */}
-      <div className="left-panel" style={{ flex: '0 0 52%', position: 'relative', overflow: 'hidden', background: '#09090B', display: 'none' }}>
-        <div style={{ position: 'absolute', top: '-15%', left: '-20%', width: '75%', height: '65%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)', filter: 'blur(50px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '0%', right: '-10%', width: '60%', height: '55%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, #3B82F6 50%, transparent)', opacity: 0.6 }} />
-
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', padding: '52px 64px' }}>
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #16a34a, #15803d)', border: '1px solid #0F172A' }} />
-            <span style={{ color: '#F4F4F5', fontSize: 18, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.3px' }}>PharmaAI</span>
-          </div>
-
-          {/* Hero */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <p style={{ color: '#3B82F6', fontSize: 11, fontWeight: 600, letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 24 }}>Pharmacy Intelligence</p>
-            <h1 style={{ color: '#F4F4F5', fontSize: 'clamp(34px, 3.5vw, 50px)', fontWeight: 700, fontFamily: 'DM Sans, sans-serif', lineHeight: 1.1, letterSpacing: '-1.5px', marginBottom: 24 }}>
-              Your pharmacy,<br />
-              <em style={{ fontStyle: 'italic', color: '#60A5FA', fontWeight: 400 }}>live in minutes.</em>
-            </h1>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {[
-                { Icon: Zap,          title: 'Instant setup',      desc: 'Sign up and go live in under a minute' },
-                { Icon: ShieldCheck,  title: 'Secure by default',  desc: 'Firebase Auth keeps your account safe' },
-                { Icon: Activity,     title: 'Full AI access',     desc: 'Drug interactions, alerts & smart chat' },
-              ].map(({ Icon, title, desc }) => (
-                <div key={title} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon size={16} color="#60A5FA" />
-                  </div>
-                  <div>
-                    <p style={{ color: '#F4F4F5', fontSize: 13, fontWeight: 600, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 1 }}>{title}</p>
-                    <p style={{ color: '#52525B', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid #18181B', paddingTop: 28 }}>
-            <p style={{ color: '#3F3F46', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>© 2026 PharmaAI · Agentic Pharmacy Intelligence</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── RIGHT ── */}
-      <div style={{ flex: 1, background: '#0D1117', borderLeft: '1px solid #18181B', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 32px', overflowY: 'auto' }}>
-        <div style={{ width: '100%', maxWidth: 400 }}>
-
-          {/* Mobile logo */}
-          <div className="mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 10, marginBottom: 36 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #16a34a, #15803d)', border: '1px solid #0F172A' }} />
-            <span style={{ color: '#F4F4F5', fontSize: 17, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}>PharmaAI</span>
-          </div>
-
-          <div style={{ marginBottom: 28 }}>
-            <h2 style={{ color: '#F4F4F5', fontSize: 26, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.5px', marginBottom: 6 }}>Create account</h2>
-            <p style={{ color: '#71717A', fontSize: 14, fontFamily: 'IBM Plex Sans, sans-serif' }}>Get started with your pharmacy dashboard</p>
-          </div>
-
-          {/* Google */}
-          <button
-            onClick={() => wrap(loginWithGoogle)} disabled={loading}
-            style={{ width: '100%', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 10, border: '1.5px solid #27272A', background: '#18181B', color: '#A1A1AA', fontSize: 14, fontWeight: 500, fontFamily: 'IBM Plex Sans, sans-serif', cursor: 'pointer', transition: 'all 0.15s', marginBottom: 20, opacity: loading ? 0.4 : 1 }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#1F1F23'; e.currentTarget.style.borderColor = '#3F3F46'; e.currentTarget.style.color = '#F4F4F5'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#18181B'; e.currentTarget.style.borderColor = '#27272A'; e.currentTarget.style.color = '#A1A1AA'; }}
+    <div style={{ minHeight: '100vh', height: 'auto', background: '#F8FAFC', padding: '32px 16px', display: 'block' }}>
+      <div style={{ width: '100%', maxWidth: '448px', margin: '0 auto', paddingBottom: '32px' }}>
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-3 mb-12">
+          <span
+            className="text-[#0F172A] text-[24px] font-black uppercase tracking-tight"
+            style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
           >
-            <GoogleIcon /> Sign up with Google
+            PHARMAAI
+          </span>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white border-2 border-[#0F172A] rounded-xl p-8">
+          {/* Heading */}
+          <div className="mb-8">
+            <h1
+              className="text-[28px] font-black uppercase text-[#0F172A] tracking-tight mb-2"
+              style={{ fontFamily: 'Inter, sans-serif', fontWeight: 900, letterSpacing: '-0.02em' }}
+            >
+              CREATE ACCOUNT
+            </h1>
+            <p className="text-[14px] text-[#64748B] font-medium">
+              Get started with your pharmacy dashboard
+            </p>
+          </div>
+
+          {/* Google Button */}
+          <button
+            onClick={() => wrap(loginWithGoogle)}
+            disabled={loading}
+            className="w-full h-12 flex items-center justify-center gap-3 bg-white hover:bg-[#F8FAFC] border-2 border-[#0F172A] text-[#0F172A] font-bold text-[13px] uppercase tracking-wide transition-all mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ borderRadius: '999px' }}
+          >
+            <GoogleIcon />
+            SIGN UP WITH GOOGLE
           </button>
 
           {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: '#18181B' }} />
-            <span style={{ color: '#3F3F46', fontSize: 12, fontFamily: 'IBM Plex Sans, sans-serif' }}>or</span>
-            <div style={{ flex: 1, height: 1, background: '#18181B' }} />
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-[2px] bg-[#E2E8F0]" />
+            <span className="text-[11px] font-black uppercase tracking-wider text-[#94A3B8]">OR</span>
+            <div className="flex-1 h-[2px] bg-[#E2E8F0]" />
           </div>
 
           {/* Tab switcher */}
-          <div style={{ display: 'flex', background: '#18181B', border: '1px solid #27272A', borderRadius: 10, padding: 4, marginBottom: 20 }}>
+          <div className="flex bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-full p-1 mb-6">
             {(['email', 'phone'] as Tab[]).map(t => (
-              <button key={t} onClick={() => { setTab(t); setError(''); setOtpSent(false); setSuccess(''); }}
-                style={{ flex: 1, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'IBM Plex Sans, sans-serif', transition: 'all 0.15s',
-                  background: tab === t ? '#0D1117' : 'transparent',
-                  color: tab === t ? '#F4F4F5' : '#71717A',
-                  boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.4)' : 'none',
-                }}>
-                {t === 'email' ? <Mail size={13} /> : <Phone size={13} />}
-                {t === 'email' ? 'Email' : 'Phone'}
+              <button
+                key={t}
+                onClick={() => { setTab(t); setError(''); setOtpSent(false); setSuccess(''); }}
+                className={`flex-1 h-10 flex items-center justify-center gap-2 rounded-full border-none cursor-pointer text-[12px] font-bold uppercase tracking-wide transition-all ${
+                  tab === t
+                    ? 'bg-[#16a34a] text-white'
+                    : 'bg-transparent text-[#64748B] hover:text-[#0F172A]'
+                }`}
+              >
+                {t === 'email' ? <Mail size={14} strokeWidth={2.5} /> : <Phone size={14} strokeWidth={2.5} />}
+                {t === 'email' ? 'EMAIL' : 'PHONE'}
               </button>
             ))}
           </div>
@@ -223,48 +209,106 @@ export function Signup() {
           {/* ── Email form ── */}
           {tab === 'email' && (
             <form onSubmit={e => { e.preventDefault(); if (password !== confirm) { setError('Passwords do not match.'); return; } if (password.length < 6) { setError('Password must be at least 6 characters.'); return; } wrap(() => signupWithEmail(name, email, password)); }}>
-              <div style={{ marginBottom: 14 }}>
-                <label style={labelStyle}>Full name</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={iconWrap}><User size={15} /></span>
-                  <input type="text" value={name} required onChange={e => setName(e.target.value)} onFocus={() => setFocused('name')} onBlur={() => setFocused(null)} placeholder="Dr. Amisha Patel" style={inputWithIconStyle('name')} />
-                </div>
+              {/* Full Name */}
+              <div className="mb-5">
+                <label style={labelStyle}>FULL NAME</label>
+                <input
+                  type="text"
+                  value={name}
+                  required
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Your full name"
+                  className="w-full h-12 px-4 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl text-[#0F172A] text-[14px] font-medium placeholder:text-[#94A3B8] focus:border-[#16a34a] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#DCFCE7] transition-all"
+                />
               </div>
 
-              <div style={{ marginBottom: 14 }}>
-                <label style={labelStyle}>Email address</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={iconWrap}><Mail size={15} /></span>
-                  <input type="email" value={email} required onChange={e => setEmail(e.target.value)} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} placeholder="you@example.com" style={inputWithIconStyle('email')} />
-                </div>
+              {/* Email */}
+              <div className="mb-5">
+                <label style={labelStyle}>EMAIL ADDRESS</label>
+                <input
+                  type="email"
+                  value={email}
+                  required
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full h-12 px-4 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl text-[#0F172A] text-[14px] font-medium placeholder:text-[#94A3B8] focus:border-[#16a34a] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#DCFCE7] transition-all"
+                />
               </div>
 
-              <div style={{ marginBottom: 14 }}>
-                <label style={labelStyle}>Password</label>
-                <div style={{ position: 'relative' }}>
-                  <input type={showPwd ? 'text' : 'password'} value={password} required onChange={e => setPassword(e.target.value)} onFocus={() => setFocused('pwd')} onBlur={() => setFocused(null)} placeholder="Min. 6 characters" style={{ ...inputStyle('pwd'), paddingRight: 44 }} />
-                  <button type="button" onClick={() => setShowPwd(p => !p)} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#52525B', padding: 0, display: 'flex' }}>
-                    {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+              {/* Password */}
+              <div className="mb-5">
+                <label style={labelStyle}>PASSWORD</label>
+                <div className="relative">
+                  <input
+                    type={showPwd ? 'text' : 'password'}
+                    value={password}
+                    required
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    className="w-full h-12 px-4 pr-12 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl text-[#0F172A] text-[14px] font-medium placeholder:text-[#94A3B8] focus:border-[#16a34a] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#DCFCE7] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd(p => !p)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#0F172A] transition-colors"
+                  >
+                    {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
                 <PasswordStrength password={password} />
               </div>
 
-              <div style={{ marginBottom: 14 }}>
-                <label style={labelStyle}>Confirm password</label>
-                <div style={{ position: 'relative' }}>
-                  <input type={showConf ? 'text' : 'password'} value={confirm} required onChange={e => setConfirm(e.target.value)} onFocus={() => setFocused('conf')} onBlur={() => setFocused(null)} placeholder="Re-enter password"
-                    style={{ ...inputStyle('conf'), paddingRight: 44, border: confirm && confirm !== password ? '1.5px solid #EF4444' : (focused === 'conf' ? '1.5px solid #3B82F6' : '1.5px solid #27272A') }} />
-                  <button type="button" onClick={() => setShowConf(p => !p)} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#52525B', padding: 0, display: 'flex' }}>
-                    {showConf ? <EyeOff size={15} /> : <Eye size={15} />}
+              {/* Confirm Password */}
+              <div className="mb-2">
+                <label style={labelStyle}>CONFIRM PASSWORD</label>
+                <div className="relative">
+                  <input
+                    type={showConf ? 'text' : 'password'}
+                    value={confirm}
+                    required
+                    onChange={e => setConfirm(e.target.value)}
+                    placeholder="Re-enter password"
+                    className={`w-full h-12 px-4 pr-12 bg-[#F8FAFC] border-2 rounded-xl text-[#0F172A] text-[14px] font-medium placeholder:text-[#94A3B8] focus:bg-white focus:outline-none focus:ring-4 transition-all ${
+                      confirm && confirm !== password
+                        ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#FEE2E2]'
+                        : 'border-[#E2E8F0] focus:border-[#16a34a] focus:ring-[#DCFCE7]'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConf(p => !p)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#0F172A] transition-colors"
+                  >
+                    {showConf ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {confirm && confirm !== password && <p style={{ color: '#EF4444', fontSize: 11, marginTop: 5, fontFamily: 'IBM Plex Sans, sans-serif' }}>Passwords don't match</p>}
+                {confirm && confirm !== password && (
+                  <p className="text-[11px] font-bold text-[#EF4444] mt-2 uppercase tracking-wide">
+                    PASSWORDS DON'T MATCH
+                  </p>
+                )}
               </div>
 
-              {error && <div style={{ background: '#1A0000', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#F87171', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 10 }}>{error}</div>}
+              {/* Error */}
+              {error && (
+                <div className="mb-5 p-4 bg-[#FEE2E2] border-2 border-[#EF4444] rounded-xl">
+                  <p className="text-[13px] font-bold text-[#DC2626]">{error}</p>
+                </div>
+              )}
+
+              {/* Submit */}
               <button type="submit" disabled={loading} style={submitBtn}>
-                {loading ? <><Loader2 size={15} className="animate-spin" /> Creating account…</> : <>Create Account <ArrowRight size={14} /></>}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
+                    CREATING ACCOUNT...
+                  </>
+                ) : (
+                  <>
+                    CREATE ACCOUNT
+                    <ArrowRight className="w-4 h-4" strokeWidth={3} />
+                  </>
+                )}
               </button>
             </form>
           )}
@@ -275,40 +319,109 @@ export function Signup() {
               <div id={`recaptcha-signup-${recaptchaId}`} />
               {!otpSent ? (
                 <form onSubmit={handleSendOtp}>
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={labelStyle}>Your name</label>
-                    <div style={{ position: 'relative' }}>
-                      <span style={iconWrap}><User size={15} /></span>
-                      <input type="text" value={displayName} required onChange={e => setDisplayName(e.target.value)} onFocus={() => setFocused('dname')} onBlur={() => setFocused(null)} placeholder="Dr. Amisha Patel" style={inputWithIconStyle('dname')} />
-                    </div>
+                  {/* Name */}
+                  <div className="mb-5">
+                    <label style={labelStyle}>YOUR NAME</label>
+                    <input
+                      type="text"
+                      value={displayName}
+                      required
+                      onChange={e => setDisplayName(e.target.value)}
+                      placeholder="Your full name"
+                      className="w-full h-12 px-4 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl text-[#0F172A] text-[14px] font-medium placeholder:text-[#94A3B8] focus:border-[#16a34a] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#DCFCE7] transition-all"
+                    />
                   </div>
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={labelStyle}>Phone number</label>
-                    <div style={{ position: 'relative' }}>
-                      <span style={iconWrap}><Phone size={15} /></span>
-                      <input type="tel" value={phone} required onChange={e => setPhone(e.target.value)} onFocus={() => setFocused('phone')} onBlur={() => setFocused(null)} placeholder="+91 98765 43210" style={inputWithIconStyle('phone')} />
-                    </div>
-                    <p style={{ color: '#52525B', fontSize: 11, marginTop: 5, fontFamily: 'IBM Plex Sans, sans-serif' }}>Include country code, e.g. +91</p>
+
+                  {/* Phone */}
+                  <div className="mb-2">
+                    <label style={labelStyle}>PHONE NUMBER</label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      required
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      className="w-full h-12 px-4 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl text-[#0F172A] text-[14px] font-medium placeholder:text-[#94A3B8] focus:border-[#16a34a] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#DCFCE7] transition-all"
+                    />
+                    <p className="text-[11px] text-[#64748B] font-medium mt-2">
+                      Include country code, e.g. +91
+                    </p>
                   </div>
-                  {error && <div style={{ background: '#1A0000', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#F87171', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 10 }}>{error}</div>}
+
+                  {/* Error */}
+                  {error && (
+                    <div className="mb-5 p-4 bg-[#FEE2E2] border-2 border-[#EF4444] rounded-xl">
+                      <p className="text-[13px] font-bold text-[#DC2626]">{error}</p>
+                    </div>
+                  )}
+
+                  {/* Submit */}
                   <button type="submit" disabled={loading} style={submitBtn}>
-                    {loading ? <><Loader2 size={15} className="animate-spin" /> Sending…</> : <>Send OTP <ArrowRight size={14} /></>}
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
+                        SENDING...
+                      </>
+                    ) : (
+                      <>
+                        SEND OTP
+                        <ArrowRight className="w-4 h-4" strokeWidth={3} />
+                      </>
+                    )}
                   </button>
                 </form>
               ) : (
                 <form onSubmit={e => { e.preventDefault(); wrap(() => confirmOtp(otp)); }}>
-                  {success && <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, padding: '10px 14px', color: '#4ADE80', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 14 }}>✓ {success}</div>}
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={labelStyle}>Enter OTP</label>
-                    <input type="text" inputMode="numeric" maxLength={6} value={otp} required onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} onFocus={() => setFocused('otp')} onBlur={() => setFocused(null)} placeholder="6-digit code"
-                      style={{ ...inputStyle('otp'), textAlign: 'center', letterSpacing: '0.4em', fontSize: 18 }} />
+                  {/* Success */}
+                  {success && (
+                    <div className="mb-5 p-4 bg-[#F0FDF4] border-2 border-[#16a34a] rounded-xl">
+                      <p className="text-[13px] font-bold text-[#16a34a]">✓ {success}</p>
+                    </div>
+                  )}
+
+                  {/* OTP */}
+                  <div className="mb-2">
+                    <label style={labelStyle}>ENTER OTP</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={otp}
+                      required
+                      onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                      placeholder="6-digit code"
+                      className="w-full h-12 px-4 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-xl text-[#0F172A] text-[20px] font-black text-center tracking-[0.4em] placeholder:text-[#94A3B8] placeholder:tracking-normal placeholder:text-[14px] placeholder:font-medium focus:border-[#16a34a] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#DCFCE7] transition-all"
+                    />
                   </div>
-                  {error && <div style={{ background: '#1A0000', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#F87171', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginBottom: 10 }}>{error}</div>}
+
+                  {/* Error */}
+                  {error && (
+                    <div className="mb-5 p-4 bg-[#FEE2E2] border-2 border-[#EF4444] rounded-xl">
+                      <p className="text-[13px] font-bold text-[#DC2626]">{error}</p>
+                    </div>
+                  )}
+
+                  {/* Submit */}
                   <button type="submit" disabled={loading} style={submitBtn}>
-                    {loading ? <><Loader2 size={15} className="animate-spin" /> Verifying…</> : <>Verify & Create Account <ArrowRight size={14} /></>}
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
+                        VERIFYING...
+                      </>
+                    ) : (
+                      <>
+                        VERIFY & CREATE ACCOUNT
+                        <ArrowRight className="w-4 h-4" strokeWidth={3} />
+                      </>
+                    )}
                   </button>
-                  <button type="button" onClick={() => { setOtpSent(false); setOtp(''); setError(''); setSuccess(''); }}
-                    style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', color: '#52525B', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif' }}>
+
+                  {/* Change number */}
+                  <button
+                    type="button"
+                    onClick={() => { setOtpSent(false); setOtp(''); setError(''); setSuccess(''); }}
+                    className="w-full mt-3 text-[12px] text-[#64748B] hover:text-[#0F172A] font-medium transition-colors"
+                  >
                     ← Change phone number
                   </button>
                 </form>
@@ -316,23 +429,25 @@ export function Signup() {
             </>
           )}
 
-          <p style={{ textAlign: 'center', color: '#52525B', fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif', marginTop: 24 }}>
+          {/* Sign in link */}
+          <p className="text-center text-[13px] text-[#64748B] font-medium mt-6">
             Already have an account?{' '}
-            <Link to="/login" style={{ color: '#3B82F6', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
-          </p>
-          <p style={{ textAlign: 'center', color: '#3F3F46', fontSize: 11, fontFamily: 'IBM Plex Sans, sans-serif', marginTop: 12, lineHeight: 1.6 }}>
-            By creating an account you agree to PharmaAI's{' '}
-            <span style={{ color: '#3B82F6', cursor: 'pointer' }}>Terms of Service</span>
-            {' '}and{' '}
-            <span style={{ color: '#3B82F6', cursor: 'pointer' }}>Privacy Policy</span>.
+            <Link to="/login" className="text-[#16a34a] font-bold hover:text-[#15803d] transition-colors">
+              Sign in
+            </Link>
           </p>
         </div>
-      </div>
 
-      <style>{`
-        @media (min-width: 1024px) { .left-panel { display: flex !important; flex-direction: column; } }
-        @media (max-width: 1023px) { .left-panel { display: none !important; } .mobile-logo { display: flex !important; } }
-      `}</style>
+        {/* Back to landing */}
+        <div className="text-center mt-6">
+          <Link
+            to="/landing"
+            className="text-[12px] text-[#64748B] hover:text-[#0F172A] font-medium transition-colors"
+          >
+            ← Back to home
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
