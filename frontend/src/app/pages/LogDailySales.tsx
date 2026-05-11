@@ -115,7 +115,7 @@ export function LogDailySales() {
               {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 mt-4 sm:mt-0">
             <button 
               onClick={() => window.location.href = '/reports/sales-history'}
               className="px-5 py-2.5 text-sm font-bold text-[#0F172A] border-2 border-[#0F172A] bg-white hover:bg-[#F0FDF4] transition-all flex items-center gap-2"
@@ -186,7 +186,7 @@ export function LogDailySales() {
             </div>
           )}
 
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             {/* Search Medicine */}
             <div className="flex-1 relative">
               <label className="block text-[10px] font-black text-[#94A3B8] mb-2 uppercase tracking-widest">Search Medicine</label>
@@ -242,7 +242,7 @@ export function LogDailySales() {
             </div>
 
             {/* Quantity Sold */}
-            <div className="w-[320px]">
+            <div className="w-full md:w-[320px]">
               <label className="block text-[10px] font-black text-[#94A3B8] mb-2 uppercase tracking-widest">Quantity Sold</label>
               <div className="flex items-center gap-3">
                 <div className="flex items-center bg-white border-2 border-[#0F172A] overflow-hidden flex-1" style={{ borderRadius: '999px', height: '48px' }}>
@@ -318,7 +318,7 @@ export function LogDailySales() {
 
         {/* Today's Log */}
         <div className="glass-card rounded-[12px] p-6">
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-4">
             <div className="flex items-center gap-3">
               <h2 className="text-[18px] font-medium text-[#111827]" style={{ fontFamily: 'DM Sans, sans-serif', letterSpacing: '-0.2px' }}>Today's Log</h2>
               <span className="text-[13px] font-normal text-[#6B7280]" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>· {new Date().toISOString().slice(0, 10)}</span>

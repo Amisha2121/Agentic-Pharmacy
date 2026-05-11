@@ -96,8 +96,8 @@ export function ReorderAlerts() {
 
         {/* Table */}
         {!loading && alerts.length > 0 && (
-          <div className="bg-white border-2 border-[#0F172A] rounded-3xl overflow-hidden">
-            <table className="w-full text-left">
+          <div className="bg-white border-2 border-[#0F172A] rounded-3xl overflow-x-auto">
+            <table className="w-full text-left whitespace-nowrap min-w-[800px]">
               <thead>
                 <tr className="border-b-2 border-[#E2E8F0]">
                   <th className="px-6 py-4 text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Status</th>

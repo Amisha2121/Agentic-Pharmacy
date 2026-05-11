@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, MoreVertical } from 'lucide-react';
+import { Plus, MoreVertical, X } from 'lucide-react';
 import { authenticatedFetch } from '../utils/api';
 
 interface Session {
@@ -74,7 +74,7 @@ export function BoldChatHistory({ isOpen, onToggle, onSelectChat, onNewChat, cur
   }, {} as Record<string, Session[]>);
 
   return (
-    <div className={`bg-white border-l border-[#E2E8F0] flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'w-[280px] translate-x-0' : 'w-0 translate-x-full overflow-hidden opacity-0'}`}>
+    <div className={`bg-white border-l border-[#E2E8F0] flex flex-col transition-all duration-300 ease-in-out z-40 absolute right-0 h-full md:relative ${isOpen ? 'w-[280px] translate-x-0 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] md:shadow-none' : 'w-0 translate-x-full overflow-hidden opacity-0'}`}>
       <div className="w-[280px] flex flex-col h-full">
         {/* Header */}
         <div className="p-6 flex items-center justify-between border-b border-[#E2E8F0]">
@@ -84,6 +84,9 @@ export function BoldChatHistory({ isOpen, onToggle, onSelectChat, onNewChat, cur
           >
             HISTORY
           </h3>
+          <button onClick={onToggle} className="md:hidden text-[#64748B] hover:text-[#0F172A]">
+            <X className="w-5 h-5" strokeWidth={2.5} />
+          </button>
         </div>
 
         {/* New Chat Button */}

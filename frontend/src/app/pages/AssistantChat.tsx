@@ -34,7 +34,7 @@ function rebuildIcon(msg: Record<string, unknown>): { icon: React.ReactNode; ico
 }
 
 export function AssistantChat() {
-  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
   const [threadId, setThreadId] = useState(() => generateThreadId());
   const [activeMessages, setActiveMessages] = useState<unknown[]>([]);
   const [sessionRefreshKey, setSessionRefreshKey] = useState(0);
