@@ -150,15 +150,16 @@ def supervisor_node(state: PharmacyState):
         response = client.chat.completions.create(
             model=TEXT_MODEL,
             messages=[
-                {"role": "system", "content": f"""Route to: ADD | INVENTORY | CLINICAL | UPDATE | GENERAL
+                {"role": "system", "content": f"""Route to: ADD | INVENTORY | CLINICAL | UPDATE | DELETE | GENERAL
 Use conversation context to resolve pronouns like 'it', 'that', 'same batch'.
 
 Context:\n{context_str}\nRecent:\n{recent_str}"""},
                 {"role": "user", "content": f"""Categories:
-- ADD: add/log/insert medicine (no image). Use for 'add it'/'log it' if last action was a scan/medicine mention.
-- INVENTORY: stock questions, 'what did I add', 'show me again', expiry queries.
-- CLINICAL: drug interactions, side effects, dosage. Use for 'what about with X?' follow-ups.
-- UPDATE: rename/update a batch name. Use for 'change it'/'update it'.
+- ADD: add/log/insert medicine (no image). Use for 'add it'/'log it'.
+- INVENTORY: stock questions, 'what did I add'.
+- CLINICAL: drug interactions, side effects.
+- UPDATE: rename/update a batch name.
+- DELETE: remove/delete a batch. Use for 'delete it'/'remove it'.
 - GENERAL: greetings, anything else.
 
 Query: "{user_query}"
@@ -175,6 +176,8 @@ Reply with EXACTLY one word."""}
             return {"next_node": "clinical_knowledge_node", "messages": user_msg, "turn_number": new_turn}
         elif "UPDATE" in decision:
             return {"next_node": "database_update_node", "messages": user_msg, "turn_number": new_turn}
+        elif "DELETE" in decision or "REMOVE" in decision:
+            return {"next_node": "database_delete_node", "messages": user_msg, "turn_number": new_turn}
     except Exception:
         pass
     return {"next_node": "database_query_node", "messages": user_msg, "turn_number": new_turn}
@@ -775,6 +778,61 @@ def database_update_node(state: PharmacyState):
         resp_text = f"Update failed: {e}"
         return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
 
+
+# --- DELETE NODE ---
+def database_delete_node(state: PharmacyState):
+    user_query = state.get("user_query", "")
+    full_history = state.get("messages") or []
+    last_added = state.get("last_added_medicine") or {}
+    last_scanned = state.get("last_scanned_image") or {}
+    user_id = _resolve_user_id(state)
+    client = get_client()
+
+    recent_str = "\n".join(f"{m['role'].upper()}: {m['content'][:300]}" for m in full_history[-8:]) or "None"
+    memory_hint = f"Last added medicine: {last_added}. Last scanned: {last_scanned}."
+
+    try:
+        response = client.chat.completions.create(
+            model=TEXT_MODEL,
+            messages=[{"role": "user", "content": f'Extract the batch_number or product name from the request below to delete. Use conversation history to resolve "it", "that batch", etc.\n\nMemory: {memory_hint}\nRecent:\n{recent_str}\n\nRequest: "{user_query}"\n\nReturn ONLY JSON: {{"identifier":"..."}}'}],
+            response_format={"type": "json_object"},
+            max_tokens=80,
+            timeout=10,
+        )
+        data = json.loads(response.choices[0].message.content)
+        identifier = data.get("identifier")
+        
+        if not identifier and ("it" in user_query.lower() or "that" in user_query.lower() or "this" in user_query.lower()):
+            if last_added and last_added.get("batch"):
+                identifier = last_added["batch"]
+            elif last_scanned and last_scanned.get("batch_number"):
+                identifier = last_scanned["batch_number"]
+                
+        if not identifier or identifier.strip().lower() in ("", "none", "null", "unknown", "..."):
+            resp_text = "I can delete a product for you. Please provide the batch number or exact name you'd like to remove."
+            return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
+            
+        success = database.delete_batch(identifier, user_id=user_id)
+        
+        if not success:
+            inventory = database.get_inventory_with_stock(user_id=user_id)
+            for item in inventory:
+                if item.get("product_name", "").lower() == identifier.lower() or item.get("batch_number", "") == identifier:
+                    success = database.delete_batch(item["doc_id"], user_id=user_id)
+                    if success:
+                        identifier = item.get("product_name", identifier)
+                        break
+                        
+        if success:
+            resp_text = f"🗑️ Successfully deleted **{identifier}** from your inventory."
+            return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
+            
+        resp_text = f"⚠️ Batch or item **{identifier}** was not found in your inventory. Please check the batch number and try again."
+        return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
+    except Exception as e:
+        resp_text = f"Delete failed: {e}"
+        return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
+
 # --- CLINICAL NODE (DDI tool-first, ChromaDB fallback) ---
 def clinical_knowledge_node(state: PharmacyState):
     user_query = state.get("user_query", "")
@@ -862,6 +920,7 @@ workflow.add_node("human_approval_node", human_approval_node)
 workflow.add_node("text_add_node", text_add_node)
 workflow.add_node("database_query_node", database_query_node)
 workflow.add_node("database_update_node", database_update_node)
+workflow.add_node("database_delete_node", database_delete_node)
 workflow.add_node("clinical_knowledge_node", clinical_knowledge_node)
 
 # Define Supervisor Workflow
@@ -872,6 +931,7 @@ workflow.add_conditional_edges("supervisor", route_from_supervisor, {
     "text_add_node": "text_add_node",
     "database_query_node": "database_query_node",
     "database_update_node": "database_update_node",
+    "database_delete_node": "database_delete_node",
     "clinical_knowledge_node": "clinical_knowledge_node"
 })
 
@@ -881,6 +941,7 @@ workflow.add_edge("human_approval_node", END)
 workflow.add_edge("text_add_node", END)
 workflow.add_edge("database_query_node", END)
 workflow.add_edge("database_update_node", END)
+workflow.add_edge("database_delete_node", END)
 workflow.add_edge("clinical_knowledge_node", END)
 
 app = workflow.compile(checkpointer=memory)
