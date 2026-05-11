@@ -45,7 +45,10 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, { ...options, headers });
+  const BASE_URL = import.meta.env.PROD ? 'https://agentic-pharmacy.onrender.com' : '';
+  const fetchUrl = url.startsWith('/api') ? `${BASE_URL}${url}` : url;
+  
+  const response = await fetch(fetchUrl, { ...options, headers });
 
   // Surface HTTP errors so callers can catch them rather than receiving
   // an unexpected JSON parse failure on the error-body.
