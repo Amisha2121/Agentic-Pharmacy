@@ -115,9 +115,9 @@ export function Landing() {
         >
           <div className="w-[80px] sm:w-[100px] md:w-[120px] h-[80px] sm:h-[100px] md:h-[120px] mb-4 sm:mb-5">
             <svg viewBox="0 0 100 100" className="w-full h-full animate-spin-pill">
-              <path d="M 25 75 L 75 25 A 20 20 0 0 0 46.7 18.3 L 18.3 46.7 A 20 20 0 0 0 25 75 Z" fill="#0F172A"/>
-              <path d="M 25 75 L 75 25 A 20 20 0 0 1 81.7 53.3 L 53.3 81.7 A 20 20 0 0 1 25 75 Z" fill="#16a34a"/>
-              <line x1="30" y1="70" x2="70" y2="30" stroke="#FFFFFF" strokeWidth="2"/>
+              <path d="M 25 75 L 75 25 A 20 20 0 0 0 46.7 18.3 L 18.3 46.7 A 20 20 0 0 0 25 75 Z" fill="#FFFFFF" stroke="#16a34a" strokeWidth="4" strokeLinejoin="round"/>
+              <path d="M 25 75 L 75 25 A 20 20 0 0 1 81.7 53.3 L 53.3 81.7 A 20 20 0 0 1 25 75 Z" fill="#16a34a" stroke="#16a34a" strokeWidth="4" strokeLinejoin="round"/>
+              <line x1="25" y1="75" x2="75" y2="25" stroke="#16a34a" strokeWidth="4" strokeLinecap="round"/>
             </svg>
           </div>
           <div className="font-black text-[28px] sm:text-[36px] md:text-[48px] uppercase text-[#0F172A] tracking-tight text-center" style={{ fontFamily: 'Inter, sans-serif' }}>
