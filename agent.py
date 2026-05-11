@@ -901,7 +901,7 @@ def clinical_knowledge_node(state: PharmacyState):
             max_tokens=512,
             timeout=15,
         )
-        resp_text = f"📚 **Clinical Knowledge (Vector DB):** {response.choices[0].message.content}"
+        resp_text = response.choices[0].message.content
         return {
             "final_response": resp_text,
             "messages": [{"role": "assistant", "content": resp_text}],
