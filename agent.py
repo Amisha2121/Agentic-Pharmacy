@@ -618,7 +618,7 @@ def human_approval_node(state: PharmacyState):
 def database_query_node(state: PharmacyState):
     user_query = state.get("user_query", "")
     today = datetime.date.today().strftime("%Y-%m-%d")
-    user_id = state.get("user_id", "legacy")
+    user_id = _resolve_user_id(state)
     inventory_data = database.get_inventory(user_id)
     # Include zero-stock items so the agent can report out-of-stock products
     inventory_context = "\n".join(
@@ -769,7 +769,9 @@ def database_update_node(state: PharmacyState):
         if not new_name or new_name.strip().lower() in ("", "none", "null", "unknown", "..."):
             resp_text = f"Please also provide the new product name for batch **{batch}**."
             return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
-        if database.update_product_name(batch, new_name):
+            
+        user_id = _resolve_user_id(state)
+        if database.update_product_name(batch, new_name, user_id=user_id):
             resp_text = f"🔄 Updated batch **{batch}** name to **{new_name}**."
             return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
         resp_text = f"⚠️ Batch **{batch}** was not found in the inventory. Please check the batch number and try again."
