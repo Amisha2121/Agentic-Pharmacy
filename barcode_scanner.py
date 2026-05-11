@@ -101,33 +101,38 @@ def _parse_gs1_string(raw: str) -> dict:
     # --- Format 2: raw AI stream (strip FNC1 / GS chars first) ---
     cleaned = re.sub(r'[\x1d\x1e\x04]', '|', raw)  # GS → pipe delimiter
 
-    # AI 01: GTIN — fixed 14 digits
-    m = re.search(r'(?:^|\|)01(\d{14})', cleaned)
-    if m:
-        result['gtin'] = m.group(1)
-
-    # AI 17: Expiry — fixed 6 digits
-    m = re.search(r'(?:^|\|)17(\d{6})', cleaned)
-    if m:
-        result['expiry_date'] = _parse_gs1_expiry(m.group(1))
-
-    # AI 11: Manufacture date — fixed 6 digits
-    m = re.search(r'(?:^|\|)11(\d{6})', cleaned)
-    if m:
-        result['manufacture_date'] = _parse_gs1_expiry(m.group(1))
-
-    # AI 10: Batch/Lot — variable length, terminated by GS (|) or end
-    m = re.search(r'(?:^|\|)10([^|]+)', cleaned)
-    if m:
-        result['batch_number'] = m.group(1).strip()
-
-    # AI 37: Quantity — variable length
-    m = re.search(r'(?:^|\|)37([^|]+)', cleaned)
-    if m:
-        try:
-            result['quantity'] = int(m.group(1).strip())
-        except ValueError:
-            pass
+    idx = 0
+    while idx < len(cleaned):
+        if cleaned[idx] == '|':
+            idx += 1
+            continue
+        if cleaned.startswith('01', idx) and len(cleaned) >= idx + 16:
+            result['gtin'] = cleaned[idx+2:idx+16]
+            idx += 16
+        elif cleaned.startswith('17', idx) and len(cleaned) >= idx + 8:
+            result['expiry_date'] = _parse_gs1_expiry(cleaned[idx+2:idx+8])
+            idx += 8
+        elif cleaned.startswith('11', idx) and len(cleaned) >= idx + 8:
+            result['manufacture_date'] = _parse_gs1_expiry(cleaned[idx+2:idx+8])
+            idx += 8
+        elif cleaned.startswith('10', idx):
+            end = cleaned.find('|', idx)
+            if end == -1: end = len(cleaned)
+            result['batch_number'] = cleaned[idx+2:end]
+            idx = end
+        elif cleaned.startswith('37', idx):
+            end = cleaned.find('|', idx)
+            if end == -1: end = len(cleaned)
+            try:
+                result['quantity'] = int(cleaned[idx+2:end])
+            except ValueError:
+                pass
+            idx = end
+        else:
+            # Unknown AI, skip to next separator
+            end = cleaned.find('|', idx)
+            if end == -1: end = len(cleaned)
+            idx = end
 
     return result
 

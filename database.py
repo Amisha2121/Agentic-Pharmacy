@@ -60,6 +60,8 @@ COLLECTION = "batches"
 
 # Firebase initialization — clears any stale apps, then re-initializes fresh.
 try:
+    if os.getenv("MOCK_FIRESTORE") == "1":
+        raise Exception("MOCK_FIRESTORE is set to 1. Forcing mock mode for testing.")
     # Delete any previously cached (possibly broken) app so key changes take effect
     for _stale in list(firebase_admin._apps.values()):
         firebase_admin.delete_app(_stale)

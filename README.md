@@ -232,6 +232,28 @@ firebase deploy
 
 ---
 
+## 🧪 Testing
+
+Agentic Pharmacy includes a comprehensive backend test suite that executes in a sandboxed, in-memory mock environment (preventing any accidental mutations to live production data).
+
+**Test Coverage Includes:**
+- `test_api.py`: Validates all 16 FastAPI endpoints, ensuring correct status codes and JSON response schemas.
+- `test_database.py`: Verifies CRUD operations and strict data isolation rules per-user account.
+- `test_agent.py`: Validates LLM prompt logic, tool usage, and Regex extraction precision.
+- `test_barcode_scanner.py`: Confirms GS1-128 compliance for multi-identifier concatenation (GTIN, Expiry, Batch).
+- `test_ddi_lookup.py`: Asserts correct Drug-Drug Interaction lookup logic, including fuzzy matching and INN synonym translation.
+
+**Running the Tests:**
+```bash
+# Run the entire test suite (automatically mocks Firestore)
+python -m unittest discover tests
+
+# Run a specific test suite
+python -m unittest tests.test_barcode_scanner
+```
+
+---
+
 ## 📁 Project Structure
 
 ```
