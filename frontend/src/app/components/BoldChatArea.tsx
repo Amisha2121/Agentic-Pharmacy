@@ -362,6 +362,22 @@ export function BoldChatArea({
       </div>
 
       <div className="flex-1 flex flex-col pt-16 sm:pt-20 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 max-w-7xl mx-auto w-full overflow-hidden">
+        {/* Medical Disclaimer Banner */}
+        {messages.length > 0 && (
+          <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-3 sm:p-4 rounded-lg shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" strokeWidth={2} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] sm:text-[12px] text-blue-900 font-medium leading-relaxed">
+                  <strong>Medical Information Disclaimer:</strong> This AI assistant provides general information for educational purposes only. 
+                  Always consult a qualified healthcare professional for medical advice, diagnosis, or treatment. 
+                  Information sources are indicated with each response (📚 Clinical Database, 💡 General Knowledge, 📦 Your Inventory).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {messages.length === 0 && !isLoading && !hitlPending ? (
           <div className="flex-1 flex items-center justify-center px-4">
             <p className="text-[13px] sm:text-[14px] text-[#64748B] font-medium text-center">

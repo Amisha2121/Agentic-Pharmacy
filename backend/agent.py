@@ -638,6 +638,9 @@ Rules:
 4. Mark EXPIRED if today > expiry date
 5. Answer medical questions helpfully using your knowledge
 6. Use history to resolve 'it', 'that batch', 'same medicine'
+7. IMPORTANT: Add source indicator at the end:
+   - For inventory queries: Add "📦 Source: Your Inventory Database"
+   - For medical info: Add "💡 Source: General Medical Knowledge"
 
 Be concise and organized. Expand only when asked."""
 
@@ -896,6 +899,8 @@ def clinical_knowledge_node(state: PharmacyState):
     try:
         results = vector_collection.query(query_texts=[user_query], n_results=1)
         context = results["documents"][0][0] if results["documents"] else "No clinical data found."
+        has_reference_data = context != "No clinical data found." and "MOCK" not in context
+        
         client = get_client()
         llm_messages = [
             {"role": "system", "content": f"""You are a clinical pharmacy assistant.
@@ -907,18 +912,27 @@ Instructions:
 1. Give CONCISE answers (3-4 sentences) unless user asks for details
 2. For drug interactions: state if safe/unsafe, main concern, and precaution
 3. Use reference data if relevant, otherwise use your medical knowledge
-4. Always end with: "Consult your healthcare provider for personalized advice"
-5. Use history to resolve 'it', 'same drug', 'what about with X?'
+4. IMPORTANT: At the end of your response, add a source indicator:
+   - If using reference data: Add "📚 Source: Clinical Database"
+   - If using general knowledge: Add "💡 Source: General Medical Knowledge"
+5. Always end with: "⚠️ Consult your healthcare provider for personalized advice"
+6. Use history to resolve 'it', 'same drug', 'what about with X?'
 
 Be brief and organized. Expand only when asked."""},
         ] + full_history[-8:]
         response = client.chat.completions.create(
             model=TEXT_MODEL,
             messages=llm_messages,
-            max_tokens=300,  # Reduced for faster, more concise responses
+            max_tokens=350,  # Slightly increased to accommodate source citations
             timeout=15,
         )
         resp_text = response.choices[0].message.content
+        
+        # Add reliability indicator if not already present
+        if "📚 Source:" not in resp_text and "💡 Source:" not in resp_text:
+            source_note = "\n\n📚 Source: Clinical Database" if has_reference_data else "\n\n💡 Source: General Medical Knowledge"
+            resp_text += source_note
+        
         return {
             "final_response": resp_text,
             "messages": [{"role": "assistant", "content": resp_text}],
