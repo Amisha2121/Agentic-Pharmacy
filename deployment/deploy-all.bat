@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 REM ============================================
 REM NovaMed - Full Stack Deployment
 REM ============================================
@@ -14,9 +15,10 @@ echo ========================================
 echo Working directory: %CD%
 echo.
 
-REM Get commit message from user
-set /p commit_msg="Enter commit message (or press Enter for default): "
-if "%commit_msg%"=="" set commit_msg=Deploy: latest changes
+REM Get commit message (do NOT wrap in quotes when typing)
+set "commit_msg=Deploy: latest changes"
+set /p commit_msg="Enter commit message (no quotes, press Enter for default): "
+
 
 echo.
 echo ========================================
