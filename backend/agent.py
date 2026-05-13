@@ -156,11 +156,11 @@ Use conversation context to resolve pronouns like 'it', 'that', 'same batch'.
 Context:\n{context_str}\nRecent:\n{recent_str}"""},
                 {"role": "user", "content": f"""Categories:
 - ADD: add/log/insert medicine (no image). Use for 'add it'/'log it'.
-- INVENTORY: stock questions, 'what did I add'.
-- CLINICAL: drug interactions, side effects.
+- INVENTORY: stock questions, 'what did I add', 'how many do we have'.
+- CLINICAL: drug interactions, side effects, dosage, safety questions.
 - UPDATE: rename/update a batch name.
 - DELETE: remove/delete a batch. Use for 'delete it'/'remove it'.
-- GENERAL: greetings, anything else.
+- GENERAL: recommendations ('which brand is best'), consumer advice, general pharmacy questions, greetings.
 
 Query: "{user_query}"
 Reply with EXACTLY one word."""}
@@ -173,6 +173,8 @@ Reply with EXACTLY one word."""}
         if "ADD" in decision:
             return {"next_node": "text_add_node", "messages": user_msg, "turn_number": new_turn}
         elif "CLINICAL" in decision:
+            return {"next_node": "clinical_knowledge_node", "messages": user_msg, "turn_number": new_turn}
+        elif "GENERAL" in decision:
             return {"next_node": "clinical_knowledge_node", "messages": user_msg, "turn_number": new_turn}
         elif "UPDATE" in decision:
             return {"next_node": "database_update_node", "messages": user_msg, "turn_number": new_turn}
@@ -477,7 +479,7 @@ FINAL JSON SCHEMA (RETURN AS AN ARRAY)
                 if attempt < max_retries - 1:
                     continue  # retry the LLM call
                 return {
-                    "final_response": "⚠️ Could not extract product details — the AI returned an unreadable response. Please try again.",
+                    "final_response": "Could not extract product details — the AI returned an unreadable response. Please try again.",
                     "pending_quarantine": None,
                     "hitl_decision": None,
                 }
@@ -513,8 +515,8 @@ FINAL JSON SCHEMA (RETURN AS AN ARRAY)
                     import pandas as pd
                     exp_date = pd.to_datetime(expiry, dayfirst=False, errors="coerce").date()
                     if exp_date and exp_date < today:
-                        reason = f"This product expired on **{exp_date}**."
-                        responses.append(f"❌ **Not Logged — Expired Product** | **{name}** ({category}) | Batch: {batch} | Expiry: {exp_date}\n⚠️ {reason}")
+                        reason = f"This product expired on {exp_date}."
+                        responses.append(f"[NOT LOGGED - EXPIRED] {name} ({category}) | Batch: {batch} | Expiry: {exp_date} | {reason}")
                         continue
                 except Exception:
                     pass
@@ -528,7 +530,7 @@ FINAL JSON SCHEMA (RETURN AS AN ARRAY)
                     "stock":        stock,
                 })
                 stock_note = f" | Stock: {stock}" if stock > 0 else ""
-                responses.append(f"✅ Logged **{name}** ({category}) | Batch: {batch}{batch_note} | Exp: {expiry}{override_note}{stock_note}")
+                responses.append(f"[LOGGED] {name} ({category}) | Batch: {batch}{batch_note} | Exp: {expiry}{override_note}{stock_note}")
 
             final_text = "\n\n".join(responses)
             last_scan = None
@@ -556,13 +558,13 @@ FINAL JSON SCHEMA (RETURN AS AN ARRAY)
                 time.sleep((2 ** attempt) + random.random())
             else:
                 return {
-                    "final_response": f"⚠️ Vision error - {str(e)}",
+                    "final_response": f"Vision error: {str(e)}",
                     "pending_quarantine": None,
                     "hitl_decision": None,
                 }
 
     return {
-        "final_response": "⚠️ Vision failed after multiple retries.",
+        "final_response": "Vision failed after multiple retries. Please try again.",
         "pending_quarantine": None,
         "hitl_decision": None,
     }
@@ -595,7 +597,7 @@ def human_approval_node(state: PharmacyState):
         )
         return {
             "final_response": (
-                f"🔒 **Moved to Quarantine** | **{pending['name']}** ({pending['category']}) "
+                f"[QUARANTINED] {pending['name']} ({pending['category']}) "
                 f"| Batch: {pending['batch']}{pending.get('batch_note', '')} "
                 f"| Expired: {pending['expiry']} | Logged to quarantine collection."
             ),
@@ -605,7 +607,7 @@ def human_approval_node(state: PharmacyState):
     else:
         return {
             "final_response": (
-                f"❌ **Rejected & Discarded** | **{pending['name']}** ({pending['category']}) "
+                f"[REJECTED] {pending['name']} ({pending['category']}) "
                 f"| Batch: {pending['batch']} | Expired: {pending['expiry']} "
                 f"| Item was NOT logged to any database."
             ),
@@ -620,29 +622,30 @@ def database_query_node(state: PharmacyState):
     today = datetime.date.today().strftime("%Y-%m-%d")
     user_id = _resolve_user_id(state)
     inventory_data = database.get_inventory(user_id)
-    # Include zero-stock items so the agent can report out-of-stock products
     inventory_context = "\n".join(
-        [f"- {r[2]} ({r[3]}) | Batch: {r[0]} | Exp: {r[1]} | Stock: {r[5]}{'  ⚠️ OUT OF STOCK' if r[5] == 0 else ''}" for r in inventory_data]
+        [f"- {r[2]} ({r[3]}) | Batch: {r[0]} | Exp: {r[1]} | Stock: {r[5]}{' [OUT OF STOCK]' if r[5] == 0 else ''}" for r in inventory_data]
     ) or "No inventory items yet."
 
     full_history = state.get("messages") or []
-    system_prompt = f"""You are a pharmacy inventory assistant with conversation memory.
+    system_prompt = f"""You are a knowledgeable pharmacy assistant with access to the pharmacy's inventory.
 TODAY: {today}
 INVENTORY:
 {inventory_context}
 
 Rules:
-1. Give SHORT, direct answers (2-3 sentences max)
-2. Only provide detailed explanations if user asks "why", "how", or "explain"
-3. For stock queries: just state the quantity and expiry
-4. Mark EXPIRED if today > expiry date
-5. Answer medical questions helpfully using your knowledge
-6. Use history to resolve 'it', 'that batch', 'same medicine'
-7. IMPORTANT: Add source indicator at the end:
-   - For inventory queries: Add "📦 Source: Your Inventory Database"
-   - For medical info: Add "💡 Source: General Medical Knowledge"
+1. Answer the user's question directly and helpfully.
+2. If the item is in inventory, report quantity and expiry. If not, say so briefly, then still answer the question using your general pharmacy knowledge.
+3. For recommendation questions ("which brand is best", "what should I buy"), provide a helpful answer from general knowledge even if the item is not in inventory.
+4. Mark [EXPIRED] if today > expiry date.
+5. Use history to resolve 'it', 'that batch', 'same medicine'.
+6. Do not use any emojis.
+7. End every response with ONE short, natural sentence that mentions where the info came from. Weave the source URL into the sentence naturally. Examples:
+   - Inventory: "This is based on your current inventory records."
+   - General knowledge: "You can read more about this at [MedlinePlus](https://medlineplus.gov)."
+   - OTC brands: "For more details, check out [MedlinePlus](https://medlineplus.gov)."
+   Do NOT write "Source:" as a heading. Do NOT add any disclaimer about consulting a healthcare provider.
 
-Be concise and organized. Expand only when asked."""
+Be concise (2-4 sentences). Expand only when the user asks for detail."""
 
     llm_messages = [{"role": "system", "content": system_prompt}] + full_history[-8:]
 
@@ -651,13 +654,13 @@ Be concise and organized. Expand only when asked."""
         response = client.chat.completions.create(
             model=TEXT_MODEL,
             messages=llm_messages,
-            max_tokens=300,  # Reduced for faster, more concise responses
+            max_tokens=400,
             timeout=15,
         )
         resp_text = response.choices[0].message.content
     except Exception as e:
         print(f"[database_query_node] LLM error: {e}")
-        resp_text = "⚠️ I'm having trouble reaching the AI right now. Please try again in a moment."
+        resp_text = "I'm having trouble reaching the AI right now. Please try again in a moment."
     return {
         "final_response": resp_text,
         "messages": [{"role": "assistant", "content": resp_text}],
@@ -780,9 +783,9 @@ def database_update_node(state: PharmacyState):
             
         user_id = _resolve_user_id(state)
         if database.update_product_name(batch, new_name, user_id=user_id):
-            resp_text = f"🔄 Updated batch **{batch}** name to **{new_name}**."
+            resp_text = f"[UPDATED] Batch {batch} name changed to {new_name}."
             return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
-        resp_text = f"⚠️ Batch **{batch}** was not found in the inventory. Please check the batch number and try again."
+        resp_text = f"Batch {batch} was not found in the inventory. Please check the batch number and try again."
         return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
     except Exception as e:
         resp_text = f"Update failed: {e}"
@@ -834,10 +837,10 @@ def database_delete_node(state: PharmacyState):
                         break
                         
         if success:
-            resp_text = f"🗑️ Successfully deleted **{identifier}** from your inventory."
+            resp_text = f"[DELETED] {identifier} has been removed from your inventory."
             return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
-            
-        resp_text = f"⚠️ Batch or item **{identifier}** was not found in your inventory. Please check the batch number and try again."
+
+        resp_text = f"Item '{identifier}' was not found in your inventory. Please check the batch number and try again."
         return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
     except Exception as e:
         resp_text = f"Delete failed: {e}"
@@ -900,45 +903,50 @@ def clinical_knowledge_node(state: PharmacyState):
         results = vector_collection.query(query_texts=[user_query], n_results=1)
         context = results["documents"][0][0] if results["documents"] else "No clinical data found."
         has_reference_data = context != "No clinical data found." and "MOCK" not in context
-        
+
         client = get_client()
         llm_messages = [
-            {"role": "system", "content": f"""You are a clinical pharmacy assistant.
+            {"role": "system", "content": f"""You are a clinical and consumer pharmacy assistant.
 
-Reference data:
+Reference data from clinical database:
 {context}
 
 Instructions:
-1. Give CONCISE answers (3-4 sentences) unless user asks for details
-2. For drug interactions: state if safe/unsafe, main concern, and precaution
-3. Use reference data if relevant, otherwise use your medical knowledge
-4. IMPORTANT: At the end of your response, add a source indicator:
-   - If using reference data: Add "📚 Source: Clinical Database"
-   - If using general knowledge: Add "💡 Source: General Medical Knowledge"
-5. Always end with: "⚠️ Consult your healthcare provider for personalized advice"
-6. Use history to resolve 'it', 'same drug', 'what about with X?'
+1. Answer the user's question directly and helpfully — including brand recommendations, consumer advice, dosage guidance, or drug interactions.
+2. Give concise answers (3-5 sentences) unless the user asks for more detail.
+3. For drug interactions: clearly state if safe or unsafe, the main concern, and the recommended precaution.
+4. For brand/product recommendations: give concrete, actionable advice based on your pharmacy knowledge.
+5. Do not use any emojis anywhere in your response.
+6. Use conversation history to resolve 'it', 'same drug', 'what about with X?'.
+7. End every response with ONE short, natural sentence that mentions the source as a hyperlink — woven into the sentence, not as a label. Do NOT write 'Source:' as a heading. Do NOT add any disclaimer about consulting a healthcare provider. Examples of the style to follow:
+   - "You can explore the full clinical details on [DrugBank](https://go.drugbank.com)."
+   - "More on this is available at [MedlinePlus](https://medlineplus.gov)."
+   - "The FDA's interaction guidance for this is at [FDA Drug Interactions](https://www.fda.gov/drugs/drug-interactions-labeling)."
+   - "Further reading is available at [PubMed](https://pubmed.ncbi.nlm.nih.gov)."
 
-Be brief and organized. Expand only when asked."""},
+Be helpful, direct, and conversational."""},
         ] + full_history[-8:]
         response = client.chat.completions.create(
             model=TEXT_MODEL,
             messages=llm_messages,
-            max_tokens=350,  # Slightly increased to accommodate source citations
+            max_tokens=500,
             timeout=15,
         )
         resp_text = response.choices[0].message.content
-        
-        # Add reliability indicator if not already present
-        if "📚 Source:" not in resp_text and "💡 Source:" not in resp_text:
-            source_note = "\n\n📚 Source: Clinical Database" if has_reference_data else "\n\n💡 Source: General Medical Knowledge"
-            resp_text += source_note
-        
+
+        # Fallback: add source naturally if model forgot entirely
+        if "medlineplus.gov" not in resp_text and "drugbank.com" not in resp_text and "fda.gov" not in resp_text and "pubmed" not in resp_text:
+            if has_reference_data:
+                resp_text += "\n\nYou can explore the full clinical details on [DrugBank](https://go.drugbank.com)."
+            else:
+                resp_text += "\n\nMore on this is available at [MedlinePlus](https://medlineplus.gov)."
+
         return {
             "final_response": resp_text,
             "messages": [{"role": "assistant", "content": resp_text}],
         }
     except Exception as e:
-        resp_text = f"Vector search error: {e}"
+        resp_text = f"Knowledge lookup error: {e}"
         return {"final_response": resp_text, "messages": [{"role": "assistant", "content": resp_text}]}
 
 # --- COMPILE GRAPH WITH MEMORY CHECKPOINTER ---

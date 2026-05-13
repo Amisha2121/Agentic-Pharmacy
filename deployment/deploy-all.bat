@@ -4,24 +4,19 @@ REM NovaMed - Full Stack Deployment
 REM ============================================
 REM Deploys both backend (Render) and frontend (Firebase)
 
+REM Always run from project root (parent of the deployment/ folder)
+cd /d "%~dp0.."
+
 echo.
 echo ========================================
 echo   NOVAMED FULL STACK DEPLOYMENT
 echo ========================================
+echo Working directory: %CD%
 echo.
-
-REM Check if there are uncommitted changes
-git status --porcelain > nul 2>&1
-if errorlevel 1 (
-    echo ERROR: Not a git repository
-    echo Please initialize git first: git init
-    pause
-    exit /b 1
-)
 
 REM Get commit message from user
 set /p commit_msg="Enter commit message (or press Enter for default): "
-if "%commit_msg%"=="" set commit_msg=Update: Deploy latest changes
+if "%commit_msg%"=="" set commit_msg=Deploy: latest changes
 
 echo.
 echo ========================================
@@ -46,10 +41,7 @@ echo.
 echo [3/3] Committing and pushing to GitHub...
 git commit -m "%commit_msg%"
 if errorlevel 1 (
-    echo WARNING: No changes to commit or commit failed
-    echo Continuing with frontend deployment...
-) else (
-    echo Commit: OK
+    echo WARNING: No changes to commit - pushing existing HEAD anyway...
 )
 echo.
 
@@ -64,7 +56,7 @@ if errorlevel 1 (
 echo Push: OK
 echo.
 
-echo ✅ Backend deployment initiated!
+echo Backend deployment initiated!
 echo Render will automatically detect the push and redeploy.
 echo This takes about 2-5 minutes.
 echo.
@@ -104,13 +96,13 @@ echo ========================================
 echo   DEPLOYMENT COMPLETE!
 echo ========================================
 echo.
-echo ✅ Backend: Deploying on Render (2-5 min)
+echo Backend: Deploying on Render (2-5 min)
 echo    Check: https://dashboard.render.com
 echo.
-echo ✅ Frontend: Live on Firebase
+echo Frontend: Live on Firebase
 echo    URL: https://pharmaai-8bb36.web.app
 echo.
-echo 📝 Commit: "%commit_msg%"
+echo Commit: "%commit_msg%"
 echo.
 echo ========================================
 echo.
@@ -123,3 +115,4 @@ if /i "%open_sites%"=="y" (
 
 echo.
 pause
+

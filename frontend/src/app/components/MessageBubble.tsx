@@ -121,6 +121,17 @@ export function MessageBubble({
                   </blockquote>
                 ),
                 hr: () => <hr className="my-3 border-[#E2E8F0]" />,
+                a: ({ href, children }) => (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-semibold"
+                    style={{ color: isUser ? '#bbf7d0' : '#16a34a' }}
+                  >
+                    {children}
+                  </a>
+                ),
               }}
             >
               {content}

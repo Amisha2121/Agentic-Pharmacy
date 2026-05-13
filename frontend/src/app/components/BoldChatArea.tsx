@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Mic, ArrowUp, Paperclip, Menu, History, Bot, User, CheckCircle, AlertCircle, XCircle, FileText, ScanLine, Camera, X } from 'lucide-react';
+import { Plus, Mic, ArrowUp, Paperclip, Menu, History, Bot, User, CheckCircle, AlertCircle, XCircle, FileText, ScanLine, Camera, X, ShieldCheck, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MessageBubble, TypingIndicator } from './MessageBubble';
 import { useAuth } from '../context/AuthContext';
@@ -40,6 +40,122 @@ interface ChatAreaProps {
   initialMessages: Message[];
   onNewChat: () => void;
 }
+
+function MedicalDisclaimer() {
+  const [dismissed, setDismissed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  if (dismissed) return null;
+
+  return (
+    <div
+      className="mb-5"
+      style={{
+        borderRadius: '18px',
+        background: '#fff',
+        border: '2px solid #E2E8F0',
+        borderLeft: '3px solid #16a34a',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+
+        {/* Icon */}
+        <div style={{
+          flexShrink: 0, marginTop: 2,
+          width: 26, height: 26, borderRadius: '50%',
+          background: '#f0fdf4',
+          border: '1.5px solid #86efac',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <ShieldCheck style={{ width: 13, height: 13, color: '#16a34a' }} strokeWidth={2.5} />
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+
+          {/* Top row: label + expand + dismiss */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+              textTransform: 'uppercase', color: '#16a34a',
+            }}>
+              AI Health Info Notice
+            </span>
+
+            <button
+              onClick={() => setExpanded(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 3,
+                background: '#f0fdf4', border: '1px solid #bbf7d0',
+                borderRadius: 999, padding: '2px 8px', cursor: 'pointer',
+                fontSize: 10, color: '#15803d', fontWeight: 600,
+              }}
+            >
+              {expanded ? 'Show less' : 'Learn more'}
+              <ChevronDown
+                style={{
+                  width: 10, height: 10,
+                  transition: 'transform 0.2s',
+                  transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}
+              />
+            </button>
+
+            <div style={{ flex: 1 }} />
+
+            <button
+              onClick={() => setDismissed(true)}
+              title="Dismiss"
+              style={{
+                width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                background: '#f1f5f9', border: '1px solid #E2E8F0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <X style={{ width: 10, height: 10, color: '#94a3b8' }} strokeWidth={2.5} />
+            </button>
+          </div>
+
+          {/* Summary line */}
+          <p style={{ margin: 0, fontSize: 12, color: '#64748b', lineHeight: 1.55 }}>
+            Responses are for{' '}
+            <strong style={{ color: '#0f172a', fontWeight: 700 }}>informational purposes only</strong>
+            {' '}and may not reflect the latest medical guidance.
+          </p>
+
+          {/* Expanded section */}
+          {expanded && (
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #E2E8F0' }}>
+              <p style={{ margin: '0 0 8px', fontSize: 11, color: '#64748b', lineHeight: 1.6 }}>
+                This AI assistant does not diagnose, prescribe, or replace professional medical advice. Information is sourced from:
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {[
+                  { label: 'Clinical Database',  bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8' },
+                  { label: 'General Knowledge',  bg: '#fefce8', border: '#fde68a', color: '#92400e' },
+                  { label: 'Your Inventory',     bg: '#f0fdf4', border: '#bbf7d0', color: '#15803d' },
+                ].map(({ label, bg, border, color }) => (
+                  <span key={label} style={{
+                    display: 'inline-flex', alignItems: 'center',
+                    background: bg, border: `1px solid ${border}`,
+                    borderRadius: 999, padding: '3px 10px',
+                    fontSize: 10, fontWeight: 600, color,
+                  }}>
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 export function BoldChatArea({
   isSidebarClosed,
@@ -363,20 +479,7 @@ export function BoldChatArea({
 
       <div className="flex-1 flex flex-col pt-16 sm:pt-20 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 max-w-7xl mx-auto w-full overflow-hidden">
         {/* Medical Disclaimer Banner */}
-        {messages.length > 0 && (
-          <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-3 sm:p-4 rounded-lg shadow-sm">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" strokeWidth={2} />
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] sm:text-[12px] text-blue-900 font-medium leading-relaxed">
-                  <strong>Medical Information Disclaimer:</strong> This AI assistant provides general information for educational purposes only. 
-                  Always consult a qualified healthcare professional for medical advice, diagnosis, or treatment. 
-                  Information sources are indicated with each response (📚 Clinical Database, 💡 General Knowledge, 📦 Your Inventory).
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {messages.length > 0 && <MedicalDisclaimer />}
         
         {messages.length === 0 && !isLoading && !hitlPending ? (
           <div className="flex-1 flex items-center justify-center px-4">

@@ -1,7 +1,14 @@
 # Firebase key updated: f527dc5103 — reload triggered
 import datetime
 import os
+import sys
 from dotenv import load_dotenv
+
+# Ensure the project root (parent of backend/) is on sys.path so that
+# `from scripts import mock_data` works regardless of the CWD.
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 import firebase_admin
 from firebase_admin import credentials, firestore
 
