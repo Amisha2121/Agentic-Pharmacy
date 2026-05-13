@@ -86,11 +86,6 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-[#111827] text-xs font-medium truncate" style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>{user?.name || 'Amisha'}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium uppercase tracking-wider bg-[#ECFDF5] text-[#16A34A] border border-[#A7F3D0]" style={{ fontFamily: 'IBM Plex Sans, sans-serif', letterSpacing: '0.6px' }}>
-                  Pharmacist
-                </span>
-              </div>
             </div>
           </div>
         </div>

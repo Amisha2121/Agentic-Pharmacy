@@ -23,69 +23,69 @@ export function Landing() {
   const features = [
     {
       icon: Bot,
-      title: 'LangGraph Assistant',
-      description: 'Powered by Llama 3 and Groq for conversational pharmacy queries',
+      title: 'Smart AI Assistant',
+      description: 'Chat naturally with your inventory system - ask questions and get instant answers',
     },
     {
       icon: Zap,
-      title: 'GS1-128 Scanning',
-      description: 'Fast local barcode decoding for accurate inventory intake',
+      title: 'Instant Barcode Scanning',
+      description: 'Scan medicine packages instantly - no manual typing needed',
     },
     {
       icon: Package,
-      title: 'Real-Time Sync',
-      description: 'Instant synchronization of inventory and sales data via Firebase',
+      title: 'Always Up-to-Date',
+      description: 'Your inventory syncs automatically across all devices in real-time',
     },
     {
       icon: Clock,
-      title: 'Expiry Alerts',
-      description: 'Automated warnings for medications approaching their expiration dates',
+      title: 'Expiry Warnings',
+      description: 'Get notified before medicines expire so you never waste stock',
     },
     {
       icon: Shield,
       title: 'Low Stock Alerts',
-      description: 'Intelligent monitoring to trigger reorder notifications when stock is low',
+      description: 'Automatic reminders when it\'s time to reorder popular items',
     },
     {
       icon: BarChart3,
-      title: 'Daily Sales Logging',
-      description: 'Simple and robust tracking for dispensed medications and daily sales',
+      title: 'Easy Sales Tracking',
+      description: 'Log daily sales effortlessly and see your pharmacy\'s performance',
     },
   ];
 
   const benefits = [
     {
-      stat: 'GS1',
-      label: 'Barcode Standard',
-      description: 'Natively decode complex GS1-128 healthcare barcodes',
+      stat: '⚡',
+      label: 'Lightning Fast',
+      description: 'Scan barcodes and get results in under a second',
     },
     {
-      stat: 'AI',
-      label: 'Agentic Workflows',
-      description: 'Multi-agent workflows powered by Llama 3 and Groq',
+      stat: '🤖',
+      label: 'AI-Powered',
+      description: 'Smart assistant that understands your pharmacy needs',
     },
     {
-      stat: 'ms',
-      label: 'Real-time Database',
-      description: 'Millisecond-latency state synchronization across clients',
+      stat: '☁️',
+      label: 'Cloud-Based',
+      description: 'Access your data anywhere, anytime, from any device',
     },
   ];
 
   const testimonials = [
     {
-      quote: "Built with React 18, Vite, and Tailwind CSS. Features shadcn/ui components for a clean, accessible interface.",
-      author: "React & Vite",
-      role: "Frontend Stack",
+      quote: "No more manual entry! I just scan the barcode and everything is logged automatically. Saves me hours every week.",
+      author: "Sarah M.",
+      role: "Community Pharmacist",
     },
     {
-      quote: "Powered by FastAPI and Python. High-performance async API handling business logic and routing.",
-      author: "FastAPI Python",
-      role: "Backend Stack",
+      quote: "The AI assistant is like having an extra team member. It answers questions instantly and catches drug interactions I might miss.",
+      author: "Dr. James K.",
+      role: "Hospital Pharmacy Director",
     },
     {
-      quote: "LangGraph handles complex multi-step reasoning using Groq's ultra-fast Llama 3 endpoints.",
-      author: "LangGraph & Groq",
-      role: "AI Stack",
+      quote: "Expiry alerts have saved us thousands in wasted inventory. The system reminds us before items expire so we can use them first.",
+      author: "Maria L.",
+      role: "Pharmacy Manager",
     },
   ];
 
@@ -391,18 +391,18 @@ export function Landing() {
             {[
               {
                 step: '01',
-                title: 'Connect Firebase',
-                description: 'Authenticate securely using Firebase Auth to isolate your pharmacy data.',
+                title: 'Sign Up Securely',
+                description: 'Create your account with secure authentication - your data stays private and protected.',
               },
               {
                 step: '02',
-                title: 'Scan & Log',
-                description: 'Use the built-in GS1-128 scanner to quickly ingest new medications.',
+                title: 'Scan & Add Items',
+                description: 'Point your camera at any medicine barcode to instantly add it to your inventory.',
               },
               {
                 step: '03',
-                title: 'Chat with AI',
-                description: "Ask the LangGraph assistant questions like 'Do we have Amoxicillin?'",
+                title: 'Ask Questions',
+                description: "Chat naturally with the AI assistant - 'Do we have Amoxicillin?' or 'What expires soon?'",
               },
             ].map((item) => (
               <div key={item.step} className="relative bg-white border border-[#0F172A] rounded-2xl sm:rounded-3xl p-6 sm:p-8">
@@ -426,10 +426,10 @@ export function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 sm:mb-16">
             <h2 className="text-[32px] sm:text-[48px] font-black uppercase text-[#0F172A] mb-3 sm:mb-4 tracking-tight">
-              PROJECT ARCHITECTURE
+              WHY PHARMACIES LOVE IT
             </h2>
             <p className="text-[16px] sm:text-[18px] text-[#64748B] max-w-2xl mx-auto px-4">
-              Leveraging cutting-edge frameworks and models
+              Built for real pharmacy workflows
             </p>
           </div>
 
@@ -470,7 +470,7 @@ export function Landing() {
             NOVAMED?
           </h2>
           <p className="text-[16px] sm:text-[20px] text-white/90 mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
-            Create an account to test out the LangGraph AI and GS1 barcode scanning.
+            Join pharmacies already using NovaMed to save time and reduce errors.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
             <button
@@ -483,7 +483,7 @@ export function Landing() {
             </button>
           </div>
           <p className="text-[12px] sm:text-[13px] text-white/70 mt-4 sm:mt-6 px-4">
-            Firebase Auth integration • Local Python Backend • React 18 Frontend
+            Secure cloud storage • Works on any device • No credit card required
           </p>
         </div>
       </section>

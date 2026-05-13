@@ -96,14 +96,6 @@ export function BoldSidebar({ isOpen, onToggle, isMobile = false, onClose }: Sid
               <p className="text-[13px] font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate transition-colors duration-300">
                 {user?.name || 'Amisha'}
               </p>
-              <div className="mt-1.5">
-                <span 
-                  className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#16a34a] text-white border border-[#0F172A] dark:border-[#F8FAFC] transition-colors duration-300"
-                  style={{ borderRadius: '999px' }}
-                >
-                  Pharmacist
-                </span>
-              </div>
             </div>
           </div>
         </div>
