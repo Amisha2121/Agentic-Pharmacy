@@ -86,6 +86,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "firebase_mode": "LIVE" if not database.MOCK_MODE else "MOCK",
+    }
+
 # ── Pydantic models ────────────────────────────────────────────────────────────
 
 class ChatRequest(BaseModel):
