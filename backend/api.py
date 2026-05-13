@@ -88,9 +88,24 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
+    zxing_ok = False
+    pil_ok = False
+    try:
+        import zxingcpp  # noqa
+        zxing_ok = True
+    except ImportError:
+        pass
+    try:
+        from PIL import Image  # noqa
+        pil_ok = True
+    except ImportError:
+        pass
     return {
         "status": "ok",
         "firebase_mode": "LIVE" if not database.MOCK_MODE else "MOCK",
+        "barcode_scanner": "OK" if (zxing_ok and pil_ok) else "UNAVAILABLE",
+        "zxingcpp": zxing_ok,
+        "pillow": pil_ok,
     }
 
 # ── Pydantic models ────────────────────────────────────────────────────────────
