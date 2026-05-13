@@ -86,7 +86,7 @@ echo Build: OK
 echo.
 
 echo [2/2] Deploying to Firebase...
-firebase deploy --only hosting
+firebase deploy --only hosting --project pharmaai-8bb36
 if errorlevel 1 (
     echo ERROR: Firebase deployment failed
     pause
