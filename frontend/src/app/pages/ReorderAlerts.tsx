@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
-import { Menu, RefreshCw, PackageX, Check } from 'lucide-react';
+import { Menu, RefreshCw, PackageX, Check, Download } from 'lucide-react';
 import { authenticatedFetch } from '../utils/api';
 
 interface ContextType {
@@ -46,6 +46,26 @@ export function ReorderAlerts() {
     setTimeout(() => setAlerts(prev => prev.filter(a => a.doc_id !== docId)), 400);
   };
 
+  const downloadCSV = () => {
+    const headers = ['Product', 'Category', 'Batch', 'Stock', 'Status'];
+    const rows = alerts.map(a => [
+      a.product_name,
+      a.category,
+      a.batch_number,
+      String(a.stock),
+      a.stock === 0 ? 'Out of Stock' : 'Low Stock',
+    ]);
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const csv = [headers, ...rows].map(r => r.map(escape).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reorder_alerts_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full w-full relative z-10 overflow-y-auto scrollbar-hide bg-[#F8FAFC]">
       {/* Topbar */}
@@ -73,14 +93,26 @@ export function ReorderAlerts() {
               {loading ? 'Loading…' : alerts.length === 0 ? 'All products are well-stocked.' : `${alerts.length} product${alerts.length !== 1 ? 's' : ''} require restocking`}
             </p>
           </div>
-          <button 
-            onClick={fetchAlerts} 
-            className="px-5 py-2.5 text-sm font-bold text-[#0F172A] border-2 border-[#0F172A] bg-white hover:bg-[#F0FDF4] transition-all flex items-center gap-2"
-            style={{ borderRadius: '999px' }}
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
-            Refresh
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            {alerts.length > 0 && (
+              <button
+                onClick={downloadCSV}
+                className="px-5 py-2.5 text-sm font-bold text-[#16a34a] border-2 border-[#16a34a] bg-white hover:bg-[#F0FDF4] transition-all flex items-center gap-2"
+                style={{ borderRadius: '999px' }}
+              >
+                <Download className="w-4 h-4" strokeWidth={2.5} />
+                Download CSV
+              </button>
+            )}
+            <button
+              onClick={fetchAlerts}
+              className="px-5 py-2.5 text-sm font-bold text-[#0F172A] border-2 border-[#0F172A] bg-white hover:bg-[#F0FDF4] transition-all flex items-center gap-2"
+              style={{ borderRadius: '999px' }}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* Empty state */}

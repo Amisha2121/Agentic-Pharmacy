@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
-import { Menu, AlertTriangle, RefreshCw, Check, Clock } from 'lucide-react';
+import { Menu, AlertTriangle, RefreshCw, Check, Clock, Download } from 'lucide-react';
 import { authenticatedFetch } from '../utils/api';
 
 interface ContextType {
@@ -60,7 +60,24 @@ export function ExpiredItems() {
     setTimeout(() => setItems(prev => prev.filter(a => a.doc_id !== docId)), 400);
   };
 
-  const expiredCount = items.filter(i => i.days_expired >= 0).length;
+  const downloadCSV = () => {
+    const headers = ['Product', 'Category', 'Batch', 'Expiry Date', 'Stock', 'Status'];
+    const rows = items.map(i => {
+      const cfg = getUrgencyConfig(i.days_expired);
+      return [i.product_name, i.category, i.batch_number, i.expiry_date, String(i.stock), cfg.label];
+    });
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const csv = [headers, ...rows].map(r => r.map(escape).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `expirations_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const expiredCount  = items.filter(i => i.days_expired >= 0).length;
   const expiringCount = items.filter(i => i.days_expired < 0).length;
 
   return (
@@ -69,8 +86,8 @@ export function ExpiredItems() {
       <div className="flex items-center justify-between p-4 absolute top-0 w-full z-20">
         <div className="flex items-center">
           {!isSidebarOpen && (
-            <button 
-              onClick={() => setIsSidebarOpen(true)} 
+            <button
+              onClick={() => setIsSidebarOpen(true)}
               className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-[#0F172A] text-[#0F172A] hover:bg-[#F0FDF4] transition-all"
             >
               <Menu className="w-5 h-5" strokeWidth={2.5} />
@@ -90,14 +107,26 @@ export function ExpiredItems() {
               {loading ? 'Loading…' : items.length === 0 ? 'No alerts' : `${expiredCount} expired · ${expiringCount} expiring soon`}
             </p>
           </div>
-          <button 
-            onClick={fetchItems} 
-            className="px-5 py-2.5 text-sm font-bold text-[#0F172A] border-2 border-[#0F172A] bg-white hover:bg-[#F0FDF4] transition-all flex items-center gap-2"
-            style={{ borderRadius: '999px' }}
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
-            Refresh
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            {items.length > 0 && (
+              <button
+                onClick={downloadCSV}
+                className="px-5 py-2.5 text-sm font-bold text-[#16a34a] border-2 border-[#16a34a] bg-white hover:bg-[#F0FDF4] transition-all flex items-center gap-2"
+                style={{ borderRadius: '999px' }}
+              >
+                <Download className="w-4 h-4" strokeWidth={2.5} />
+                Download CSV
+              </button>
+            )}
+            <button
+              onClick={fetchItems}
+              className="px-5 py-2.5 text-sm font-bold text-[#0F172A] border-2 border-[#0F172A] bg-white hover:bg-[#F0FDF4] transition-all flex items-center gap-2"
+              style={{ borderRadius: '999px' }}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* Empty state */}
