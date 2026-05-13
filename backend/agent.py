@@ -626,15 +626,20 @@ def database_query_node(state: PharmacyState):
     ) or "No inventory items yet."
 
     full_history = state.get("messages") or []
-    system_prompt = f"""You are a pharmacy inventory auditor and a general medical assistant with full conversation memory.
+    system_prompt = f"""You are a pharmacy inventory assistant with conversation memory.
 TODAY: {today}
 INVENTORY:
 {inventory_context}
+
 Rules:
-1. If the user asks about stock/inventory, refer to the INVENTORY list above.
-2. Mark as EXPIRED if today > expiry date.
-3. If the user asks a general medical question or a question about a drug (whether it is in the inventory or not), answer it helpfully using your general medical knowledge. DO NOT refuse to answer questions about items not in the inventory.
-Use conversation history to resolve references like 'it', 'that batch', 'same medicine', 'what did I just add'."""
+1. Give SHORT, direct answers (2-3 sentences max)
+2. Only provide detailed explanations if user asks "why", "how", or "explain"
+3. For stock queries: just state the quantity and expiry
+4. Mark EXPIRED if today > expiry date
+5. Answer medical questions helpfully using your knowledge
+6. Use history to resolve 'it', 'that batch', 'same medicine'
+
+Be concise and organized. Expand only when asked."""
 
     llm_messages = [{"role": "system", "content": system_prompt}] + full_history[-8:]
 
@@ -643,7 +648,7 @@ Use conversation history to resolve references like 'it', 'that batch', 'same me
         response = client.chat.completions.create(
             model=TEXT_MODEL,
             messages=llm_messages,
-            max_tokens=512,
+            max_tokens=300,  # Reduced for faster, more concise responses
             timeout=15,
         )
         resp_text = response.choices[0].message.content
@@ -893,27 +898,24 @@ def clinical_knowledge_node(state: PharmacyState):
         context = results["documents"][0][0] if results["documents"] else "No clinical data found."
         client = get_client()
         llm_messages = [
-            {"role": "system", "content": f"""You are a knowledgeable clinical pharmacy assistant with expertise in drug interactions, side effects, and medication safety.
+            {"role": "system", "content": f"""You are a clinical pharmacy assistant.
 
-Reference data (if available):
+Reference data:
 {context}
 
-IMPORTANT INSTRUCTIONS:
-1. Answer drug interaction questions directly and helpfully using your medical knowledge
-2. If the reference data is relevant, incorporate it into your answer
-3. If the reference data says "No clinical data found" or is not relevant, use your general medical knowledge to provide a helpful answer
-4. For drug interaction questions, explain:
-   - Whether the drugs can be taken together
-   - Any potential interactions or concerns
-   - Recommended precautions if applicable
-5. Always recommend consulting a healthcare professional for personalized medical advice
-6. Use conversation history to resolve drug references like 'it', 'same drug', 'what about with X?'
-7. Be informative and helpful - do NOT refuse to answer clinical questions"""},
+Instructions:
+1. Give CONCISE answers (3-4 sentences) unless user asks for details
+2. For drug interactions: state if safe/unsafe, main concern, and precaution
+3. Use reference data if relevant, otherwise use your medical knowledge
+4. Always end with: "Consult your healthcare provider for personalized advice"
+5. Use history to resolve 'it', 'same drug', 'what about with X?'
+
+Be brief and organized. Expand only when asked."""},
         ] + full_history[-8:]
         response = client.chat.completions.create(
             model=TEXT_MODEL,
             messages=llm_messages,
-            max_tokens=512,
+            max_tokens=300,  # Reduced for faster, more concise responses
             timeout=15,
         )
         resp_text = response.choices[0].message.content
