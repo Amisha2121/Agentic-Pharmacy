@@ -1,0 +1,29 @@
+# NovaMed — Core Dependencies
+
+# LLM / AI
+openai>=1.30.0,<2.0.0
+langgraph>=0.2.0,<1.0.0
+langchain>=0.3.0,<1.0.0
+langchain-groq>=0.2.0,<1.0.0
+groq>=0.12.0,<1.0.0
+
+# Database / Auth
+firebase-admin>=6.5.0,<7.0.0
+chromadb>=0.5.0,<1.0.0
+
+# Data processing
+pandas>=2.0.0,<3.0.0
+pillow>=10.0.0,<12.0.0
+rapidfuzz>=3.0.0,<4.0.0
+pymupdf>=1.23.0,<2.0.0
+zxing-cpp>=2.2.0,<3.0.0
+
+# Backend / API
+fastapi>=0.110.0,<1.0.0
+uvicorn[standard]>=0.29.0,<1.0.0
+sse-starlette>=1.8.2,<3.0.0
+python-multipart>=0.0.9,<1.0.0
+
+# Utilities
+python-dotenv>=1.0.0,<2.0.0
+requests>=2.31.0,<3.0.0
