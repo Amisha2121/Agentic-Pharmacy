@@ -148,7 +148,7 @@ export function Login() {
             ))}
           </div>
         </div>
-        <p className="relative z-10 text-[#b2dfdb]/50 text-xs">© 2026 PharmaAI · Agentic Pharmacy Intelligence</p>
+        <p className="relative z-10 text-[#b2dfdb]/50 text-xs">© 2026 PharmaAI · NovaMed Intelligence</p>
       </div>
 
       {/* ── Right panel ────────────────────────────────────────────── */}

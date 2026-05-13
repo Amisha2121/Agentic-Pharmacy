@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Mic, ArrowUp, Paperclip, Menu, History, Bot, User, CheckCircle, AlertCircle, XCircle, FileText, ScanLine } from 'lucide-react';
+import { Plus, Mic, ArrowUp, Paperclip, Menu, History, Bot, User, CheckCircle, AlertCircle, XCircle, FileText, ScanLine, Camera, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MessageBubble, TypingIndicator } from './MessageBubble';
 import { useAuth } from '../context/AuthContext';
@@ -21,7 +21,10 @@ interface BarcodeResult {
   batch_number?: string;
   expiry_date?: string;
   gtin?: string;
+  ndc?: string;
   quantity?: number;
+  raw_text?: string;
+  is_gs1?: boolean;
   path: string;
   filename: string;
 }
@@ -59,8 +62,12 @@ export function BoldChatArea({
   const [uploading, setUploading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const startListening = () => {
     // @ts-expect-error Web Speech API vendor prefixes
@@ -84,6 +91,77 @@ export function BoldChatArea({
     recognition.start();
   };
 
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Use back camera on mobile
+      });
+      setStream(mediaStream);
+      setShowCamera(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      alert('Camera access denied or not available');
+      console.error('Camera error:', err);
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.drawImage(video, 0, 0);
+    
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      
+      stopCamera();
+      setUploading(true);
+      setScanning(true);
+      setBarcodeResult(null);
+      setAttachedImage(null);
+
+      try {
+        const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        const scanFormData = new FormData();
+        scanFormData.append('file', file);
+        const scanRes = await authenticatedFetch('/api/scan-barcode', { method: 'POST', body: scanFormData });
+        const scanData: BarcodeResult = await scanRes.json();
+        setBarcodeResult(scanData);
+        setAttachedImage({ path: scanData.path, name: file.name });
+      } catch {
+        try {
+          const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          const formData = new FormData();
+          formData.append('file', file);
+          const res = await authenticatedFetch('/api/upload-image', { method: 'POST', body: formData });
+          const data = await res.json();
+          setAttachedImage({ path: data.path, name: file.name });
+        } catch {
+          appendMessage({ id: Date.now().toString(), type: 'system', icon: <XCircle className="w-5 h-5" />, iconColor: '#ef4444', content: 'Image upload failed. Try again.' });
+        }
+      } finally {
+        setUploading(false);
+        setScanning(false);
+      }
+    }, 'image/jpeg', 0.95);
+  };
+
   useEffect(() => {
     setMessages(initialMessages);
     setHitlPending(null);
@@ -94,6 +172,15 @@ export function BoldChatArea({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    // Cleanup camera on unmount
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   const appendMessage = (msg: Message) => {
     setMessages((prev) => {
@@ -219,8 +306,39 @@ export function BoldChatArea({
 
   return (
     <div className="flex-1 flex flex-col h-screen w-full relative z-10 bg-[#F8FAFC] overflow-hidden">
+      {/* Camera Modal */}
+      {showCamera && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl">
+            <button
+              onClick={stopCamera}
+              className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            >
+              <X className="w-6 h-6" strokeWidth={2.5} />
+            </button>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full rounded-lg"
+            />
+            <div className="mt-4 flex justify-center gap-4">
+              <button
+                onClick={capturePhoto}
+                className="bg-[#16a34a] hover:bg-[#15803d] text-white px-8 py-4 font-black uppercase text-sm tracking-wide transition-all flex items-center gap-2"
+                style={{ borderRadius: '999px' }}
+              >
+                <Camera className="w-5 h-5" strokeWidth={2.5} />
+                Capture Photo
+              </button>
+            </div>
+          </div>
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+      )}
+
       {/* Top bar with menu buttons */}
-      <div className="flex items-center justify-between p-3 sm:p-4 bg-transparent absolute top-0 w-full z-20">
+      <div className="flex items-center justify-between p-3 sm:p-4 bg-[#F8FAFC] absolute top-0 w-full z-20 border-b border-gray-200">
         <div className="flex items-center">
           {isSidebarClosed && (
             <button 
@@ -243,10 +361,7 @@ export function BoldChatArea({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col pt-16 sm:pt-20 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 max-w-7xl mx-auto w-full overflow-y-auto" style={{ 
-        scrollbarWidth: 'thin',
-        scrollbarColor: '#CBD5E1 transparent'
-      }}>
+      <div className="flex-1 flex flex-col pt-16 sm:pt-20 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 max-w-7xl mx-auto w-full overflow-hidden">
         {messages.length === 0 && !isLoading && !hitlPending ? (
           <div className="flex-1 flex items-center justify-center px-4">
             <p className="text-[13px] sm:text-[14px] text-[#64748B] font-medium text-center">
@@ -254,7 +369,7 @@ export function BoldChatArea({
             </p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto mb-3 sm:mb-4 px-2 sm:px-4 space-y-6 sm:space-y-8 min-h-0 scroll-smooth">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden mb-3 sm:mb-4 px-2 sm:px-4 space-y-6 sm:space-y-8 min-h-0">
             {messages.map((msg) => (
               <MessageBubble 
                 key={msg.id} 
@@ -306,11 +421,34 @@ export function BoldChatArea({
 
               {/* Barcode Result Indicator */}
               {barcodeResult && barcodeResult.found && !scanning && (
-                <div className="bg-[#16a34a] border-2 border-[#0F172A] px-6 py-3 flex items-center gap-3" style={{ borderRadius: '999px' }}>
-                  <CheckCircle className="w-5 h-5 text-white" strokeWidth={2.5} />
-                  <span className="text-[13px] font-bold text-white">
-                    BARCODE DETECTED: {barcodeResult.batch_number || 'Unknown'}
-                  </span>
+                <div className="bg-[#16a34a] border-2 border-[#0F172A] px-6 py-3 flex flex-col gap-2 max-w-md" style={{ borderRadius: '20px' }}>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-white flex-shrink-0" strokeWidth={2.5} />
+                    <span className="text-[13px] font-bold text-white">BARCODE DETECTED</span>
+                  </div>
+                  <div className="text-[11px] text-white/90 space-y-1 pl-8">
+                    {barcodeResult.barcode_type && (
+                      <div>Type: {barcodeResult.barcode_type}</div>
+                    )}
+                    {barcodeResult.ndc && (
+                      <div>NDC: {barcodeResult.ndc}</div>
+                    )}
+                    {barcodeResult.batch_number && (
+                      <div>Batch: {barcodeResult.batch_number}</div>
+                    )}
+                    {barcodeResult.expiry_date && (
+                      <div>Expiry: {barcodeResult.expiry_date}</div>
+                    )}
+                    {barcodeResult.gtin && (
+                      <div>GTIN: {barcodeResult.gtin}</div>
+                    )}
+                    {barcodeResult.raw_text && !barcodeResult.is_gs1 && (
+                      <div>Code: {barcodeResult.raw_text.substring(0, 30)}{barcodeResult.raw_text.length > 30 ? '...' : ''}</div>
+                    )}
+                    {!barcodeResult.batch_number && !barcodeResult.expiry_date && !barcodeResult.ndc && (
+                      <div className="text-white/80 italic">Product barcode - will help identify the medicine</div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -343,8 +481,16 @@ export function BoldChatArea({
             <button
               onClick={() => fileInputRef.current?.click()}
               className="w-8 sm:w-10 h-8 sm:h-10 rounded-full flex items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors flex-shrink-0"
+              title="Upload image"
             >
               <Plus className="w-4 sm:w-5 h-4 sm:h-5" strokeWidth={2.5} />
+            </button>
+            <button
+              onClick={startCamera}
+              className="w-8 sm:w-10 h-8 sm:h-10 rounded-full flex items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors flex-shrink-0"
+              title="Use camera"
+            >
+              <Camera className="w-4 sm:w-5 h-4 sm:h-5" strokeWidth={2.5} />
             </button>
             <input
               type="text"

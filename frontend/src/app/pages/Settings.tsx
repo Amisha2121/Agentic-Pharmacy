@@ -395,7 +395,7 @@ export function Settings() {
           <div>
             <Row
               label="Signed-in With"
-              sub="Your current authentication method determines how you access Agentic Pharmacy. This cannot be changed without creating a new account."
+              sub="Your current authentication method determines how you access NovaMed. This cannot be changed without creating a new account."
               right={
                 <div 
                   className="flex items-center gap-2 px-3 py-1 rounded-full border-2 border-[#0F172A] dark:border-[#F8FAFC] text-xs font-bold transition-colors duration-300"
@@ -425,14 +425,14 @@ export function Settings() {
         <Section icon={<Database size={16} />} title="About" subtitle="App version and system information">
           <div className="mb-4 p-3 bg-[#F8FAFC] dark:bg-[#334155] border border-[#E2E8F0] dark:border-[#475569] rounded-2xl transition-colors duration-300">
             <p className="m-0 mb-2 text-xs text-[#0F172A] dark:text-[#F8FAFC] leading-relaxed transition-colors duration-300">
-              <strong>Agentic Pharmacy</strong> is an AI-powered pharmacy management system designed to streamline inventory tracking, prevent stockouts, and ensure medication safety through intelligent drug interaction checking.
+              <strong>NovaMed</strong> is an AI-powered pharmacy management system designed to streamline inventory tracking, prevent stockouts, and ensure medication safety through intelligent drug interaction checking.
             </p>
             <p className="m-0 text-[11px] text-[#64748B] dark:text-[#94A3B8] leading-relaxed transition-colors duration-300">
               Built with modern cloud technologies for reliability, security, and real-time synchronization across all your devices.
             </p>
           </div>
           <div>
-            <Row label="App Version" sub="Current release version of Agentic Pharmacy" right={<span className="text-xs text-[#0F172A] dark:text-[#F8FAFC] bg-[#F8FAFC] dark:bg-[#334155] px-3 py-1 rounded-full border-2 border-[#0F172A] dark:border-[#F8FAFC] font-bold transition-colors duration-300">v1.0.0</span>} />
+            <Row label="App Version" sub="Current release version of NovaMed" right={<span className="text-xs text-[#0F172A] dark:text-[#F8FAFC] bg-[#F8FAFC] dark:bg-[#334155] px-3 py-1 rounded-full border-2 border-[#0F172A] dark:border-[#F8FAFC] font-bold transition-colors duration-300">v1.0.0</span>} />
             <Row label="Database" sub="Cloud-hosted NoSQL database for real-time data sync" right={<span className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">Firebase Firestore</span>} />
             <Row label="AI Model" sub="Large language model powering the intelligent assistant" right={<span className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">Groq · llama-3.1-8b-instant</span>} />
             <Row label="Vector Store" sub="Semantic search engine for drug interaction database" right={<span className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold transition-colors duration-300">ChromaDB Cloud</span>} noBorder />

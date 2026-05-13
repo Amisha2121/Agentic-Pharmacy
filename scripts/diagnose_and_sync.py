@@ -245,7 +245,7 @@ def seed_demo_data(db, target_uid: str):
 # ── Main ───────────────────────────────────────────────────────────────────────
 def main():
     print(f"\n{SECTION}")
-    print("  AGENTIC PHARMACY — FIRESTORE DIAGNOSTIC & SYNC")
+    print("  NOVAMED — FIRESTORE DIAGNOSTIC & SYNC")
     print(SECTION)
 
     db = init_firebase()

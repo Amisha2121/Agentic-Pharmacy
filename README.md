@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💊 Agentic Pharmacy
+# 💊 NovaMed
 
 ![React](https://img.shields.io/badge/React_18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
@@ -19,9 +19,9 @@
 
 ## 📖 About the Project
 
-Agentic Pharmacy is a modern pharmacy management system that combines AI-powered automation with an intuitive user interface. Built for pharmacists and medical staff, it streamlines inventory management, sales tracking, and operational workflows through conversational AI and intelligent automation.
+NovaMed is a modern pharmacy management system that combines AI-powered automation with an intuitive user interface. Built for pharmacists and medical staff, it streamlines inventory management, sales tracking, and operational workflows through conversational AI and intelligent automation.
 
-The system features a bold, editorial design with complete dark mode support, per-account data isolation, and real-time inventory tracking. By integrating multimodal AI capabilities with traditional pharmacy operations, Agentic Pharmacy reduces manual data entry and enhances operational efficiency.
+The system features a bold, editorial design with complete dark mode support, per-account data isolation, and real-time inventory tracking. By integrating multimodal AI capabilities with traditional pharmacy operations, NovaMed reduces manual data entry and enhances operational efficiency.
 
 ---
 
@@ -234,7 +234,7 @@ firebase deploy
 
 ## 🧪 Testing
 
-Agentic Pharmacy includes a comprehensive backend test suite that executes in a sandboxed, in-memory mock environment (preventing any accidental mutations to live production data).
+NovaMed includes a comprehensive backend test suite that executes in a sandboxed, in-memory mock environment (preventing any accidental mutations to live production data).
 
 **Test Coverage Includes:**
 - `test_api.py`: Validates all 16 FastAPI endpoints, ensuring correct status codes and JSON response schemas.
@@ -329,7 +329,7 @@ Agentic-Pharmacy/
 
 ## 🎨 Design Philosophy
 
-Agentic Pharmacy features a bold, editorial design system inspired by modern SaaS applications:
+NovaMed features a bold, editorial design system inspired by modern SaaS applications:
 
 - **Typography:** Inter font family with bold weights and uppercase labels
 - **Color Palette:** Green accent (#16a34a), near-black borders (#0F172A), clean backgrounds
@@ -345,16 +345,41 @@ The application is deployed on Firebase Hosting:
 
 **Live URL:** [https://pharmaai-8bb36.web.app](https://pharmaai-8bb36.web.app)
 
-To deploy your own instance:
+### Quick Deploy
+
+We provide automated deployment scripts for easy deployment:
 
 ```bash
-# Build frontend
+# Full deployment (includes dependency installation)
+deploy.bat
+
+# Quick deployment (skip dependencies)
+quick-deploy.bat
+
+# Pre-deployment checks
+pre-deploy-check.bat
+```
+
+### Manual Deployment
+
+```bash
+# 1. Build frontend
 cd frontend
+npm install
 npm run build
 
-# Deploy to Firebase
-firebase deploy
+# 2. Deploy to Firebase
+cd ..
+firebase deploy --only hosting
 ```
+
+### Prerequisites
+
+- Node.js v18 or higher
+- Firebase CLI: `npm install -g firebase-tools`
+- Firebase authentication: `firebase login`
+
+📖 **For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md)**
 
 ---
 

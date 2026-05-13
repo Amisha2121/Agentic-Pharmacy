@@ -1,5 +1,5 @@
 """
-FastAPI bridge server — exposes the Agentic Pharmacy backend as REST endpoints
+FastAPI bridge server — exposes the NovaMed backend as REST endpoints
 so the React frontend can communicate with Python/LangGraph/Firestore.
 
 Run with:
@@ -76,7 +76,7 @@ def _load_agent():
     return _agent_app, _agent_Command, _agent_GraphInterrupt
 
 # ── App setup ─────────────────────────────────────────────────────────────────
-app = FastAPI(title="Agentic Pharmacy API", version="1.0.0")
+app = FastAPI(title="NovaMed API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,

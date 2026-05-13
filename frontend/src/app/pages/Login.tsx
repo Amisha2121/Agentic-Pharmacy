@@ -56,7 +56,7 @@ export function Login() {
             className="text-[#0F172A] text-[18px] sm:text-[24px] font-black uppercase tracking-tight text-center"
             style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
           >
-            AGENTIC PHARMACY
+            NOVAMED
           </span>
         </div>
 

@@ -1,7 +1,7 @@
 """
 📊 Evaluation Dataset - 20 Complex Pharmacy Queries (Academic Testing)
 
-This dataset is designed for rigorous evaluation of the agentic pharmacy system.
+This dataset is designed for rigorous evaluation of the NovaMed system.
 Includes:
 - Clinical DDI queries (exact + typos)
 - Inventory queries

@@ -18,7 +18,7 @@ const STEPS: TourStep[] = [
     target: null,
     placement: 'center',
     emoji: '👋',
-    title: 'Welcome to Agentic Pharmacy AI',
+    title: 'Welcome to NovaMed AI',
     description:
       "This quick tour shows you exactly what each feature does. Click Next to begin — or skip if you'd rather explore on your own.",
   },

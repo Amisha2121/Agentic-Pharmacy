@@ -1,4 +1,4 @@
-# Agentic Pharmacy — Core Dependencies
+# NovaMed — Core Dependencies
 # Pin exact lower bounds; run `pip freeze > requirements-lock.txt` in a clean
 # venv to get a fully-reproducible lock file for production deployments.
 

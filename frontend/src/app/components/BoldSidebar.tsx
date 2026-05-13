@@ -72,7 +72,7 @@ export function BoldSidebar({ isOpen, onToggle, isMobile = false, onClose }: Sid
               className="text-[#0F172A] dark:text-[#F8FAFC] text-[20px] font-black uppercase tracking-tight transition-colors duration-300"
               style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
             >
-              AGENTIC PHARMACY
+              NOVAMED
             </span>
           </div>
         </div>

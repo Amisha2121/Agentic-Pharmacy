@@ -553,7 +553,7 @@ export function LiveInventory() {
                       YOUR INVENTORY IS EMPTY
                     </h3>
                     <p className="text-[#64748B] max-w-md mx-auto mb-8 leading-relaxed font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>
-                      Welcome to Agentic Pharmacy! Start by adding your first product manually above, or head over to the chat to scan a medicine box.
+                      Welcome to NovaMed! Start by adding your first product manually above, or head over to the chat to scan a medicine box.
                     </p>
                     <button 
                       onClick={() => setShowAddForm(true)} 

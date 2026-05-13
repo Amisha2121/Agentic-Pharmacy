@@ -75,8 +75,17 @@ def _parse_gs1_string(raw: str) -> dict:
     Handles two common formats:
       1. Human-readable with parens: (01)12345678901234(17)261130(10)BN123
       2. Raw concatenated: FNC1 + AI data (no delimiters)
+    
+    Also extracts NDC codes if present in the raw text.
     """
     result: dict = {}
+
+    # --- Check for NDC code in raw text ---
+    # NDC format: 5-4-2 or 5-4-1 or 4-4-2 (with or without dashes)
+    ndc_match = re.search(r'NDC[:\s]*(\d{4,5}[-\s]?\d{3,4}[-\s]?\d{1,2})', raw, re.IGNORECASE)
+    if ndc_match:
+        result['ndc'] = ndc_match.group(1).replace(' ', '-')
+        print(f"[barcode_scanner] Found NDC code: {result['ndc']}")
 
     # --- Format 1: parenthesized AIs (most scanners emit this) ---
     paren_matches = re.findall(r'\((\d{2,4})\)([^(]+)', raw)
@@ -147,6 +156,7 @@ def scan_image(image_path: str) -> dict:
         "barcode_type":   str,   # (From the first found barcode)
         "raw_text":       str,
         "gtin":           str | None,
+        "ndc":            str | None,
         "batch_number":   str | None,
         "expiry_date":    str | None,
         "manufacture_date": str | None,
@@ -158,7 +168,7 @@ def scan_image(image_path: str) -> dict:
     """
     empty = {
         "found": False, "barcode_type": None, "raw_text": None,
-        "gtin": None, "batch_number": None, "expiry_date": None,
+        "gtin": None, "ndc": None, "batch_number": None, "expiry_date": None,
         "manufacture_date": None, "quantity": None, "is_gs1": False,
         "barcodes": [], "pdf_text": None,
     }
@@ -167,19 +177,69 @@ def scan_image(image_path: str) -> dict:
         print("[barcode_scanner] zxingcpp or Pillow not available — skipping scan")
         return empty
 
-    def _decode_image(img):
-        """Decode barcodes from a PIL Image using zxingcpp."""
+    def _decode_image(img, try_preprocessing=True):
+        """Decode barcodes from a PIL Image using zxingcpp with multiple strategies."""
+        all_results = []
+        
         try:
-            raw_results = _zxingcpp.read_barcodes(img)
-            results = []
+            # Strategy 1: Try original image
+            raw_results = _zxingcpp.read_barcodes(
+                img, 
+                formats=_zxingcpp.BarcodeFormats.EAN13 | 
+                        _zxingcpp.BarcodeFormats.EAN8 | 
+                        _zxingcpp.BarcodeFormats.Code128 | 
+                        _zxingcpp.BarcodeFormats.DataMatrix | 
+                        _zxingcpp.BarcodeFormats.QRCode,
+                try_rotate=True,
+                try_downscale=True
+            )
+            
             for r in raw_results:
                 fmt = r.format.name if hasattr(r.format, "name") else str(r.format)
-                results.append({"text": r.text, "format": fmt})
-            if results:
-                print(f"[barcode_scanner] zxingcpp found {len(results)} barcode(s)")
+                text = r.text if hasattr(r, 'text') else str(r)
+                print(f"[barcode_scanner] Found {fmt}: {text[:100]}")
+                all_results.append({"text": text, "format": fmt})
+            
+            # Strategy 2: If nothing found and preprocessing enabled, try enhanced image
+            if not all_results and try_preprocessing:
+                print("[barcode_scanner] No barcodes found, trying image enhancement...")
+                try:
+                    from PIL import ImageEnhance, ImageOps
+                    
+                    # Convert to grayscale
+                    enhanced = img.convert('L')
+                    
+                    # Increase contrast
+                    enhancer = ImageEnhance.Contrast(enhanced)
+                    enhanced = enhancer.enhance(2.0)
+                    
+                    # Try again with enhanced image
+                    raw_results = _zxingcpp.read_barcodes(
+                        enhanced,
+                        formats=_zxingcpp.BarcodeFormats.EAN13 | 
+                                _zxingcpp.BarcodeFormats.EAN8 | 
+                                _zxingcpp.BarcodeFormats.Code128 | 
+                                _zxingcpp.BarcodeFormats.DataMatrix | 
+                                _zxingcpp.BarcodeFormats.QRCode,
+                        try_rotate=True,
+                        try_downscale=True
+                    )
+                    
+                    for r in raw_results:
+                        fmt = r.format.name if hasattr(r.format, "name") else str(r.format)
+                        text = r.text if hasattr(r, 'text') else str(r)
+                        print(f"[barcode_scanner] Found (enhanced): {fmt}: {text[:100]}")
+                        all_results.append({"text": text, "format": fmt})
+                except Exception as enhance_err:
+                    print(f"[barcode_scanner] Enhancement failed: {enhance_err}")
+            
+            if all_results:
+                print(f"[barcode_scanner] zxingcpp found {len(all_results)} barcode(s)")
             else:
-                print("[barcode_scanner] zxingcpp: no barcodes in this frame")
-            return results
+                print("[barcode_scanner] zxingcpp: no barcodes detected")
+            
+            return all_results
+            
         except Exception as e:
             print(f"[barcode_scanner] zxingcpp error: {e}")
             return []
@@ -229,10 +289,18 @@ def scan_image(image_path: str) -> dict:
                 continue
             barcode_type = res["format"]
             gs1_data = _parse_gs1_string(raw)
+            
+            # Log what we found
+            if gs1_data:
+                print(f"[barcode_scanner] Parsed GS1 data: {gs1_data}")
+            else:
+                print(f"[barcode_scanner] Non-GS1 barcode: {barcode_type} = {raw[:50]}")
+            
             parsed_barcodes.append({
                 "barcode_type": barcode_type,
                 "raw_text": raw,
                 "gtin": gs1_data.get("gtin"),
+                "ndc": gs1_data.get("ndc"),
                 "batch_number": gs1_data.get("batch_number"),
                 "expiry_date": gs1_data.get("expiry_date"),
                 "manufacture_date": gs1_data.get("manufacture_date"),
@@ -245,11 +313,12 @@ def scan_image(image_path: str) -> dict:
             return empty
 
         first = parsed_barcodes[0]
-        return {
+        result = {
             "found": True,
             "barcode_type": first["barcode_type"],
             "raw_text": first["raw_text"],
             "gtin": first["gtin"],
+            "ndc": first["ndc"],
             "batch_number": first["batch_number"],
             "expiry_date": first["expiry_date"],
             "manufacture_date": first["manufacture_date"],
@@ -258,6 +327,12 @@ def scan_image(image_path: str) -> dict:
             "barcodes": parsed_barcodes,
             "pdf_text": pdf_text,
         }
+        
+        # Log the final result for debugging
+        print(f"[barcode_scanner] Returning result: found={result['found']}, type={result['barcode_type']}, "
+              f"ndc={result['ndc']}, batch={result['batch_number']}, expiry={result['expiry_date']}, raw={result['raw_text'][:50]}")
+        
+        return result
 
     except Exception as e:
         print(f"[barcode_scanner] Unexpected error: {e}")
@@ -282,7 +357,11 @@ def build_barcode_hint(scan_result: dict) -> str:
     parts = [f"🔖 {len(barcodes)} Barcode(s) detected."]
     
     for i, b in enumerate(barcodes):
-        parts.append(f"\\n--- Barcode {i+1} ({b.get('barcode_type')}) ---")
+        parts.append(f"\n--- Barcode {i+1} ({b.get('barcode_type')}) ---")
+        
+        # Show GS1 data if available
+        if b.get("ndc"):
+            parts.append(f"NDC Code: **{b['ndc']}**")
         if b.get("batch_number"):
             parts.append(f"Batch/Lot: **{b['batch_number']}**")
         if b.get("expiry_date"):
@@ -291,8 +370,15 @@ def build_barcode_hint(scan_result: dict) -> str:
             parts.append(f"GTIN: {b['gtin']}")
         if b.get("quantity"):
             parts.append(f"Qty: {b['quantity']}")
-        if not b.get("is_gs1"):
-            parts.append(f"Raw Text: {b.get('raw_text')}")
+        
+        # Always show raw text for reference
+        raw = b.get("raw_text", "")
+        if raw:
+            parts.append(f"Raw Barcode Data: {raw}")
+            
+        # If no GS1 data was extracted, note it
+        if not b.get("is_gs1") and raw:
+            parts.append("(This appears to be a product barcode - use it to identify the product)")
 
-    parts.append("\\nUse THESE barcode values for batch/expiry extraction. If multiple products are present, list them all.")
+    parts.append("\nUse THESE barcode values for batch/expiry extraction. If the barcode is a product code (EAN/UPC), use it to identify the product name.")
     return " ".join(parts)

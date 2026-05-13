@@ -121,7 +121,7 @@ export function Landing() {
             </svg>
           </div>
           <div className="font-black text-[28px] sm:text-[36px] md:text-[48px] uppercase text-[#0F172A] tracking-tight text-center" style={{ fontFamily: 'Inter, sans-serif' }}>
-            AGENTIC PHARMACY
+            NOVAMED
           </div>
           <div className="text-[14px] sm:text-[16px] md:text-[18px] text-[#64748B] mt-3 sm:mt-4 font-medium tracking-wide text-center">
             AI-Powered Pharmacy Management
@@ -157,7 +157,7 @@ export function Landing() {
               className="text-[#0F172A] text-[14px] sm:text-[20px] font-black uppercase tracking-tight"
               style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.5px' }}
             >
-              AGENTIC PHARMACY
+              NOVAMED
             </span>
           </div>
 
@@ -207,7 +207,7 @@ export function Landing() {
 
             {/* Subheading */}
             <p className="text-[16px] sm:text-[20px] text-[#64748B] font-medium mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
-              From scanning a barcode to catching a drug interaction — Agentic Pharmacy handles the complexity so you can focus on care.
+              From scanning a barcode to catching a drug interaction — NovaMed handles the complexity so you can focus on care.
             </p>
 
             {/* CTA Buttons */}
@@ -467,7 +467,7 @@ export function Landing() {
           <h2 className="text-[36px] sm:text-[48px] lg:text-[56px] font-black uppercase mb-4 sm:mb-6 tracking-tight leading-none">
             READY TO EXPLORE
             <br />
-            AGENTIC PHARMACY?
+            NOVAMED?
           </h2>
           <p className="text-[16px] sm:text-[20px] text-white/90 mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
             Create an account to test out the LangGraph AI and GS1 barcode scanning.
@@ -496,7 +496,7 @@ export function Landing() {
             <div className="col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <span className="text-[#0F172A] text-[14px] sm:text-[18px] font-black uppercase tracking-tight">
-                  AGENTIC PHARMACY
+                  NOVAMED
                 </span>
               </div>
               <p className="text-[12px] sm:text-[13px] text-[#64748B] leading-relaxed">
@@ -555,7 +555,7 @@ export function Landing() {
 
           <div className="border-t border-[#E2E8F0] pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-[11px] sm:text-[12px] text-[#94A3B8] font-medium text-center sm:text-left">
-              © 2026 Agentic Pharmacy. All rights reserved.
+              © 2026 NovaMed. All rights reserved.
             </p>
             <div className="flex items-center gap-4 sm:gap-6">
               <a href="#" className="text-[#64748B] hover:text-[#0F172A] transition-colors">
