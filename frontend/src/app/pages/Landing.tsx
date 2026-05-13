@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Bot, Package, Clock, Shield, Zap, BarChart3 } from 'lucide-react';
+import { ArrowRight, Bot, Package, Clock, Shield, Zap, BarChart3, Cloud } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export function Landing() {
@@ -55,17 +55,17 @@ export function Landing() {
 
   const benefits = [
     {
-      stat: '⚡',
+      icon: Zap,
       label: 'Lightning Fast',
       description: 'Scan barcodes and get results in under a second',
     },
     {
-      stat: '🤖',
+      icon: Bot,
       label: 'AI-Powered',
       description: 'Smart assistant that understands your pharmacy needs',
     },
     {
-      stat: '☁️',
+      icon: Cloud,
       label: 'Cloud-Based',
       description: 'Access your data anywhere, anytime, from any device',
     },
@@ -73,19 +73,19 @@ export function Landing() {
 
   const testimonials = [
     {
-      quote: "No more manual entry! I just scan the barcode and everything is logged automatically. Saves me hours every week.",
-      author: "Sarah M.",
-      role: "Community Pharmacist",
+      quote: "Scan any medicine barcode and instantly log it into your inventory. No more manual data entry or typing errors.",
+      author: "Barcode Scanning",
+      role: "Core Feature",
     },
     {
-      quote: "The AI assistant is like having an extra team member. It answers questions instantly and catches drug interactions I might miss.",
-      author: "Dr. James K.",
-      role: "Hospital Pharmacy Director",
+      quote: "Ask questions in plain English and get instant answers about your inventory, drug interactions, and stock levels.",
+      author: "AI Assistant",
+      role: "Smart Technology",
     },
     {
-      quote: "Expiry alerts have saved us thousands in wasted inventory. The system reminds us before items expire so we can use them first.",
-      author: "Maria L.",
-      role: "Pharmacy Manager",
+      quote: "Get automatic notifications before medicines expire and when stock runs low. Never miss a reorder again.",
+      author: "Smart Alerts",
+      role: "Proactive Management",
     },
   ];
 
@@ -360,8 +360,10 @@ export function Landing() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-12">
             {benefits.map((benefit) => (
               <div key={benefit.label} className="text-center bg-white border border-[#0F172A] rounded-2xl sm:rounded-3xl p-6 sm:p-8">
-                <div className="text-[48px] sm:text-[64px] font-black text-[#0F172A] mb-1 sm:mb-2 leading-none">
-                  {benefit.stat}
+                <div className="flex items-center justify-center mb-4 sm:mb-6">
+                  <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-full bg-[#16a34a] border-2 border-[#0F172A] flex items-center justify-center">
+                    <benefit.icon className="w-8 sm:w-10 h-8 sm:h-10 text-white" strokeWidth={2.5} />
+                  </div>
                 </div>
                 <div className="text-[16px] sm:text-[20px] font-bold mb-2 sm:mb-3 text-[#0F172A]">
                   {benefit.label}
