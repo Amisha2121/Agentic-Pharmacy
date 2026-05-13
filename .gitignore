@@ -1,27 +1,84 @@
-# Sensitive API keys and credentials
+# ============================================
+# NovaMed - Git Ignore Configuration
+# ============================================
+
+# ── Sensitive Credentials ──────────────────
 .env
+.env.local
+.env.production
 firebase_key.json
 agentic-pharmacy-*.json
-# NOTE: *.json is intentionally NOT ignored globally — it would block tsconfig etc.
+credentials/
+*.pem
+*.key
 
-# Python virtual environment
+# ── Python ─────────────────────────────────
 venv/
+env/
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.pytest_cache/
 
-# Local databases and temp files
+# ── Node.js / Frontend ─────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── Databases & Storage ────────────────────
 chroma_db/
-temp_*
+*.db
+*.sqlite
+*.sqlite3
 
-# Large binary installers — never commit these
+# ── Temporary Files ────────────────────────
+temp_*
+tmp/
+uploads/
+*.tmp
+*.log
+
+# ── Build Artifacts ────────────────────────
 *.msi
 *.zip
+*.tar.gz
 node/
 
-# Temp uploads (server-generated)
-uploads/
+# ── IDE & Editor ───────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
 
-# OS artefacts
+# ── OS Files ───────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ── Firebase ───────────────────────────────
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# ── Testing ────────────────────────────────
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ── Misc ───────────────────────────────────
+*.bak
+*.backup
